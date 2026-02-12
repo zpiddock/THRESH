@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THRΞSH Engine — Brand Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00f0ff;
+    --cyan-dim: #00a0aa;
+    --cyan-glow: rgba(0, 240, 255, 0.15);
+    --magenta: #ff2d6a;
+    --magenta-dim: #b8204d;
+    --magenta-glow: rgba(255, 45, 106, 0.12);
+    --amber: #ffb800;
+    --amber-dim: #aa7a00;
+    --bg-deep: #06080c;
+    --bg-panel: #0a0e14;
+    --bg-surface: #0f1520;
+    --bg-elevated: #141c28;
+    --border: rgba(0, 240, 255, 0.08);
+    --text-primary: #e8edf5;
+    --text-secondary: #6a7a90;
+    --text-dim: #3a4a5c;
+    --scanline: rgba(0, 240, 255, 0.015);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.06), transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse 6s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  }
+
+  .hero-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--cyan-dim);
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 1s ease 0.2s both;
+  }
+
+  .hero-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(64px, 12vw, 140px);
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 1;
+    text-shadow:
+      0 0 40px rgba(0, 240, 255, 0.3),
+      0 0 80px rgba(0, 240, 255, 0.1);
+    animation: fadeIn 1s ease 0.4s both;
+    line-height: 1;
+  }
+
+  .hero-logo .xi { color: var(--cyan); }
+
+  .hero-subtitle {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 1s ease 0.6s both;
+  }
+
+  .hero-bar {
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+    margin-top: 48px;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 1s ease 0.8s both;
+  }
+
+  .hero-version {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 16px;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 1s ease 1s both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 100px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--cyan-dim);
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    margin-bottom: 40px;
+  }
+
+  .section-desc {
+    color: var(--text-secondary);
+    font-size: 16px;
+    max-width: 640px;
+    margin-bottom: 48px;
+    font-weight: 300;
+  }
+
+  /* ── LOGO VARIANTS ── */
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .logo-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 48px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .logo-card:hover {
+    border-color: rgba(0, 240, 255, 0.2);
+  }
+
+  .logo-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .logo-card:hover::before { opacity: 1; }
+
+  .logo-card-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    position: absolute;
+    top: 16px;
+    left: 20px;
+  }
+
+  .logo-card .mark {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .logo-card .mark .xi { color: var(--cyan); }
+
+  .logo-primary .mark { font-size: 52px; }
+  .logo-primary .mark-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 300;
+    font-size: 14px;
+    letter-spacing: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+
+  .logo-compact .mark { font-size: 36px; }
+
+  .logo-monogram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hex-monogram {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 140px;
+    height: 140px;
+  }
+
+  .hex-monogram .hex-xi {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 64px;
+    color: var(--cyan);
+    position: relative;
+    z-index: 2;
+    line-height: 1;
+  }
+
+  .hex-monogram .hex-glow {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 64px;
+    color: var(--cyan);
+    filter: blur(12px);
+    opacity: 0.5;
+    z-index: 1;
+    line-height: 1;
+  }
+
+  .hex-monogram .hex-glow-outer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 64px;
+    color: var(--cyan);
+    filter: blur(28px);
+    opacity: 0.2;
+    z-index: 0;
+    line-height: 1;
+  }
+
+  .hex-monogram svg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* Light variant overrides */
+  .logo-light .hex-monogram .hex-xi { color: #0088aa; }
+  .logo-light .hex-monogram .hex-glow,
+  .logo-light .hex-monogram .hex-glow-outer { display: none; }
+
+  .logo-light {
+    background: #e8edf5;
+  }
+
+  .logo-light .mark { color: var(--bg-deep); }
+  .logo-light .mark .xi { color: #0088aa; }
+  .logo-light .mark-sub { color: #6a7a90; }
+  .logo-light .logo-card-label { color: #9aa5b0; }
+
+  .logo-wordmark .mark { font-size: 36px; }
+  .logo-wordmark .inline-engine {
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--text-dim);
+    vertical-align: middle;
+    margin-left: 14px;
+  }
+
+  /* ── COLOR PALETTE ── */
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .palette-card {
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .palette-swatch {
+    height: 100px;
+    position: relative;
+  }
+
+  .palette-info {
+    background: var(--bg-panel);
+    padding: 14px 16px;
+  }
+
+  .palette-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .palette-hex {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .palette-role {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .palette-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    margin-top: 32px;
+  }
+
+  .palette-section-label:first-of-type { margin-top: 0; }
+
+  /* ── TYPOGRAPHY ── */
+  .type-specimen {
+    margin-bottom: 48px;
+  }
+
+  .type-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .type-family-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--cyan);
+  }
+
+  .type-usage {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .type-sample-orbitron {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 48px;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .type-sample-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1.4;
+    color: var(--text-secondary);
+  }
+
+  .type-sample-mono {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    padding: 20px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .type-weights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 12px;
+  }
+
+  .type-weight-item {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    color: var(--text-secondary);
+  }
+
+  .type-weight-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* ── USAGE RULES ── */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+
+  .rule-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px;
+  }
+
+  .rule-card.do { border-left: 3px solid var(--cyan); }
+  .rule-card.dont { border-left: 3px solid var(--magenta); }
+
+  .rule-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .rule-card.do .rule-label { color: var(--cyan); }
+  .rule-card.dont .rule-label { color: var(--magenta); }
+
+  .rule-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .rule-card li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 6px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .rule-card li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 13px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+  }
+
+  .rule-card.do li::before { background: var(--cyan-dim); }
+  .rule-card.dont li::before { background: var(--magenta-dim); }
+
+  /* ── ACCENT PATTERNS ── */
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .pattern-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    height: 180px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    padding: 16px;
+  }
+
+  .pattern-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    position: relative;
+    z-index: 1;
+  }
+
+  .pattern-scanlines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 240, 255, 0.04) 3px,
+      rgba(0, 240, 255, 0.04) 4px
+    );
+  }
+
+  .pattern-grid-dots::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(0, 240, 255, 0.12) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .pattern-diagonal::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(0, 240, 255, 0.03) 8px,
+      rgba(0, 240, 255, 0.03) 9px
+    );
+  }
+
+  /* ── GLOW EFFECTS DEMO ── */
+  .effects-row {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 32px;
+  }
+
+  .effect-demo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .glow-box {
+    width: 120px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 2px;
+    border-radius: 2px;
+  }
+
+  .glow-cyan {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05);
+  }
+
+  .glow-magenta {
+    background: rgba(255, 45, 106, 0.08);
+    border: 1px solid var(--magenta);
+    color: var(--magenta);
+    box-shadow: 0 0 20px rgba(255, 45, 106, 0.15), inset 0 0 20px rgba(255, 45, 106, 0.05);
+  }
+
+  .glow-amber {
+    background: rgba(255, 184, 0, 0.08);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 20px rgba(255, 184, 0, 0.15), inset 0 0 20px rgba(255, 184, 0, 0.05);
+  }
+
+  .effect-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ── CLEARSPACE ── */
+  .clearspace-demo {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0;
+  }
+
+  .clearspace-box {
+    position: relative;
+    padding: 48px 64px;
+    border: 1px dashed rgba(0, 240, 255, 0.2);
+  }
+
+  .clearspace-box .mark {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 40px;
+    letter-spacing: 0.06em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .clearspace-box .mark .xi { color: var(--cyan); }
+
+  .clearspace-measure {
+    position: absolute;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--cyan-dim);
+    letter-spacing: 1px;
+  }
+
+  .clearspace-measure.top {
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .clearspace-measure.left {
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+  }
+
+  .clearspace-measure.right {
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+  }
+
+  .clearspace-measure.bottom {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+    text-align: center;
+  }
+
+  .footer-mark {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .footer-mark .xi { color: var(--cyan-dim); }
+
+  .footer-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-label">Brand Identity System</div>
+  <div class="hex-monogram" style="width: 160px; height: 160px; margin-bottom: 32px; position: relative; z-index: 1; animation: fadeIn 1s ease 0.2s both;">
+    <span class="hex-glow-outer" style="font-size: 72px;">Ξ</span>
+    <span class="hex-glow" style="font-size: 72px;">Ξ</span>
+    <span class="hex-xi" style="font-size: 72px;">Ξ</span>
+    <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; inset: 0;">
+      <polygon points="80,5 150,40 150,120 80,155 10,120 10,40"
+               stroke="#00f0ff" stroke-width="1.5" fill="none" opacity="0.2"/>
+      <polygon points="80,15 140,46 140,114 80,145 20,114 20,46"
+               stroke="#00f0ff" stroke-width="1" fill="none" opacity="0.1"/>
+      <g fill="#00f0ff" opacity="0.5">
+        <circle cx="80" cy="5" r="2.5"/>
+        <circle cx="150" cy="40" r="2.5"/>
+        <circle cx="150" cy="120" r="2.5"/>
+        <circle cx="80" cy="155" r="2.5"/>
+        <circle cx="10" cy="120" r="2.5"/>
+        <circle cx="10" cy="40" r="2.5"/>
+      </g>
+      <g stroke="#00f0ff" stroke-width="1" opacity="0.12">
+        <line x1="80" y1="5" x2="80" y2="0"/>
+        <line x1="80" y1="155" x2="80" y2="160"/>
+        <line x1="150" y1="40" x2="155" y2="37"/>
+        <line x1="150" y1="120" x2="155" y2="123"/>
+        <line x1="10" y1="40" x2="5" y2="37"/>
+        <line x1="10" y1="120" x2="5" y2="123"/>
+      </g>
+    </svg>
+  </div>
+  <div class="hero-logo">THR<span class="xi">Ξ</span>SH</div>
+  <div class="hero-subtitle">Engine</div>
+  <div class="hero-bar"></div>
+  <div class="hero-version">v1.0 — Brand Guide</div>
+</section>
+
+<!-- ═══ LOGO VARIANTS ═══ -->
+<section>
+  <div class="container">
+    <div class="section-label">01 // Identity</div>
+    <div class="section-title">Logo System</div>
+    <div class="section-desc">
+      The THRΞSH logotype is built on Orbitron Black. The greek capital letter Xi (Ξ) replaces the E as the primary brand hook — always rendered in the accent cyan. The hexagonal monogram frames the Ξ as an emblem mark for app icons, favicons, and social avatars. When unicode isn't available, "THRESH" is acceptable.
+    </div>
+
+    <div class="logo-grid">
+      <div class="logo-card logo-primary">
+        <div class="logo-card-label">Primary Lockup</div>
+        <div class="mark">THR<span class="xi">Ξ</span>SH</div>
+        <div class="mark-sub">Engine</div>
+      </div>
+
+      <div class="logo-card logo-compact">
+        <div class="logo-card-label">Compact</div>
+        <div class="mark">THR<span class="xi">Ξ</span>SH</div>
+      </div>
+
+      <div class="logo-card logo-monogram">
+        <div class="logo-card-label">Monogram — Dark</div>
+        <div class="hex-monogram">
+          <span class="hex-glow-outer">Ξ</span>
+          <span class="hex-glow">Ξ</span>
+          <span class="hex-xi">Ξ</span>
+          <svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="70,5 131,35 131,105 70,135 9,105 9,35"
+                     stroke="#00f0ff" stroke-width="1.5" fill="none" opacity="0.2"/>
+            <polygon points="70,14 122,40 122,100 70,126 18,100 18,40"
+                     stroke="#00f0ff" stroke-width="1" fill="none" opacity="0.1"/>
+            <g fill="#00f0ff" opacity="0.5">
+              <circle cx="70" cy="5" r="2.5"/>
+              <circle cx="131" cy="35" r="2.5"/>
+              <circle cx="131" cy="105" r="2.5"/>
+              <circle cx="70" cy="135" r="2.5"/>
+              <circle cx="9" cy="105" r="2.5"/>
+              <circle cx="9" cy="35" r="2.5"/>
+            </g>
+            <g stroke="#00f0ff" stroke-width="1" opacity="0.12">
+              <line x1="70" y1="5" x2="70" y2="0"/>
+              <line x1="70" y1="135" x2="70" y2="140"/>
+              <line x1="131" y1="35" x2="136" y2="32"/>
+              <line x1="131" y1="105" x2="136" y2="108"/>
+              <line x1="9" y1="35" x2="4" y2="32"/>
+              <line x1="9" y1="105" x2="4" y2="108"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="logo-card logo-light logo-monogram">
+        <div class="logo-card-label">Monogram — Light</div>
+        <div class="hex-monogram">
+          <span class="hex-xi">Ξ</span>
+          <svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="70,5 131,35 131,105 70,135 9,105 9,35"
+                     stroke="#0088aa" stroke-width="1.5" fill="none" opacity="0.25"/>
+            <polygon points="70,14 122,40 122,100 70,126 18,100 18,40"
+                     stroke="#0088aa" stroke-width="1" fill="none" opacity="0.12"/>
+            <g fill="#0088aa" opacity="0.4">
+              <circle cx="70" cy="5" r="2.5"/>
+              <circle cx="131" cy="35" r="2.5"/>
+              <circle cx="131" cy="105" r="2.5"/>
+              <circle cx="70" cy="135" r="2.5"/>
+              <circle cx="9" cy="105" r="2.5"/>
+              <circle cx="9" cy="35" r="2.5"/>
+            </g>
+            <g stroke="#0088aa" stroke-width="1" opacity="0.12">
+              <line x1="70" y1="5" x2="70" y2="0"/>
+              <line x1="70" y1="135" x2="70" y2="140"/>
+              <line x1="131" y1="35" x2="136" y2="32"/>
+              <line x1="131" y1="105" x2="136" y2="108"/>
+              <line x1="9" y1="35" x2="4" y2="32"/>
+              <line x1="9" y1="105" x2="4" y2="108"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="logo-card logo-wordmark">
+        <div class="logo-card-label">Inline Wordmark</div>
+        <div class="mark">THR<span class="xi">Ξ</span>SH<span class="inline-engine">ENGINE</span></div>
+      </div>
+
+      <div class="logo-card logo-light">
+        <div class="logo-card-label">Light Background</div>
+        <div class="mark">THR<span class="xi">Ξ</span>SH</div>
+        <div class="mark-sub">Engine</div>
+      </div>
+
+      <div class="logo-card logo-compact">
+        <div class="logo-card-label">Plaintext Fallback</div>
+        <div class="mark" style="color: var(--text-secondary);">THRESH</div>
+      </div>
+    </div>
+
+    <!-- Clearspace -->
+    <div style="margin-top: 64px;">
+      <div class="palette-section-label">Minimum Clear Space</div>
+      <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; font-weight: 300;">
+        Maintain a clear zone equal to the cap height of the Ξ character on all sides of the logotype.
+      </p>
+      <div class="clearspace-demo">
+        <div class="clearspace-box">
+          <span class="clearspace-measure top">1× Ξ height</span>
+          <span class="clearspace-measure left">1× Ξ height</span>
+          <span class="clearspace-measure right">1× Ξ height</span>
+          <span class="clearspace-measure bottom">1× Ξ height</span>
+          <div class="mark">THR<span class="xi">Ξ</span>SH</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COLOR PALETTE ═══ -->
+<section>
+  <div class="container">
+    <div class="section-label">02 // Chromatics</div>
+    <div class="section-title">Color System</div>
+    <div class="section-desc">
+      A dark-first palette anchored by electric cyan. Magenta serves as an alert/destructive accent. Amber for warnings and highlighted data. The background stack provides depth layering for UI panels.
+    </div>
+
+    <div class="palette-section-label">Primary Accents</div>
+    <div class="palette-grid">
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--cyan);"></div>
+        <div class="palette-info">
+          <div class="palette-name" style="color: var(--cyan);">Cyan</div>
+          <div class="palette-hex">#00F0FF</div>
+          <div class="palette-role">Primary accent, Xi glyph, interactive elements</div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--magenta);"></div>
+        <div class="palette-info">
+          <div class="palette-name" style="color: var(--magenta);">Magenta</div>
+          <div class="palette-hex">#FF2D6A</div>
+          <div class="palette-role">Alert, error, destructive actions</div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--amber);"></div>
+        <div class="palette-info">
+          <div class="palette-name" style="color: var(--amber);">Amber</div>
+          <div class="palette-hex">#FFB800</div>
+          <div class="palette-role">Warning, highlights, data emphasis</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-section-label">Background Stack</div>
+    <div class="palette-grid">
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--bg-deep); border-bottom: 1px solid var(--border);"></div>
+        <div class="palette-info">
+          <div class="palette-name">Deep</div>
+          <div class="palette-hex">#06080C</div>
+          <div class="palette-role">Page / viewport background</div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--bg-panel); border-bottom: 1px solid var(--border);"></div>
+        <div class="palette-info">
+          <div class="palette-name">Panel</div>
+          <div class="palette-hex">#0A0E14</div>
+          <div class="palette-role">Cards, side panels</div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--bg-surface); border-bottom: 1px solid var(--border);"></div>
+        <div class="palette-info">
+          <div class="palette-name">Surface</div>
+          <div class="palette-hex">#0F1520</div>
+          <div class="palette-role">Input fields, secondary surfaces</div>
+        </div>
+      </div>
+      <div class="palette-card">
+        <div class="palette-swatch" style="background: var(--bg-elevated); border-bottom: 1px solid var(--border);"></div>
+        <div class="palette-info">
+          <div class="palette-name">Elevated</div>
+          <div class="palette-hex">#141C28</div>
+          <div class="palette-role">Tooltips, dropdowns, modals</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-section-label">Glow Effects</div>
+    <div class="effects-row">
+      <div class="effect-demo">
+        <div class="glow-box glow-cyan">ACTIVE</div>
+        <div class="effect-label">Cyan Glow</div>
+      </div>
+      <div class="effect-demo">
+        <div class="glow-box glow-magenta">ALERT</div>
+        <div class="effect-label">Magenta Glow</div>
+      </div>
+      <div class="effect-demo">
+        <div class="glow-box glow-amber">WARN</div>
+        <div class="effect-label">Amber Glow</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TYPOGRAPHY ═══ -->
+<section>
+  <div class="container">
+    <div class="section-label">03 // Typography</div>
+    <div class="section-title">Type System</div>
+    <div class="section-desc">
+      Three typefaces provide a complete typographic hierarchy — a display face for identity, a readable workhorse for UI and body text, and a monospace for technical and data contexts.
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-header">
+        <span class="type-family-name">Orbitron</span>
+        <span class="type-usage">Display / Identity / Headlines</span>
+      </div>
+      <div class="type-sample-orbitron">THR<span style="color: var(--cyan);">Ξ</span>SH ENGINE</div>
+      <div class="type-weights">
+        <div class="type-weight-item" style="font-weight:400;">Aa <span class="type-weight-label">Regular 400</span></div>
+        <div class="type-weight-item" style="font-weight:600;">Aa <span class="type-weight-label">Semi 600</span></div>
+        <div class="type-weight-item" style="font-weight:700;">Aa <span class="type-weight-label">Bold 700</span></div>
+        <div class="type-weight-item" style="font-weight:900;">Aa <span class="type-weight-label">Black 900</span></div>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-header">
+        <span class="type-family-name">Rajdhani</span>
+        <span class="type-usage">UI / Body / Subheadings</span>
+      </div>
+      <div class="type-sample-rajdhani">A modular 3D engine built for the next generation of interactive experiences. Designed with precision. Crafted for performance.</div>
+    </div>
+
+    <div class="type-specimen">
+      <div class="type-header">
+        <span class="type-family-name">Share Tech Mono</span>
+        <span class="type-usage">Code / Data / Labels / System Text</span>
+      </div>
+      <div class="type-sample-mono">
+&gt; thresh init --renderer vulkan --platform linux<br>
+&gt; loading substratum core... [OK]<br>
+&gt; loading horizon windowing... [OK]<br>
+&gt; loading flux graphics... [OK]<br>
+&gt; THRΞSH Engine v0.1.0-alpha ready.<br>
+&gt; render loop: 144.0 fps | 6.94ms frame time
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TEXTURES / PATTERNS ═══ -->
+<section>
+  <div class="container">
+    <div class="section-label">04 // Texture</div>
+    <div class="section-title">Background Patterns</div>
+    <div class="section-desc">
+      Subtle background textures reinforce the technical aesthetic. Use sparingly — they should add atmosphere without competing with content.
+    </div>
+
+    <div class="patterns-grid">
+      <div class="pattern-card pattern-scanlines">
+        <div class="pattern-label">Scanlines</div>
+      </div>
+      <div class="pattern-card pattern-grid-dots">
+        <div class="pattern-label">Grid Dots</div>
+      </div>
+      <div class="pattern-card pattern-diagonal">
+        <div class="pattern-label">Diagonal Hatch</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ USAGE RULES ═══ -->
+<section>
+  <div class="container">
+    <div class="section-label">05 // Guidelines</div>
+    <div class="section-title">Usage Rules</div>
+
+    <div class="rules-grid">
+      <div class="rule-card do">
+        <div class="rule-label">✓ Do</div>
+        <ul>
+          <li>Always render the Ξ in cyan when color is available</li>
+          <li>Use "THRΞSH" in all-caps for the logotype</li>
+          <li>Use "thresh" lowercase for code references, CLI, filenames</li>
+          <li>Maintain clear space around the logotype</li>
+          <li>Use dark backgrounds as the primary context</li>
+          <li>Allow the logotype to breathe — minimal surrounding elements</li>
+        </ul>
+      </div>
+      <div class="rule-card dont">
+        <div class="rule-label">✗ Don't</div>
+        <ul>
+          <li>Don't render the Ξ in the same color as the rest of the mark</li>
+          <li>Don't use mixed case ("Thresh", "ThResh")</li>
+          <li>Don't rotate, skew, or distort the logotype</li>
+          <li>Don't add drop shadows, bevels, or 3D effects to the type</li>
+          <li>Don't place on busy backgrounds without sufficient contrast</li>
+          <li>Don't substitute Ξ with "E" when unicode is available</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="container" style="display: flex; flex-direction: column; align-items: center;">
+    <div class="hex-monogram" style="width: 60px; height: 60px; position: relative; margin-bottom: 16px;">
+      <span class="hex-xi" style="font-size: 28px; opacity: 0.4;">Ξ</span>
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; inset: 0;">
+        <polygon points="30,3 56,17 56,43 30,57 4,43 4,17"
+                 stroke="#00f0ff" stroke-width="1" fill="none" opacity="0.12"/>
+        <g fill="#00f0ff" opacity="0.25">
+          <circle cx="30" cy="3" r="1.5"/>
+          <circle cx="56" cy="17" r="1.5"/>
+          <circle cx="56" cy="43" r="1.5"/>
+          <circle cx="30" cy="57" r="1.5"/>
+          <circle cx="4" cy="43" r="1.5"/>
+          <circle cx="4" cy="17" r="1.5"/>
+        </g>
+      </svg>
+    </div>
+    <div class="footer-mark">THR<span class="xi">Ξ</span>SH</div>
+    <div class="footer-sub">Brand Guide v1.0</div>
+  </div>
+</footer>
+
+</body>
+</html>
