@@ -53,4 +53,4 @@ namespace flux {
         VkCommandPool m_command_pool = VK_NULL_HANDLE;
         std::vector<VkCommandBuffer> m_command_buffers;
     };
-} // namespace batleth
+} // namespace flux

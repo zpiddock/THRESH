@@ -37,7 +37,7 @@ namespace flux {
     }
 
     Instance::Instance(const Config &config) : m_validation_enabled(config.enable_validation) {
-        SUB_INFO("Creating Vulkan instance: {} (API 1.3)", config.application_name);
+        SUB_INFO("Creating Vulkan instance: {} (API 1.4)", config.application_name);
 
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -45,7 +45,7 @@ namespace flux {
         app_info.applicationVersion = config.application_version;
         app_info.pEngineName = config.engine_name.c_str();
         app_info.engineVersion = config.engine_version;
-        app_info.apiVersion = VK_API_VERSION_1_3;
+        app_info.apiVersion = VK_API_VERSION_1_4;
 
         VkInstanceCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -134,4 +134,4 @@ namespace flux {
 
         SUB_DEBUG("Vulkan debug messenger active");
     }
-} // namespace batleth
+} // namespace flux

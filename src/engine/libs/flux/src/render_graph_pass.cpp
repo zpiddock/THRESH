@@ -34,4 +34,4 @@ namespace flux {
 
         return first_writes || second_writes;
     }
-} // namespace batleth
+} // namespace flux

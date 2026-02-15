@@ -249,4 +249,4 @@ namespace flux {
             SUB_ERROR("Failed to write cache data: {}", cache_path.string());
         }
     }
-} // namespace batleth
+} // namespace flux

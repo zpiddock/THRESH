@@ -86,4 +86,4 @@ namespace flux {
 
         return present_modes;
     }
-} // namespace batleth
+} // namespace flux

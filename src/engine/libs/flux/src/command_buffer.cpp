@@ -65,4 +65,4 @@ namespace flux {
     auto CommandBuffer::reset() -> void {
         ::vkResetCommandPool(m_device, m_command_pool, 0);
     }
-} // namespace batleth
+} // namespace flux

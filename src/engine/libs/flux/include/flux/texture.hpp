@@ -42,4 +42,4 @@ namespace flux {
         TextureType m_type;
         std::string m_filepath;
     };
-} // namespace batleth
+} // namespace flux

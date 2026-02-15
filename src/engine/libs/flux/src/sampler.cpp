@@ -67,4 +67,4 @@ auto Sampler::operator=(Sampler&& other) noexcept -> Sampler& {
     return *this;
 }
 
-} // namespace batleth
+} // namespace flux

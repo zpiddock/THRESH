@@ -119,4 +119,4 @@ auto generate_mipmaps(
     SUB_TRACE("Finished generating mipmaps");
 }
 
-} // namespace batleth
+} // namespace flux

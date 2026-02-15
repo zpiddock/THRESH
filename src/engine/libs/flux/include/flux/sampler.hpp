@@ -50,4 +50,4 @@ namespace flux {
         VkDevice m_device = VK_NULL_HANDLE;
         VkSampler m_sampler = VK_NULL_HANDLE;
     };
-} // namespace batleth
+} // namespace flux

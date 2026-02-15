@@ -287,4 +287,4 @@ namespace flux {
             default: return static_cast<int>(EShLangVertex);
         }
     }
-} // namespace batleth
+} // namespace flux

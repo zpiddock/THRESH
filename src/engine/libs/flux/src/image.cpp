@@ -190,4 +190,4 @@ auto Image::transition_layout(
     );
 }
 
-} // namespace batleth
+} // namespace flux

@@ -210,4 +210,4 @@ namespace flux {
 
         return actual_extent;
     }
-} // namespace batleth
+} // namespace flux

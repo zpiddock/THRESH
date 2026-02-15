@@ -135,4 +135,4 @@ namespace flux {
         VkBufferUsageFlags m_usage_flags;
         VkMemoryPropertyFlags m_memory_property_flags;
     };
-} // namespace batleth
+} // namespace flux

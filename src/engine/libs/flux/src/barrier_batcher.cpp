@@ -221,4 +221,4 @@ namespace flux {
         // Transfer needed if queue families differ
         return before.queue_family != after.queue_family;
     }
-} // namespace batleth
+} // namespace flux

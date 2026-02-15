@@ -5,6 +5,8 @@
 #include <vector>
 #include <optional>
 
+#include "flux/shader_object_functions.hpp"
+
 #ifdef _WIN32
 #ifdef FLUX_EXPORTS
 #define FLUX_API __declspec(dllexport)
@@ -61,6 +63,8 @@ namespace flux {
         auto get_command_pool() const -> VkCommandPool { return m_command_pool; }
         auto set_command_pool(VkCommandPool pool) -> void { m_command_pool = pool; }
 
+        [[nodiscard]] auto get_shader_object_fn() const -> const ShaderObjectFunctions& { return m_shader_object_fn; }
+
         auto wait_idle() const -> void;
 
         /**
@@ -116,6 +120,7 @@ namespace flux {
         VkCommandPool m_command_pool = VK_NULL_HANDLE;
         QueueFamilyIndices m_indices;
         bool m_owns_command_pool = false;
+        ShaderObjectFunctions m_shader_object_fn;
 
         auto pick_physical_device(VkInstance instance, VkSurfaceKHR surface) -> void;
 
@@ -123,5 +128,8 @@ namespace flux {
 
         auto is_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface,
                                 const std::vector<const char *> &extensions) -> bool;
+
+        static auto check_extension_support(VkPhysicalDevice device,
+                                            const std::vector<const char *> &extensions) -> bool;
     };
-} // namespace batleth
+} // namespace flux

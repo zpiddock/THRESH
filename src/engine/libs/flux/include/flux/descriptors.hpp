@@ -120,4 +120,4 @@ namespace flux {
         DescriptorPool &m_pool;
         std::vector<VkWriteDescriptorSet> m_writes;
     };
-} // namespace batleth
+} // namespace flux

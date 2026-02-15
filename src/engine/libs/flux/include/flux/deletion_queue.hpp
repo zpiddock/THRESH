@@ -39,19 +39,16 @@ public:
     DeletionQueue& operator=(const DeletionQueue&) = delete;
 
     /**
-     * Schedule a pipeline for deletion after frames_in_flight frames.
-     */
-    void push_pipeline(VkPipeline pipeline, uint64_t current_frame);
-
-    /**
      * Schedule a pipeline layout for deletion.
      */
     void push_pipeline_layout(VkPipelineLayout layout, uint64_t current_frame);
 
     /**
-     * Schedule a shader module for deletion.
+     * Schedule a shader object (VkShaderEXT) for deletion.
+     * Requires the extension destroy function pointer since VkShaderEXT
+     * is destroyed via an extension function, not a core Vulkan function.
      */
-    void push_shader_module(VkShaderModule module, uint64_t current_frame);
+    void push_shader_object(VkShaderEXT shader, PFN_vkDestroyShaderEXT destroy_fn, uint64_t current_frame);
 
     /**
      * Schedule a descriptor set layout for deletion.
@@ -91,4 +88,4 @@ private:
     std::deque<PendingDeletion> m_pending;
 };
 
-} // namespace batleth
+} // namespace flux

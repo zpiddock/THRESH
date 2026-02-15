@@ -199,4 +199,4 @@ namespace flux {
 
     // Get shader stage flags for a ResourceUsage (for descriptor set layout)
     FLUX_API auto usage_to_shader_stages(ResourceUsage usage) -> VkShaderStageFlags;
-} // namespace batleth
+} // namespace flux

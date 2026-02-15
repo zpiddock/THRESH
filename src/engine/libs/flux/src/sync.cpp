@@ -131,4 +131,4 @@ auto Fence::is_signaled() const -> bool {
     return vkGetFenceStatus(m_device, m_fence) == VK_SUCCESS;
 }
 
-} // namespace batleth
+} // namespace flux

@@ -86,4 +86,4 @@ namespace flux {
         uint32_t m_mip_levels = 1;
         uint32_t m_array_layers = 1;
     };
-} // namespace batleth
+} // namespace flux

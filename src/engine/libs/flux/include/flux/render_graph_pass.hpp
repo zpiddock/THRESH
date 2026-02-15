@@ -85,12 +85,17 @@ namespace flux {
         bool auto_descriptors = false;
     };
 
+    class Device;
+
     // Execution context passed to pass callbacks
     struct FLUX_API PassExecutionContext {
         VkCommandBuffer command_buffer = VK_NULL_HANDLE;
         std::uint32_t frame_index = 0;
         float delta_time = 0.0f;
         VkExtent2D render_extent = {0, 0};
+
+        // Device reference (for GraphicsState::apply and shader object fn access)
+        const Device *device = nullptr;
 
         // Pass information
         const PassConfig *config = nullptr;
@@ -155,4 +160,4 @@ namespace flux {
         const ResourceAccess &first,
         const ResourceAccess &second
     ) -> bool;
-} // namespace batleth
+} // namespace flux

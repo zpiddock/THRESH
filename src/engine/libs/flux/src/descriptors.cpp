@@ -182,4 +182,4 @@ namespace flux {
         }
         ::vkUpdateDescriptorSets(m_pool.m_device, static_cast<uint32_t>(m_writes.size()), m_writes.data(), 0, nullptr);
     }
-} // namespace batleth
+} // namespace flux

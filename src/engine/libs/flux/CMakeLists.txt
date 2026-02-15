@@ -8,10 +8,12 @@ add_library(FLUX SHARED
         src/buffer.cpp
         src/descriptors.cpp
         src/swapchain.cpp
-        src/shader.cpp
+        src/shader_object.cpp
+        src/shader_object_functions.cpp
+        src/shader_program.cpp
+        src/graphics_state.cpp
         src/shader_compiler.cpp
         src/shader_cache.cpp
-        src/pipeline.cpp
         src/command_buffer.cpp
         src/render_graph_resource.cpp
         src/barrier_batcher.cpp

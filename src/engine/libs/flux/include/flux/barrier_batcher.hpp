@@ -158,4 +158,4 @@ namespace flux {
         const ResourceState &before,
         const ResourceState &after
     ) -> bool;
-} // namespace batleth
+} // namespace flux

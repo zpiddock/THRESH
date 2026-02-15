@@ -41,4 +41,4 @@ namespace flux {
      * Formula: floor(log2(max(width, height))) + 1
      */
     [[nodiscard]] FLUX_API auto calculate_mip_levels(uint32_t width, uint32_t height) -> uint32_t;
-} // namespace batleth
+} // namespace flux

@@ -92,4 +92,4 @@ namespace flux {
         Config m_config;
         std::filesystem::path m_cache_dir;
     };
-} // namespace batleth
+} // namespace flux

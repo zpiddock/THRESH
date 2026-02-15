@@ -14,15 +14,6 @@ DeletionQueue::~DeletionQueue() {
     flush_all();
 }
 
-void DeletionQueue::push_pipeline(VkPipeline pipeline, uint64_t current_frame) {
-    if (pipeline == VK_NULL_HANDLE) return;
-
-    push([this, pipeline]() {
-        ::vkDestroyPipeline(m_device, pipeline, nullptr);
-        SUB_TRACE("DeletionQueue: Destroyed pipeline");
-    }, current_frame);
-}
-
 void DeletionQueue::push_pipeline_layout(VkPipelineLayout layout, uint64_t current_frame) {
     if (layout == VK_NULL_HANDLE) return;
 
@@ -32,12 +23,12 @@ void DeletionQueue::push_pipeline_layout(VkPipelineLayout layout, uint64_t curre
     }, current_frame);
 }
 
-void DeletionQueue::push_shader_module(VkShaderModule module, uint64_t current_frame) {
-    if (module == VK_NULL_HANDLE) return;
+void DeletionQueue::push_shader_object(VkShaderEXT shader, PFN_vkDestroyShaderEXT destroy_fn, uint64_t current_frame) {
+    if (shader == VK_NULL_HANDLE || destroy_fn == nullptr) return;
 
-    push([this, module]() {
-        ::vkDestroyShaderModule(m_device, module, nullptr);
-        SUB_TRACE("DeletionQueue: Destroyed shader module");
+    push([this, shader, destroy_fn]() {
+        destroy_fn(m_device, shader, nullptr);
+        SUB_TRACE("DeletionQueue: Destroyed shader object");
     }, current_frame);
 }
 
@@ -77,4 +68,4 @@ void DeletionQueue::flush_all() {
     SUB_DEBUG("DeletionQueue: Flushed all pending deletions");
 }
 
-} // namespace batleth
+} // namespace flux

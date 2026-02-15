@@ -61,4 +61,4 @@ namespace flux {
         VkInstance m_instance = VK_NULL_HANDLE;
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
     };
-} // namespace batleth
+} // namespace flux

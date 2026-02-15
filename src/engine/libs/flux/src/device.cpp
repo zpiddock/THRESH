@@ -30,7 +30,17 @@ namespace flux {
             queue_create_infos.push_back(queue_create_info);
         }
 
-        // enable sampler anisotropy
+        // Build required device extensions list
+        std::vector<const char *> required_extensions = config.device_extensions;
+        required_extensions.push_back(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+        required_extensions.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+
+        if (!check_extension_support(m_physical_device, required_extensions)) {
+            SUB_FATAL("Physical device does not support required extensions");
+            throw std::runtime_error("Physical device does not support required extensions");
+        }
+
+        // Enable sampler anisotropy
         VkPhysicalDeviceFeatures vulkan10_features{};
         vulkan10_features.samplerAnisotropy = VK_TRUE;
 
@@ -43,12 +53,24 @@ namespace flux {
         descriptor_indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
         descriptor_indexing_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
 
-        // Enable Vulkan 1.3 features (includes dynamic rendering)
+        // Enable VK_EXT_vertex_input_dynamic_state
+        VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_features{};
+        vertex_input_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
+        vertex_input_features.vertexInputDynamicState = VK_TRUE;
+        vertex_input_features.pNext = &descriptor_indexing_features;
+
+        // Enable VK_EXT_shader_object
+        VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features{};
+        shader_object_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_OBJECT_FEATURES_EXT;
+        shader_object_features.shaderObject = VK_TRUE;
+        shader_object_features.pNext = &vertex_input_features;
+
+        // Enable Vulkan 1.3 features (dynamic rendering, synchronization2)
         VkPhysicalDeviceVulkan13Features vulkan13_features{};
         vulkan13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
         vulkan13_features.dynamicRendering = VK_TRUE;
         vulkan13_features.synchronization2 = VK_TRUE;
-        vulkan13_features.pNext = &descriptor_indexing_features;  // Chain descriptor indexing
+        vulkan13_features.pNext = &shader_object_features;
 
         VkPhysicalDeviceFeatures2 device_features{};
         device_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -61,12 +83,16 @@ namespace flux {
         create_info.queueCreateInfoCount = static_cast<std::uint32_t>(queue_create_infos.size());
         create_info.pQueueCreateInfos = queue_create_infos.data();
         create_info.pEnabledFeatures = nullptr; // Use pNext chain instead
-        create_info.enabledExtensionCount = static_cast<std::uint32_t>(config.device_extensions.size());
-        create_info.ppEnabledExtensionNames = config.device_extensions.data();
+        create_info.enabledExtensionCount = static_cast<std::uint32_t>(required_extensions.size());
+        create_info.ppEnabledExtensionNames = required_extensions.data();
 
         if (::vkCreateDevice(m_physical_device, &create_info, nullptr, &m_device) != VK_SUCCESS) {
+            SUB_FATAL("Failed to create logical device");
             throw std::runtime_error("Failed to create logical device");
         }
+
+        // Load VK_EXT_shader_object function pointers
+        m_shader_object_fn.load(m_device);
 
         // List all available Vulkan extensions
         std::uint32_t extension_count = 0;
@@ -100,7 +126,8 @@ namespace flux {
           , m_present_queue(other.m_present_queue)
           , m_command_pool(other.m_command_pool)
           , m_indices(other.m_indices)
-          , m_owns_command_pool(other.m_owns_command_pool) {
+          , m_owns_command_pool(other.m_owns_command_pool)
+          , m_shader_object_fn(other.m_shader_object_fn) {
         other.m_instance = VK_NULL_HANDLE;
         other.m_surface = VK_NULL_HANDLE;
         other.m_physical_device = VK_NULL_HANDLE;
@@ -126,6 +153,7 @@ namespace flux {
             m_command_pool = other.m_command_pool;
             m_indices = other.m_indices;
             m_owns_command_pool = other.m_owns_command_pool;
+            m_shader_object_fn = other.m_shader_object_fn;
 
             other.m_instance = VK_NULL_HANDLE;
             other.m_surface = VK_NULL_HANDLE;
@@ -201,10 +229,40 @@ namespace flux {
                                     const std::vector<const char *> &extensions) -> bool {
         auto indices = find_queue_families(device, surface);
 
-        // TODO: Check for extension support when needed
-        (void) extensions;
+        if (!indices.is_complete()) {
+            return false;
+        }
 
-        return indices.is_complete();
+        if (!extensions.empty() && !check_extension_support(device, extensions)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    auto Device::check_extension_support(VkPhysicalDevice device,
+                                         const std::vector<const char *> &extensions) -> bool {
+        std::uint32_t extension_count = 0;
+        ::vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+
+        std::vector<VkExtensionProperties> available(extension_count);
+        ::vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available.data());
+
+        for (const auto *required: extensions) {
+            bool found = false;
+            for (const auto &avail: available) {
+                if (std::strcmp(required, avail.extensionName) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                SUB_WARN("Required device extension not available: {}", required);
+                return false;
+            }
+        }
+
+        return true;
     }
 
     auto Device::begin_single_time_commands() -> VkCommandBuffer {
@@ -319,4 +377,4 @@ namespace flux {
 
         end_single_time_commands(command_buffer);
     }
-} // namespace batleth
+} // namespace flux

@@ -98,4 +98,4 @@ namespace flux {
 
         std::unique_ptr<ShaderCache> m_cache;
     };
-} // namespace batleth
+} // namespace flux

@@ -40,4 +40,4 @@ namespace flux {
         }
         return {0, 0, 0};
     }
-} // namespace batleth
+} // namespace flux

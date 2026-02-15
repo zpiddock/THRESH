@@ -93,4 +93,4 @@ namespace flux {
     auto Buffer::descriptor_info_for_index(int index) -> VkDescriptorBufferInfo {
         return descriptor_info(m_alignment_size, index * m_alignment_size);
     }
-} // namespace batleth
+} // namespace flux

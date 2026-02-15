@@ -54,4 +54,4 @@ namespace flux {
 
         auto setup_debug_messenger() -> void;
     };
-} // namespace batleth
+} // namespace flux

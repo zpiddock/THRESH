@@ -46,7 +46,7 @@ namespace flux {
             VkInstance instance = VK_NULL_HANDLE;
             VkPhysicalDevice physical_device = VK_NULL_HANDLE;
             VkDevice device = VK_NULL_HANDLE;
-            std::uint32_t api_version = VK_API_VERSION_1_3;
+            std::uint32_t api_version = VK_API_VERSION_1_4;
         };
 
         explicit TransientAllocator(const Config &config);
@@ -148,4 +148,4 @@ namespace flux {
         std::vector<ImageAllocation> m_images;
         std::vector<BufferAllocation> m_buffers;
     };
-} // namespace batleth
+} // namespace flux

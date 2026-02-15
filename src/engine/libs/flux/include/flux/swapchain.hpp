@@ -88,4 +88,4 @@ namespace flux {
 
         auto choose_extent(const VkSurfaceCapabilitiesKHR &capabilities) -> VkExtent2D;
     };
-} // namespace batleth
+} // namespace flux
