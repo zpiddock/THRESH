@@ -78,8 +78,11 @@ namespace thresh {
     auto Engine::run(GraphSetupCallback graph_setup, UpdateCallback update) -> void {
         SUB_INFO("Starting engine loop");
 
+        // Store graph setup callback for re-invocation on resize
+        m_graph_setup = graph_setup;
+
         // Let the user define their render graph
-        graph_setup(*m_render_graph);
+        m_graph_setup(*m_render_graph);
 
         if (!m_render_graph->compile()) {
             SUB_FATAL("Failed to compile initial render graph");
@@ -218,11 +221,15 @@ namespace thresh {
 
             // Recompile the graph if it was invalidated (e.g., by resize)
             if (!m_render_graph->is_compiled()) {
+                // Re-invoke graph setup so transient resources get new extents
+                m_graph_setup(*m_render_graph);
+
                 if (!m_render_graph->compile()) {
                     SUB_ERROR("Failed to recompile render graph");
                     m_renderer->end_frame();
                     continue;
                 }
+                SUB_DEBUG("Render graph recompiled after resize");
             }
 
             m_render_graph->execute(*cmd, m_renderer->get_current_frame_index(), snapshot.delta_time);

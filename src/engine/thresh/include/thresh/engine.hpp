@@ -107,6 +107,9 @@ namespace thresh {
         std::array<FrameSnapshot, SNAPSHOT_COUNT> m_snapshots{};
         std::atomic<std::uint32_t> m_latest_snapshot{0};
 
+        // Graph setup callback (stored for re-invocation on resize)
+        GraphSetupCallback m_graph_setup;
+
         // Resize tracking
         std::uint32_t m_last_fb_width = 0;
         std::uint32_t m_last_fb_height = 0;

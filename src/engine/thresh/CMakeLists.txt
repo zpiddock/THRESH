@@ -4,6 +4,7 @@ add_library(THRESH SHARED
         src/renderer.cpp
         src/frame_context.cpp
         src/render_graph.cpp
+        src/camera.cpp
 )
 
 target_include_directories(THRESH
@@ -16,7 +17,14 @@ target_include_directories(THRESH
 
 target_compile_features(THRESH PUBLIC cxx_std_26)
 
-target_link_libraries(THRESH PUBLIC FLUX)
+target_link_libraries(THRESH PUBLIC FLUX glm::glm)
+
+# GLM configuration - Vulkan depth range and radians
+target_compile_definitions(THRESH
+        PUBLIC
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
+        GLM_FORCE_RADIANS
+)
 
 # Set output name and versioning
 set_target_properties(THRESH PROPERTIES

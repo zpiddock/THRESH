@@ -74,8 +74,16 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 
+# GLM - Mathematics library
+FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 1.0.1
+        GIT_SHALLOW TRUE
+)
+
 FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(ser20 glfw vma)
+FetchContent_MakeAvailable(ser20 glfw vma glm)
 
 # Disable warnings for third-party libraries
 if(TARGET glfw)

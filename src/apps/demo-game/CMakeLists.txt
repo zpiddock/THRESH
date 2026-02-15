@@ -22,6 +22,13 @@ set_target_properties(game PROPERTIES
         SOVERSION ${PROJECT_VERSION_MAJOR}
 )
 
+# Copy shaders to output directory
+add_custom_command(TARGET game POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+        $<TARGET_FILE_DIR:game>/shaders
+)
+
 # Copy DLLs to output directory (Windows)
 if (WIN32)
     add_custom_command(TARGET game POST_BUILD
