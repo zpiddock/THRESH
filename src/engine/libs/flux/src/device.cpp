@@ -102,7 +102,7 @@ namespace flux {
 
         SUB_INFO("Available Vulkan Device extensions ({}):", extension_count);
         for (const auto &extension: available_extensions) {
-            SUB_DEBUG(" - {} (version {})", extension.extensionName, extension.specVersion);
+            SUB_TRACE(" - {} (version {})", extension.extensionName, extension.specVersion);
         }
 
         ::vkGetDeviceQueue(m_device, m_indices.graphics_family.value(), 0, &m_graphics_queue);

@@ -37,3 +37,5 @@ add_subdirectory(src/engine/libs/horizon)
 add_subdirectory(src/engine/libs/flux)
 
 add_subdirectory(src/engine/thresh)
+
+add_subdirectory(src/apps/demo-game)
