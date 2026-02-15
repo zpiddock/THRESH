@@ -1,4 +1,3 @@
-#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
 #include "flux/transient_allocator.hpp"
@@ -6,30 +5,20 @@
 
 namespace flux {
     TransientAllocator::TransientAllocator(const Config &config)
-        : m_device(config.device) {
-        VmaAllocatorCreateInfo allocator_info{};
-        allocator_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-        allocator_info.physicalDevice = config.physical_device;
-        allocator_info.device = config.device;
-        allocator_info.instance = config.instance;
-        allocator_info.vulkanApiVersion = config.api_version;
-
-        VkResult result = ::vmaCreateAllocator(&allocator_info, &m_allocator);
-        if (result != VK_SUCCESS) {
-            SUB_ERROR("Failed to create VMA allocator: {}", static_cast<int>(result));
-            throw std::runtime_error("Failed to create VMA allocator");
+        : m_device(config.device)
+          , m_allocator(config.allocator) {
+        if (!m_allocator) {
+            SUB_FATAL("TransientAllocator: VMA allocator is null (must be created by Device)");
+            throw std::runtime_error("TransientAllocator: null VMA allocator");
         }
 
-        SUB_INFO("TransientAllocator created successfully");
+        SUB_INFO("TransientAllocator created (using shared VMA allocator)");
     }
 
     TransientAllocator::~TransientAllocator() {
         release_all();
-
-        if (m_allocator) {
-            ::vmaDestroyAllocator(m_allocator);
-            m_allocator = nullptr;
-        }
+        // Do NOT destroy m_allocator — it is owned by Device
+        m_allocator = nullptr;
     }
 
     TransientAllocator::TransientAllocator(TransientAllocator &&other) noexcept
@@ -44,9 +33,7 @@ namespace flux {
     TransientAllocator &TransientAllocator::operator=(TransientAllocator &&other) noexcept {
         if (this != &other) {
             release_all();
-            if (m_allocator) {
-                ::vmaDestroyAllocator(m_allocator);
-            }
+            // Do NOT destroy m_allocator — it is owned by Device
 
             m_device = other.m_device;
             m_allocator = other.m_allocator;

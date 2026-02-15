@@ -2,6 +2,8 @@
 # Provides modern RAII wrappers around Vulkan resources
 
 add_library(FLUX SHARED
+        src/vma_impl.cpp
+        src/stb_impl.cpp
         src/instance.cpp
         src/surface.cpp
         src/device.cpp
@@ -24,6 +26,9 @@ add_library(FLUX SHARED
         src/image_utils.cpp
         src/sync.cpp
         src/deletion_queue.cpp
+        src/texture_loader.cpp
+        src/vertex.cpp
+        src/mesh.cpp
 )
 
 target_include_directories(FLUX
@@ -45,6 +50,8 @@ target_link_libraries(FLUX
         PRIVATE
         glslang
         SPIRV
+        stb
+        ktx
 )
 
 # Set output name and versioning

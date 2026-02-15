@@ -3,6 +3,7 @@ add_library(SUBSTRATUM SHARED
         src/core.cpp
         src/log.cpp
         src/file_watcher.cpp
+        src/vfs.cpp
 )
 
 target_include_directories(SUBSTRATUM
@@ -17,6 +18,9 @@ target_compile_features(SUBSTRATUM PUBLIC cxx_std_26)
 
 # Link Cereal for JSON serialization (header-only)
 target_link_libraries(SUBSTRATUM PUBLIC ser20)
+
+# PhysicsFS for virtual filesystem (static, compiled into our DLL)
+target_link_libraries(SUBSTRATUM PRIVATE physfs-static)
 
 # Set output name and versioning
 set_target_properties(SUBSTRATUM PROPERTIES

@@ -82,8 +82,74 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 
+# PhysicsFS - Virtual filesystem abstraction (mount folders or archives)
+# PhysicsFS 3.2.0 uses cmake_minimum_required(VERSION 2.8.12) which CMake 4.x rejects.
+# Allow it via the compatibility policy variable.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
+set(PHYSFS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_TEST OFF CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(PHYSFS_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
+FetchContent_Declare(
+        physfs
+        GIT_REPOSITORY https://github.com/icculus/physfs.git
+        GIT_TAG release-3.2.0
+        GIT_SHALLOW TRUE
+)
+
+# stb - Single-file public domain libraries (stb_image.h for texture decoding)
+FetchContent_Declare(
+        stb
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_TAG master
+        GIT_SHALLOW TRUE
+)
+
+# KTX-Software - KTX2 GPU-compressed texture loading + Basis Universal transcoding
+set(KTX_FEATURE_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
+set(KTX_FEATURE_TESTS OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_VK_UPLOAD OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_DOC OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_LOADTEST_APPS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+        ktx
+        GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
+        GIT_TAG v4.3.2
+        GIT_SHALLOW TRUE
+)
+
+# cgltf - Single-header glTF 2.0 parser
+FetchContent_Declare(
+        cgltf
+        GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+        GIT_TAG v1.14
+        GIT_SHALLOW TRUE
+)
+
+# entt - Entity Component System (header-only)
+FetchContent_Declare(
+        entt
+        GIT_REPOSITORY https://github.com/skypjack/entt.git
+        GIT_TAG v3.14.0
+        GIT_SHALLOW TRUE
+)
+
 FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(ser20 glfw vma glm)
+FetchContent_MakeAvailable(ser20 glfw vma glm physfs stb ktx cgltf entt)
+
+# stb is not a CMake project — create an INTERFACE target for include path
+if(NOT TARGET stb)
+    add_library(stb INTERFACE)
+    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+endif()
+
+# cgltf is not a CMake project — create an INTERFACE target for include path
+if(NOT TARGET cgltf)
+    add_library(cgltf INTERFACE)
+    target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
+endif()
 
 # Disable warnings for third-party libraries
 if(TARGET glfw)
@@ -105,4 +171,19 @@ if(TARGET SPIRV-Tools-static)
 endif()
 if(TARGET SPIRV-Tools-opt)
     target_compile_options(SPIRV-Tools-opt PRIVATE -w)
+endif()
+if(TARGET physfs-static)
+    target_compile_options(physfs-static PRIVATE -w)
+endif()
+if(TARGET ktx)
+    target_compile_options(ktx PRIVATE -w)
+endif()
+if(TARGET ktx_read)
+    target_compile_options(ktx_read PRIVATE -w)
+endif()
+if(TARGET obj_basisu_cbind)
+    target_compile_options(obj_basisu_cbind PRIVATE -w)
+endif()
+if(TARGET objUtil)
+    target_compile_options(objUtil PRIVATE -w)
 endif()

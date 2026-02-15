@@ -98,5 +98,17 @@ namespace thresh {
         bool m_resize_pending = false;
         std::uint32_t m_resize_width = 0;
         std::uint32_t m_resize_height = 0;
+
+        // Set when swapchain was recreated during begin_frame().
+        // Render thread should invalidate the render graph when this is true.
+        bool m_did_resize = false;
+
+    public:
+        /**
+         * Returns true if the swapchain was recreated during the last begin_frame() call.
+         * The render thread should invalidate/recompile the render graph when this is true.
+         * Resets to false at the start of each begin_frame().
+         */
+        [[nodiscard]] auto did_resize() const -> bool { return m_did_resize; }
     };
 } // namespace thresh

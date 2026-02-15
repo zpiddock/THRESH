@@ -7,6 +7,10 @@
 
 #include "flux/shader_object_functions.hpp"
 
+// Forward declare VMA types
+struct VmaAllocator_T;
+using VmaAllocator = VmaAllocator_T *;
+
 #ifdef _WIN32
 #ifdef FLUX_EXPORTS
 #define FLUX_API __declspec(dllexport)
@@ -65,6 +69,12 @@ namespace flux {
 
         [[nodiscard]] auto get_shader_object_fn() const -> const ShaderObjectFunctions& { return m_shader_object_fn; }
 
+        /**
+         * Get the shared VMA allocator.
+         * Used by all persistent GPU resource types (Image, Buffer, Texture, Mesh).
+         */
+        [[nodiscard]] auto get_allocator() const -> VmaAllocator { return m_allocator; }
+
         auto wait_idle() const -> void;
 
         /**
@@ -120,6 +130,7 @@ namespace flux {
         VkCommandPool m_command_pool = VK_NULL_HANDLE;
         QueueFamilyIndices m_indices;
         bool m_owns_command_pool = false;
+        VmaAllocator m_allocator = nullptr;
         ShaderObjectFunctions m_shader_object_fn;
 
         auto pick_physical_device(VkInstance instance, VkSurfaceKHR surface) -> void;

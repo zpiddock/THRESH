@@ -1,4 +1,5 @@
 #include "flux/device.hpp"
+#include <vk_mem_alloc.h>
 #include <stdexcept>
 #include <set>
 #include <cstring>
@@ -44,20 +45,11 @@ namespace flux {
         VkPhysicalDeviceFeatures vulkan10_features{};
         vulkan10_features.samplerAnisotropy = VK_TRUE;
 
-        // Enable Vulkan 1.2 descriptor indexing features (for bindless textures)
-        VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features{};
-        descriptor_indexing_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-        descriptor_indexing_features.descriptorBindingPartiallyBound = VK_TRUE;
-        descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
-        descriptor_indexing_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
-        descriptor_indexing_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-        descriptor_indexing_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
-
         // Enable VK_EXT_vertex_input_dynamic_state
         VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_features{};
         vertex_input_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
         vertex_input_features.vertexInputDynamicState = VK_TRUE;
-        vertex_input_features.pNext = &descriptor_indexing_features;
+        vertex_input_features.pNext = nullptr;
 
         // Enable VK_EXT_shader_object
         VkPhysicalDeviceShaderObjectFeaturesEXT shader_object_features{};
@@ -65,12 +57,23 @@ namespace flux {
         shader_object_features.shaderObject = VK_TRUE;
         shader_object_features.pNext = &vertex_input_features;
 
+        // Enable Vulkan 1.2 features (buffer device address for VMA)
+        VkPhysicalDeviceVulkan12Features vulkan12_features{};
+        vulkan12_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        vulkan12_features.bufferDeviceAddress = VK_TRUE;
+        vulkan12_features.descriptorBindingPartiallyBound = VK_TRUE;
+        vulkan12_features.runtimeDescriptorArray = VK_TRUE;
+        vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        vulkan12_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+        vulkan12_features.pNext = &shader_object_features;
+
         // Enable Vulkan 1.3 features (dynamic rendering, synchronization2)
         VkPhysicalDeviceVulkan13Features vulkan13_features{};
         vulkan13_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
         vulkan13_features.dynamicRendering = VK_TRUE;
         vulkan13_features.synchronization2 = VK_TRUE;
-        vulkan13_features.pNext = &shader_object_features;
+        vulkan13_features.pNext = &vulkan12_features;
 
         VkPhysicalDeviceFeatures2 device_features{};
         device_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -107,10 +110,32 @@ namespace flux {
 
         ::vkGetDeviceQueue(m_device, m_indices.graphics_family.value(), 0, &m_graphics_queue);
         ::vkGetDeviceQueue(m_device, m_indices.present_family.value(), 0, &m_present_queue);
+
+        // Create shared VMA allocator
+        VmaAllocatorCreateInfo vma_info{};
+        vma_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+        vma_info.physicalDevice = m_physical_device;
+        vma_info.device = m_device;
+        vma_info.instance = m_instance;
+        vma_info.vulkanApiVersion = VK_API_VERSION_1_4;
+
+        VkResult vma_result = ::vmaCreateAllocator(&vma_info, &m_allocator);
+        if (vma_result != VK_SUCCESS) {
+            SUB_FATAL("Failed to create VMA allocator: {}", static_cast<int>(vma_result));
+            throw std::runtime_error("Failed to create VMA allocator");
+        }
+        SUB_INFO("Shared VMA allocator created");
     }
 
     Device::~Device() {
         SUB_DEBUG("Destroying Vulkan Device");
+
+        if (m_allocator) {
+            ::vmaDestroyAllocator(m_allocator);
+            m_allocator = nullptr;
+            SUB_DEBUG("Destroyed VMA allocator");
+        }
+
         if (m_device != VK_NULL_HANDLE) {
             ::vkDestroyDevice(m_device, nullptr);
             SUB_DEBUG("Destroyed Vulkan Device");
@@ -127,6 +152,7 @@ namespace flux {
           , m_command_pool(other.m_command_pool)
           , m_indices(other.m_indices)
           , m_owns_command_pool(other.m_owns_command_pool)
+          , m_allocator(other.m_allocator)
           , m_shader_object_fn(other.m_shader_object_fn) {
         other.m_instance = VK_NULL_HANDLE;
         other.m_surface = VK_NULL_HANDLE;
@@ -136,10 +162,14 @@ namespace flux {
         other.m_present_queue = VK_NULL_HANDLE;
         other.m_command_pool = VK_NULL_HANDLE;
         other.m_owns_command_pool = false;
+        other.m_allocator = nullptr;
     }
 
     auto Device::operator=(Device &&other) noexcept -> Device & {
         if (this != &other) {
+            if (m_allocator) {
+                ::vmaDestroyAllocator(m_allocator);
+            }
             if (m_device != VK_NULL_HANDLE) {
                 ::vkDestroyDevice(m_device, nullptr);
             }
@@ -153,6 +183,7 @@ namespace flux {
             m_command_pool = other.m_command_pool;
             m_indices = other.m_indices;
             m_owns_command_pool = other.m_owns_command_pool;
+            m_allocator = other.m_allocator;
             m_shader_object_fn = other.m_shader_object_fn;
 
             other.m_instance = VK_NULL_HANDLE;
@@ -163,6 +194,7 @@ namespace flux {
             other.m_present_queue = VK_NULL_HANDLE;
             other.m_command_pool = VK_NULL_HANDLE;
             other.m_owns_command_pool = false;
+            other.m_allocator = nullptr;
         }
         return *this;
     }

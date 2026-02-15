@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 4.2)
 project(THRESH
         VERSION 0.1.0
-        LANGUAGES CXX
+        LANGUAGES C CXX
         DESCRIPTION "A Modern Vulkan-based Game Engine"
 )
 

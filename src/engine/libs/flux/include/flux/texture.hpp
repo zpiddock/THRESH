@@ -19,6 +19,7 @@ namespace flux {
         Albedo,
         Normal,
         MetallicRoughness,
+        Emissive,
         Opacity,
         Unknown
     };

@@ -482,11 +482,10 @@ namespace thresh {
         // Initialize physical resources vector
         m_physical_resources.resize(m_resources.size());
 
-        // Create transient allocator
+        // Create transient allocator (uses Device's shared VMA allocator)
         flux::TransientAllocator::Config alloc_config{};
-        alloc_config.instance = instance;
-        alloc_config.physical_device = physical_device;
         alloc_config.device = device.get_logical_device();
+        alloc_config.allocator = device.get_allocator();
 
         m_allocator = std::make_unique<flux::TransientAllocator>(alloc_config);
         m_barrier_batcher = std::make_unique<flux::BarrierBatcher>();

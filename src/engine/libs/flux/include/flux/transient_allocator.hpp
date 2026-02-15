@@ -43,10 +43,8 @@ namespace flux {
     class FLUX_API TransientAllocator {
     public:
         struct Config {
-            VkInstance instance = VK_NULL_HANDLE;
-            VkPhysicalDevice physical_device = VK_NULL_HANDLE;
             VkDevice device = VK_NULL_HANDLE;
-            std::uint32_t api_version = VK_API_VERSION_1_4;
+            VmaAllocator allocator = nullptr; ///< Shared VMA allocator from Device
         };
 
         explicit TransientAllocator(const Config &config);

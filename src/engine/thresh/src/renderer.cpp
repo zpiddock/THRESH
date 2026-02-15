@@ -101,12 +101,15 @@ namespace thresh {
     }
 
     auto Renderer::begin_frame() -> std::optional<VkCommandBuffer> {
+        m_did_resize = false;
+
         // Handle any pending resize
         {
             std::lock_guard lock(m_resize_mutex);
             if (m_resize_pending) {
                 handle_resize();
                 m_resize_pending = false;
+                m_did_resize = true;
             }
         }
 
@@ -128,13 +131,16 @@ namespace thresh {
             &m_current_image_index
         );
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            SUB_WARN("Swapchain out of date on acquire - recreating");
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_NOT_READY) {
+            SUB_WARN("Swapchain out of date on acquire (VkResult {}) - recreating", static_cast<int>(result));
             handle_resize();
+            m_did_resize = true;
             return std::nullopt;
         }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             SUB_ERROR("Failed to acquire swapchain image: {}", static_cast<int>(result));
+            handle_resize();
+            m_did_resize = true;
             return std::nullopt;
         }
 
@@ -162,7 +168,10 @@ namespace thresh {
         auto cmd = frame.command_buffer->get_command_buffer(0);
 
         if (::vkEndCommandBuffer(cmd) != VK_SUCCESS) {
-            SUB_ERROR("Failed to end command buffer");
+            SUB_ERROR("Failed to end command buffer - performing full device sync");
+            m_device->wait_idle();
+            m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+            ++m_frame_number;
             return;
         }
 
@@ -192,7 +201,15 @@ namespace thresh {
 
         if (::vkQueueSubmit2(m_device->get_graphics_queue(), 1, &submit_info,
                              frame.in_flight_fence->get_handle()) != VK_SUCCESS) {
-            SUB_ERROR("Failed to submit command buffer");
+            SUB_ERROR("Failed to submit command buffer - performing full device sync");
+            // Submit failed: fence was reset but never signaled, semaphore is
+            // signaled but unconsumed. The only safe recovery is a full drain
+            // which resets all semaphore/fence states.
+            m_device->wait_idle();
+
+            // Advance frame so we don't re-use this broken frame state
+            m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+            ++m_frame_number;
             return;
         }
 

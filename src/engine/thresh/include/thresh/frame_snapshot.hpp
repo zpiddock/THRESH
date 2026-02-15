@@ -1,5 +1,7 @@
 #pragma once
 
+#include "render_data.hpp"
+
 #include <cstdint>
 
 namespace thresh {
@@ -11,6 +13,8 @@ namespace thresh {
         std::uint64_t frame_number = 0;
         float delta_time = 0.0f;
         float total_time = 0.0f;
-        // TODO: transforms, draw commands, camera data
+
+        /// Render data extracted from the scene by the update thread.
+        FrameRenderData render_data;
     };
 } // namespace thresh

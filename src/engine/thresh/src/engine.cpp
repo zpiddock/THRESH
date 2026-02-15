@@ -4,6 +4,7 @@
 #include "horizon/window.hpp"
 #include "horizon/input.hpp"
 #include "substratum/file_watcher.hpp"
+#include "substratum/vfs.hpp"
 #include "substratum/log.hpp"
 
 #include <chrono>
@@ -14,6 +15,22 @@ namespace thresh {
     Engine::Engine(const EngineConfig &config)
         : m_config(config) {
         SUB_INFO("Initializing THRESH Engine");
+
+        // --- Virtual Filesystem ---
+        if (!substratum::VFS::init(nullptr)) {
+            SUB_FATAL("Failed to initialize VFS");
+            throw std::runtime_error("Failed to initialize VFS");
+        }
+
+        if (config.vfs_mounts.empty()) {
+            // Default: mount current working directory at root
+            auto cwd = std::filesystem::current_path().string();
+            substratum::VFS::mount(cwd, "/", true);
+        } else {
+            for (const auto &entry : config.vfs_mounts) {
+                substratum::VFS::mount(entry.real_path, entry.mount_point, entry.append);
+            }
+        }
 
         // --- Window ---
         horizon::Window::Config window_config{};
@@ -36,7 +53,7 @@ namespace thresh {
 
         // --- Shader file watcher ---
         if (config.enable_shader_hot_reload) {
-            auto shader_dir = std::filesystem::current_path() / "shaders";
+            auto shader_dir = std::filesystem::current_path() / "assets" / "shaders";
             if (std::filesystem::exists(shader_dir)) {
                 substratum::FileWatcher::Config watcher_config{};
                 watcher_config.directory = shader_dir;
@@ -72,6 +89,10 @@ namespace thresh {
         }
 
         // unique_ptrs destroy in reverse member order
+
+        // Shutdown VFS after all systems are destroyed
+        substratum::VFS::shutdown();
+
         SUB_INFO("THRESH Engine shutdown complete");
     }
 
@@ -207,8 +228,17 @@ namespace thresh {
 
             auto cmd = m_renderer->begin_frame();
             if (!cmd) {
-                // Swapchain was recreated - skip this frame
+                // Swapchain was recreated or acquire failed - invalidate graph
+                // so transient resources are rebuilt at the new extent
+                m_render_graph->invalidate();
                 continue;
+            }
+
+            // If the swapchain was just resized inside begin_frame(), the
+            // render graph's transient resources (e.g. depth image) are stale.
+            // Force a recompile before using them.
+            if (m_renderer->did_resize()) {
+                m_render_graph->invalidate();
             }
 
             // Set the backbuffer for this frame

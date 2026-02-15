@@ -54,10 +54,10 @@ namespace thresh {
         if (::glfwGetKey(glfw_window, GLFW_KEY_A) == GLFW_PRESS) {
             m_position -= right * speed;
         }
-        if (::glfwGetKey(glfw_window, GLFW_KEY_E) == GLFW_PRESS || ::glfwGetKey(glfw_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        if (::glfwGetKey(glfw_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
             m_position += up * speed;
         }
-        if (::glfwGetKey(glfw_window, GLFW_KEY_Q) == GLFW_PRESS || ::glfwGetKey(glfw_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        if (::glfwGetKey(glfw_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
             m_position -= up * speed;
         }
     }
@@ -96,7 +96,7 @@ namespace thresh {
         m_mouse_dy += dy;
     }
 
-    auto Camera::on_mouse_button(GLFWwindow * /*window*/, int button, int action, int /*mods*/) -> void {
+    auto Camera::on_mouse_button(GLFWwindow* /*window*/, int button, int action, int /*mods*/) -> void {
         if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             if (action == GLFW_PRESS) {
                 m_mouse_captured = true;
