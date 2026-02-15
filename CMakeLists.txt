@@ -35,3 +35,5 @@ message(STATUS "Vulkan include: ${Vulkan_INCLUDE_DIRS}")
 add_subdirectory(src/engine/libs/substratum)
 add_subdirectory(src/engine/libs/horizon)
 add_subdirectory(src/engine/libs/flux)
+
+add_subdirectory(src/engine/thresh)

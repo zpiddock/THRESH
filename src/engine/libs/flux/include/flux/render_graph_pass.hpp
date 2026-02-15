@@ -19,8 +19,6 @@
 
 namespace flux {
 
-    class CompiledRenderGraph;
-
     // Pass type enumeration
     enum class PassType {
         Graphics,
@@ -100,24 +98,17 @@ namespace flux {
         // Pass information
         const PassConfig *config = nullptr;
 
-        // Internal pointer to compiled graph for resource lookup
-        const CompiledRenderGraph *graph = nullptr;
-
         // Auto-generated descriptor set for this pass (if auto_descriptors enabled)
         // This is Set 1 (per-pass) - bind alongside Set 0 (global) and Set 2 (bindless)
         VkDescriptorSet pass_descriptor_set = VK_NULL_HANDLE;
         VkDescriptorSetLayout pass_descriptor_layout = VK_NULL_HANDLE;
 
-        // Resource access methods
-        [[nodiscard]] auto get_image(ResourceHandle handle) const -> VkImage;
-
-        [[nodiscard]] auto get_image_view(ResourceHandle handle) const -> VkImageView;
-
-        [[nodiscard]] auto get_buffer(ResourceHandle handle) const -> VkBuffer;
-
-        [[nodiscard]] auto get_image_format(ResourceHandle handle) const -> VkFormat;
-
-        [[nodiscard]] auto get_image_extent(ResourceHandle handle) const -> VkExtent3D;
+        // Resource access callbacks (set by the render graph executor)
+        std::function<VkImage(ResourceHandle)> get_image;
+        std::function<VkImageView(ResourceHandle)> get_image_view;
+        std::function<VkBuffer(ResourceHandle)> get_buffer;
+        std::function<VkFormat(ResourceHandle)> get_image_format;
+        std::function<VkExtent3D(ResourceHandle)> get_image_extent;
 
         // Check if this pass has auto-generated descriptors
         [[nodiscard]] auto has_pass_descriptors() const -> bool {
