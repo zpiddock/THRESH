@@ -40,23 +40,37 @@ namespace thresh {
     auto Scene::extract_render_data(
         const Camera &camera,
         float aspect_ratio,
-        const DirectionalLight &sun
+        const DirectionalLight &sun,
+        const AmbientLight &ambient
     ) const -> FrameRenderData {
         FrameRenderData data;
         data.view = camera.get_view_matrix();
         data.projection = camera.get_projection_matrix(aspect_ratio);
         data.camera_position = camera.get_position();
         data.sun = sun;
+        data.ambient = ambient;
 
         // Iterate all entities with Transform + Mesh + Material
-        auto view = m_registry.view<const TransformComponent, const MeshComponent, const MaterialComponent>();
+        auto render_view = m_registry.view<const TransformComponent, const MeshComponent, const MaterialComponent>();
 
-        for (auto [entity, transform, mesh, material] : view.each()) {
+        for (auto [entity, transform, mesh, material] : render_view.each()) {
             RenderObject obj;
             obj.model_matrix = transform.get_model_matrix();
             obj.mesh_index = mesh.mesh_index;
             obj.material_index = material.material_handle;
             data.objects.push_back(obj);
+        }
+
+        // Extract point lights from entities with Transform + PointLightComponent
+        auto light_view = m_registry.view<const TransformComponent, const PointLightComponent>();
+
+        for (auto [entity, transform, light] : light_view.each()) {
+            PointLight pl;
+            pl.position = transform.position;
+            pl.radius = light.radius;
+            pl.color = light.color;
+            pl.intensity = light.intensity;
+            data.point_lights.push_back(pl);
         }
 
         return data;

@@ -79,15 +79,18 @@ namespace thresh {
 
         /**
          * Extract render data from all entities with Transform + Mesh + Material.
+         * Also extracts point lights from entities with Transform + PointLightComponent.
          * @param camera Camera for view/projection
          * @param aspect_ratio Viewport width / height
          * @param sun Directional light
+         * @param ambient Ambient light
          * @return FrameRenderData ready for the forward pass
          */
         [[nodiscard]] auto extract_render_data(
             const Camera &camera,
             float aspect_ratio,
-            const DirectionalLight &sun = {}
+            const DirectionalLight &sun = {},
+            const AmbientLight &ambient = {}
         ) const -> FrameRenderData;
 
         /**

@@ -50,3 +50,4 @@ CMakeUserPresets.json
 .idea
 cmake-build-debug
 build
+shader_cache

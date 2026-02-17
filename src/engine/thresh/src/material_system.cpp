@@ -85,6 +85,10 @@ namespace thresh {
         return static_cast<std::uint32_t>(m_textures.size());
     }
 
+    auto MaterialSystem::get_textures() const -> const std::vector<std::unique_ptr<flux::Texture>> & {
+        return m_textures;
+    }
+
     auto MaterialSystem::get_material_count() const -> std::uint32_t {
         return static_cast<std::uint32_t>(m_materials.size());
     }

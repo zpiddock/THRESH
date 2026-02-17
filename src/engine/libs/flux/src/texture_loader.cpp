@@ -66,8 +66,8 @@ namespace flux {
 
         SUB_DEBUG("Decoded '{}': {}x{} ({} channels -> RGBA8)", virtual_path, width, height, channels);
 
-        // Normal maps use UNORM (linear data), everything else uses SRGB
-        auto format = (type == TextureType::Normal)
+        // Normal & metallic-roughness maps use UNORM (linear data), everything else uses SRGB
+        auto format = (type == TextureType::Normal || type == TextureType::MetallicRoughness)
             ? VK_FORMAT_R8G8B8A8_UNORM
             : VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -274,7 +274,7 @@ namespace flux {
     ) -> std::unique_ptr<Texture> {
         std::uint8_t pixel[4] = {r, g, b, a};
 
-        auto format = (type == TextureType::Normal)
+        auto format = (type == TextureType::Normal || type == TextureType::MetallicRoughness)
             ? VK_FORMAT_R8G8B8A8_UNORM
             : VK_FORMAT_R8G8B8A8_SRGB;
 

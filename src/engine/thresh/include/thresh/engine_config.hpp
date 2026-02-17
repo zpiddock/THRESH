@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <filesystem>
 #include <string>
 #include <cstdint>
 #include <vector>
@@ -30,6 +31,13 @@ namespace thresh {
         VkPresentModeKHR preferred_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
         bool enable_validation = true;
         bool enable_shader_hot_reload = true;
+
+        /**
+         * Path to the shader directory for the standard rendering stack.
+         * If empty (default), uses cwd/assets/shaders.
+         * Only used by the simplified run() path.
+         */
+        std::filesystem::path shader_dir = {};
 
         /**
          * Virtual filesystem mount points.

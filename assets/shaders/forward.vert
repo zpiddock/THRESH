@@ -16,6 +16,10 @@ layout(set = 0, binding = 0) uniform FrameUBO {
     float sun_intensity;
     vec3 sun_color;
     float _pad1;
+    vec3 ambient_color;
+    float ambient_intensity;
+    uint point_light_count;
+    float _pad2[3];
 };
 
 struct ObjectData {

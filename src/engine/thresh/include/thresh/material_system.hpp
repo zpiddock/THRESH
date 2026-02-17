@@ -71,6 +71,11 @@ namespace thresh {
         [[nodiscard]] auto get_texture_count() const -> std::uint32_t;
 
         /**
+         * Get direct access to the texture array (for descriptor writes).
+         */
+        [[nodiscard]] auto get_textures() const -> const std::vector<std::unique_ptr<flux::Texture>> &;
+
+        /**
          * Get the number of materials.
          */
         [[nodiscard]] auto get_material_count() const -> std::uint32_t;

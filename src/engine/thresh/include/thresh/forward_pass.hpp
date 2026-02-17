@@ -115,11 +115,17 @@ namespace thresh {
         ) -> void;
 
     private:
+        static constexpr std::uint32_t MAX_TEXTURE_COUNT = 512;
+
         auto create_descriptor_resources() -> void;
+        auto create_texture_descriptor_resources() -> void;
         auto create_ubo_buffers() -> void;
         auto create_object_ssbo_buffers() -> void;
+        auto create_point_light_ssbo_buffers() -> void;
         auto grow_object_ssbo_if_needed(std::uint32_t object_count) -> void;
+        auto grow_point_light_ssbo_if_needed(std::uint32_t light_count) -> void;
         auto update_descriptors(std::uint32_t frame_index) -> void;
+        auto update_texture_descriptors() -> void;
 
         auto destroy_buffer(VkBuffer &buffer, VkDeviceMemory &memory) -> void;
 
@@ -130,22 +136,34 @@ namespace thresh {
         std::unique_ptr<flux::ShaderProgram> m_shader_program;
         flux::GraphicsState m_graphics_state;
 
-        // Descriptor set 0: UBO (binding 0) + Object SSBO (binding 1) + Material SSBO (binding 2)
+        // Descriptor set 0: UBO (0) + Object SSBO (1) + Material SSBO (2) + PointLight SSBO (3)
         VkDescriptorSetLayout m_set0_layout = VK_NULL_HANDLE;
         VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_descriptor_sets{};
 
-        // Per-frame UBO (view/proj/camera/light)
+        // Descriptor set 1: Bindless textures (0) + Sampler (1)
+        VkDescriptorSetLayout m_set1_layout = VK_NULL_HANDLE;
+        VkDescriptorPool m_texture_pool = VK_NULL_HANDLE;
+        VkDescriptorSet m_texture_descriptor_set = VK_NULL_HANDLE;
+        std::unique_ptr<flux::Sampler> m_sampler;
+        std::uint32_t m_last_texture_count = 0;
+
+        // Per-frame UBO (view/proj/camera/lights)
         struct alignas(16) FrameUBO {
-            glm::mat4 view;
-            glm::mat4 proj;
-            glm::vec3 camera_pos;
-            float _pad0 = 0.0f;
-            glm::vec3 sun_direction;
-            float sun_intensity = 1.5f;
-            glm::vec3 sun_color;
-            float _pad1 = 0.0f;
+            glm::mat4 view;                    // 64
+            glm::mat4 proj;                    // 64
+            glm::vec3 camera_pos;              // 12
+            float _pad0 = 0.0f;               // 4
+            glm::vec3 sun_direction;           // 12
+            float sun_intensity = 1.5f;        // 4
+            glm::vec3 sun_color;               // 12
+            float _pad1 = 0.0f;               // 4
+            glm::vec3 ambient_color;           // 12
+            float ambient_intensity = 0.03f;   // 4
+            std::uint32_t point_light_count = 0; // 4
+            float _pad2[3] = {};               // 12 (pad to 16-byte boundary)
         };
+        static_assert(sizeof(FrameUBO) == 208, "FrameUBO must be 208 bytes");
 
         struct UboBuffer {
             VkBuffer buffer = VK_NULL_HANDLE;
@@ -168,9 +186,26 @@ namespace thresh {
             VkBuffer buffer = VK_NULL_HANDLE;
             VkDeviceMemory memory = VK_NULL_HANDLE;
             void *mapped = nullptr;
-            std::uint32_t capacity = 0; // Max number of objects
+            std::uint32_t capacity = 0;
         };
         std::array<ObjectSsboBuffer, MAX_FRAMES_IN_FLIGHT> m_object_ssbo_buffers{};
+
+        // Per-frame point light SSBO (binding 3)
+        struct alignas(16) GpuPointLight {
+            glm::vec3 position;    // 12
+            float radius;          // 4
+            glm::vec3 color;       // 12
+            float intensity;       // 4  = 32 bytes
+        };
+        static_assert(sizeof(GpuPointLight) == 32, "GpuPointLight must be 32 bytes");
+
+        struct PointLightSsboBuffer {
+            VkBuffer buffer = VK_NULL_HANDLE;
+            VkDeviceMemory memory = VK_NULL_HANDLE;
+            void *mapped = nullptr;
+            std::uint32_t capacity = 0;
+        };
+        std::array<PointLightSsboBuffer, MAX_FRAMES_IN_FLIGHT> m_point_light_ssbo_buffers{};
 
         // Cached data for execute callback
         struct FrameCache {

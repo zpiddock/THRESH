@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,16 +23,32 @@
 namespace thresh {
 
     /**
+     * Raw image data extracted from a glTF buffer view (embedded textures).
+     * Contains the encoded bytes (PNG/JPG/etc.) and the MIME type.
+     */
+    struct EmbeddedTexture {
+        std::vector<std::uint8_t> data;
+        std::string mime_type;
+    };
+
+    /**
      * Describes a material referenced by a loaded glTF.
-     * Contains virtual paths to textures (may be empty if not present).
+     * Textures may come as file paths (URI) or embedded buffer data.
      */
     struct MaterialDesc {
         std::string name;
 
+        // External texture paths (populated when glTF image has a URI)
         std::string albedo_path;
         std::string normal_path;
         std::string metallic_roughness_path;
         std::string emissive_path;
+
+        // Embedded texture data (populated when glTF image uses a buffer view)
+        std::optional<EmbeddedTexture> albedo_embedded;
+        std::optional<EmbeddedTexture> normal_embedded;
+        std::optional<EmbeddedTexture> metallic_roughness_embedded;
+        std::optional<EmbeddedTexture> emissive_embedded;
 
         float base_color_factor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
         float metallic_factor = 1.0f;

@@ -32,6 +32,13 @@ namespace substratum {
 namespace thresh {
     class Renderer;
     class RenderGraph;
+    class Camera;
+    class Scene;
+    class MaterialSystem;
+    class AssetSystem;
+    class ForwardPass;
+    struct DirectionalLight;
+    struct AmbientLight;
 
     /**
      * Callback for setting up the render graph (define passes, resources, etc.)
@@ -46,17 +53,32 @@ namespace thresh {
     using UpdateCallback = std::function<void(FrameSnapshot &snapshot, float delta_time)>;
 
     /**
+     * Simplified update callback for the easy run() path.
+     * Provides the scene and delta time — camera, rendering, etc. are handled internally.
+     */
+    using SimpleUpdateCallback = std::function<void(Scene &scene, float delta_time)>;
+
+    /**
      * THRESH engine core.
      *
      * Manages the window, input, renderer, and render graph.
      * Runs three threads: main (GLFW events), update (game logic), render (GPU).
      *
-     * Usage:
+     * Two run paths:
+     *
+     * **Full control:**
      *   Engine engine(config);
      *   engine.run(
      *       [](RenderGraph& graph) { ... define passes ... },
      *       [](FrameSnapshot& snap, float dt) { ... update logic ... }
      *   );
+     *
+     * **Simple (default render graph):**
+     *   Engine engine(config);
+     *   engine.get_camera().set_position({0, 0, 3});
+     *   auto& scene = engine.get_scene();
+     *   // ... set up scene entities ...
+     *   engine.run();  // or engine.run([](Scene& s, float dt) { ... });
      */
     class THRESH_API Engine {
     public:
@@ -66,13 +88,84 @@ namespace thresh {
         Engine(const Engine &) = delete;
         Engine &operator=(const Engine &) = delete;
 
+        // ── Full-control run path ──────────────────────────────────────────
+
         /**
-         * Start the engine loop.
+         * Start the engine loop with full control over the render graph and update logic.
          * Blocks until the window is closed or request_shutdown() is called.
          * @param graph_setup Called once to define the render graph
          * @param update Called each tick on the update thread
          */
         auto run(GraphSetupCallback graph_setup, UpdateCallback update) -> void;
+
+        // ── Simplified run path ────────────────────────────────────────────
+
+        /**
+         * Start the engine loop with a default render graph (ForwardPass + PBR).
+         * Camera, scene extraction, and rendering are handled internally.
+         * @param update Called each tick with the scene and delta time
+         */
+        auto run(SimpleUpdateCallback update) -> void;
+
+        /**
+         * Start the engine loop with a default render graph and no per-frame logic.
+         * Renders the scene as-is with the built-in camera.
+         */
+        auto run() -> void;
+
+        // ── Standard stack accessors (lazy-init on first call) ─────────────
+
+        /**
+         * Get the built-in first-person camera.
+         * Initializes the standard rendering stack on first call.
+         */
+        [[nodiscard]] auto get_camera() -> Camera &;
+
+        /**
+         * Get the built-in ECS scene.
+         * Initializes the standard rendering stack on first call.
+         */
+        [[nodiscard]] auto get_scene() -> Scene &;
+
+        /**
+         * Get the built-in material system.
+         * Initializes the standard rendering stack on first call.
+         */
+        [[nodiscard]] auto get_material_system() -> MaterialSystem &;
+
+        /**
+         * Get the built-in asset system.
+         * Initializes the standard rendering stack on first call.
+         */
+        [[nodiscard]] auto get_asset_system() -> AssetSystem &;
+
+        /**
+         * Get the built-in forward rendering pass.
+         * Initializes the standard rendering stack on first call.
+         */
+        [[nodiscard]] auto get_forward_pass() -> ForwardPass &;
+
+        /**
+         * Set the directional (sun) light for the simplified run path.
+         */
+        auto set_sun(const DirectionalLight &sun) -> void;
+
+        /**
+         * Get the current directional (sun) light.
+         */
+        [[nodiscard]] auto get_sun() const -> const DirectionalLight &;
+
+        /**
+         * Set the ambient light for the simplified run path.
+         */
+        auto set_ambient(const AmbientLight &ambient) -> void;
+
+        /**
+         * Get the current ambient light.
+         */
+        [[nodiscard]] auto get_ambient() const -> const AmbientLight &;
+
+        // ── Core accessors ─────────────────────────────────────────────────
 
         /**
          * Request a clean shutdown. Thread-safe.
@@ -87,6 +180,7 @@ namespace thresh {
     private:
         auto update_thread_fn(UpdateCallback update) -> void;
         auto render_thread_fn() -> void;
+        auto ensure_standard_stack() -> void;
 
         EngineConfig m_config;
 
@@ -96,6 +190,22 @@ namespace thresh {
         std::unique_ptr<Renderer> m_renderer;
         std::unique_ptr<RenderGraph> m_render_graph;
         std::unique_ptr<substratum::FileWatcher> m_shader_watcher;
+
+        // Standard rendering stack (lazy-init, ordered for destruction)
+        // Destroyed bottom-to-top: forward_pass first (depends on device + material_system)
+        std::unique_ptr<Camera> m_camera;
+        std::unique_ptr<Scene> m_scene;
+        std::unique_ptr<AssetSystem> m_asset_system;
+        std::unique_ptr<MaterialSystem> m_material_system;
+        std::unique_ptr<ForwardPass> m_forward_pass;
+
+        // Internal shared state for simple run path
+        struct InternalRenderState;
+        std::unique_ptr<InternalRenderState> m_internal_state;
+
+        // Lighting defaults for simple run path
+        std::unique_ptr<DirectionalLight> m_sun;
+        std::unique_ptr<AmbientLight> m_ambient;
 
         // Threading
         std::thread m_update_thread;

@@ -207,6 +207,42 @@ namespace thresh {
             gltf_dir += '/';
         }
 
+        // Helper: convert MIME type to file extension for TextureLoader auto-detect
+        auto mime_to_ext = [](const std::string &mime) -> std::string {
+            if (mime == "image/png") return ".png";
+            if (mime == "image/jpeg") return ".jpg";
+            if (mime == "image/ktx2") return ".ktx2";
+            return ".png"; // default fallback
+        };
+
+        // Helper: load a texture from VFS path or embedded data, add to MaterialSystem
+        auto load_texture_slot = [&](const std::string &path,
+                                     const std::optional<EmbeddedTexture> &embedded,
+                                     flux::TextureType type,
+                                     const std::string &mat_name,
+                                     const std::string &slot_name) -> std::int32_t {
+            if (!path.empty()) {
+                auto file_data = substratum::VFS::read_file(path);
+                if (!file_data.empty()) {
+                    auto tex = m_texture_loader.load(file_data, path, type);
+                    if (tex) {
+                        SUB_DEBUG("Loaded {} texture for material '{}': {}", slot_name, mat_name, path);
+                        return material_system.add_texture(std::move(tex));
+                    }
+                }
+                SUB_WARN("Failed to load {} texture: {}", slot_name, path);
+            } else if (embedded) {
+                auto synth_path = virtual_path + "#" + slot_name + mime_to_ext(embedded->mime_type);
+                auto tex = m_texture_loader.load(embedded->data, synth_path, type);
+                if (tex) {
+                    SUB_DEBUG("Loaded embedded {} texture for material '{}'", slot_name, mat_name);
+                    return material_system.add_texture(std::move(tex));
+                }
+                SUB_WARN("Failed to decode embedded {} texture for material '{}'", slot_name, mat_name);
+            }
+            return -1;
+        };
+
         // Create materials from glTF material descriptions
         std::vector<MaterialHandle> material_handles;
         material_handles.reserve(result.materials.size());
@@ -230,41 +266,28 @@ namespace thresh {
                 0.0f
             };
 
-            // Load textures if paths are specified
-            // Note: texture indices in GpuMaterialData refer to MaterialSystem's
-            // texture array. For now, we load textures into the AssetSystem but
-            // defer MaterialSystem texture binding to when Set 2 (bindless) is added.
-            if (!mat_desc.albedo_path.empty()) {
-                auto tex_path = gltf_dir + mat_desc.albedo_path;
-                auto tex_handle = load_texture(tex_path, flux::TextureType::Albedo);
-                if (tex_handle.is_valid()) {
-                    SUB_DEBUG("Loaded albedo texture for material '{}': {}", mat_desc.name, tex_path);
-                }
+            // Load textures (URI or embedded) and wire indices into material
+            gpu_mat.albedo_tex_index = load_texture_slot(
+                mat_desc.albedo_path, mat_desc.albedo_embedded,
+                flux::TextureType::Albedo, mat_desc.name, "albedo");
+            if (gpu_mat.albedo_tex_index < 0) {
+                gpu_mat.albedo_tex_index = material_system.get_default_white_index();
             }
 
-            if (!mat_desc.normal_path.empty()) {
-                auto tex_path = gltf_dir + mat_desc.normal_path;
-                auto tex_handle = load_texture(tex_path, flux::TextureType::Normal);
-                if (tex_handle.is_valid()) {
-                    SUB_DEBUG("Loaded normal texture for material '{}': {}", mat_desc.name, tex_path);
-                }
+            gpu_mat.normal_tex_index = load_texture_slot(
+                mat_desc.normal_path, mat_desc.normal_embedded,
+                flux::TextureType::Normal, mat_desc.name, "normal");
+            if (gpu_mat.normal_tex_index < 0) {
+                gpu_mat.normal_tex_index = material_system.get_default_normal_index();
             }
 
-            if (!mat_desc.metallic_roughness_path.empty()) {
-                auto tex_path = gltf_dir + mat_desc.metallic_roughness_path;
-                auto tex_handle = load_texture(tex_path, flux::TextureType::MetallicRoughness);
-                if (tex_handle.is_valid()) {
-                    SUB_DEBUG("Loaded metallic-roughness texture for material '{}': {}", mat_desc.name, tex_path);
-                }
-            }
+            gpu_mat.metallic_roughness_tex_index = load_texture_slot(
+                mat_desc.metallic_roughness_path, mat_desc.metallic_roughness_embedded,
+                flux::TextureType::MetallicRoughness, mat_desc.name, "metallic_roughness");
 
-            if (!mat_desc.emissive_path.empty()) {
-                auto tex_path = gltf_dir + mat_desc.emissive_path;
-                auto tex_handle = load_texture(tex_path, flux::TextureType::Emissive);
-                if (tex_handle.is_valid()) {
-                    SUB_DEBUG("Loaded emissive texture for material '{}': {}", mat_desc.name, tex_path);
-                }
-            }
+            gpu_mat.emissive_tex_index = load_texture_slot(
+                mat_desc.emissive_path, mat_desc.emissive_embedded,
+                flux::TextureType::Emissive, mat_desc.name, "emissive");
 
             material_handles.push_back(material_system.create_material(gpu_mat));
         }

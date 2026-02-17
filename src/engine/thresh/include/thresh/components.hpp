@@ -61,4 +61,14 @@ namespace thresh {
         std::vector<entt::entity> children;
     };
 
+    /**
+     * Point light component — omnidirectional light source.
+     * Attach to an entity with a TransformComponent; position comes from the transform.
+     */
+    struct PointLightComponent {
+        glm::vec3 color = {1.0f, 1.0f, 1.0f};
+        float intensity = 1.0f;
+        float radius = 10.0f;
+    };
+
 } // namespace thresh

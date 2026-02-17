@@ -103,6 +103,26 @@ namespace thresh {
             if (last_slash == std::string::npos) return "";
             return path.substr(0, last_slash + 1);
         }
+
+        /**
+         * Extract texture reference from a cgltf_image.
+         * Sets either the URI path or copies embedded buffer-view data.
+         */
+        auto extract_texture(const cgltf_image *image, const std::string &dir,
+                             std::string &out_path, std::optional<EmbeddedTexture> &out_embedded) -> void {
+            if (!image) return;
+
+            if (image->uri) {
+                out_path = dir + image->uri;
+            } else if (image->buffer_view && image->buffer_view->buffer->data) {
+                auto *bv = image->buffer_view;
+                auto *ptr = static_cast<const std::uint8_t *>(bv->buffer->data) + bv->offset;
+                out_embedded = EmbeddedTexture{
+                    .data = {ptr, ptr + bv->size},
+                    .mime_type = image->mime_type ? image->mime_type : ""
+                };
+            }
+        }
     } // anonymous namespace
 
     // ── Main loader ─────────────────────────────────────────────────────────────
@@ -155,24 +175,24 @@ namespace thresh {
                 desc.roughness_factor = pbr.roughness_factor;
 
                 if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image) {
-                    auto *uri = pbr.base_color_texture.texture->image->uri;
-                    if (uri) desc.albedo_path = dir + uri;
+                    extract_texture(pbr.base_color_texture.texture->image, dir,
+                                    desc.albedo_path, desc.albedo_embedded);
                 }
 
                 if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image) {
-                    auto *uri = pbr.metallic_roughness_texture.texture->image->uri;
-                    if (uri) desc.metallic_roughness_path = dir + uri;
+                    extract_texture(pbr.metallic_roughness_texture.texture->image, dir,
+                                    desc.metallic_roughness_path, desc.metallic_roughness_embedded);
                 }
             }
 
             if (mat.normal_texture.texture && mat.normal_texture.texture->image) {
-                auto *uri = mat.normal_texture.texture->image->uri;
-                if (uri) desc.normal_path = dir + uri;
+                extract_texture(mat.normal_texture.texture->image, dir,
+                                desc.normal_path, desc.normal_embedded);
             }
 
             if (mat.emissive_texture.texture && mat.emissive_texture.texture->image) {
-                auto *uri = mat.emissive_texture.texture->image->uri;
-                if (uri) desc.emissive_path = dir + uri;
+                extract_texture(mat.emissive_texture.texture->image, dir,
+                                desc.emissive_path, desc.emissive_embedded);
             }
 
             std::memcpy(desc.emissive_factor, mat.emissive_factor, sizeof(float) * 3);
