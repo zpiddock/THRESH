@@ -4,9 +4,6 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-# Find Vulkan SDK
-find_package(Vulkan REQUIRED)
-
 # SPIRV-Headers - Required by SPIRV-Tools
 FetchContent_Declare(
         spirv-headers
@@ -51,26 +48,6 @@ FetchContent_Declare(
         ser20
         GIT_REPOSITORY https://github.com/royjacobson/ser20
         GIT_TAG v0.9.1
-        GIT_SHALLOW TRUE
-)
-
-# GLFW - Windowing library
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-set(GLFW_LIBRARY_TYPE SHARED CACHE STRING "" FORCE)
-FetchContent_Declare(
-        glfw
-        URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
-        FIND_PACKAGE_ARGS 3.4
-)
-
-# VulkanMemoryAllocator
-FetchContent_Declare(
-        vma
-        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-        GIT_TAG v3.3.0
         GIT_SHALLOW TRUE
 )
 
@@ -137,9 +114,9 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(ser20 glfw vma glm physfs stb ktx cgltf entt)
+FetchContent_MakeAvailable(ser20 glm physfs stb ktx cgltf entt)
 
-# stb is not a CMake project — create an INTERFACE target for include path
+# stb is not a CMake project — create an INTERFACE target for includ path
 if(NOT TARGET stb)
     add_library(stb INTERFACE)
     target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
@@ -151,14 +128,6 @@ if(NOT TARGET cgltf)
     target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
 endif()
 
-# Disable warnings for third-party libraries
-if(TARGET glfw)
-    target_compile_options(glfw PRIVATE -w)
-endif()
-# VMA is header-only, so we disable warnings via INTERFACE
-if(TARGET VulkanMemoryAllocator)
-    target_compile_options(VulkanMemoryAllocator INTERFACE -w)
-endif()
 # Disable warnings-as-errors for third-party libraries
 if(TARGET glslang)
     target_compile_options(glslang PRIVATE -Wno-error)
