@@ -1,8 +1,8 @@
 add_library(Substratum SHARED
-        log.cpp
-        log.hpp
+        substratum/log.cpp
+        substratum/log.hpp
 )
 
 target_include_directories(Substratum PUBLIC
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/thresh-core
 )

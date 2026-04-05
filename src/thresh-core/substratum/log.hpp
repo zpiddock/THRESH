@@ -96,7 +96,7 @@ namespace substratum {
 
         inline static LogLevel s_current_level = LogLevel::Info;
     };
-} // namespace federation
+} // namespace substratum
 
 // Conditional logging macros for zero-cost when disabled
 #ifndef SUBSTRATUM_DISABLE_LOGGING
@@ -108,10 +108,10 @@ namespace substratum {
 #define SUB_FATAL(...) ::substratum::Logger::log_fatal(::std::source_location::current(), __VA_ARGS__)
 #else
 // Zero-cost when disabled - these become no-ops that the compiler optimizes away
-#define FED_TRACE(...) ((void)0)
-#define FED_DEBUG(...) ((void)0)
-#define FED_INFO(...)  ((void)0)
-#define FED_WARN(...)  ((void)0)
-#define FED_ERROR(...) ((void)0)
-#define FED_FATAL(...) ((void)0)
+#define SUB_TRACE(...) ((void)0)
+#define SUB_DEBUG(...) ((void)0)
+#define SUB_INFO(...)  ((void)0)
+#define SUB_WARN(...)  ((void)0)
+#define SUB_ERROR(...) ((void)0)
+#define SUB_FATAL(...) ((void)0)
 #endif

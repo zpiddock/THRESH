@@ -24,6 +24,10 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_link_options(-static-libgcc -static-libstdc++)
+endif ()
+
 # Disable logging for Release and RelWithDebInfo builds
 if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
     add_compile_definitions(SUBSTRATUM_DISABLE_LOGGING)
