@@ -42,6 +42,18 @@ set(ENABLE_OPT ON CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(GLSLANG_TESTS OFF CACHE BOOL "" FORCE)
 
+# SDL3 - Windowing & Controller Support
+# SDL3 must be shared — static SDL3 embedded in a DLL violates Windows DLL init rules
+set(SDL_SHARED ON CACHE BOOL "" FORCE)
+set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+set(SDL_WERROR OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+        sdl
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL
+        GIT_TAG release-3.4.4
+        GIT_SHALLOW TRUE
+        SYSTEM
+)
 
 # Ser20 Serialisation Library
 FetchContent_Declare(
@@ -114,7 +126,7 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(ser20 glm physfs stb ktx cgltf entt)
+FetchContent_MakeAvailable(sdl ser20 glm physfs stb ktx cgltf entt)
 
 # stb is not a CMake project — create an INTERFACE target for includ path
 if(NOT TARGET stb)

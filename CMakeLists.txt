@@ -14,6 +14,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
+# Include dependencies
+include(cmake-scripts/dependencies.cmake)
+
 # Treat warnings as errors
 if(MSVC)
     add_compile_options(/W4 /WX)
@@ -27,9 +30,8 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInf
     message(STATUS "Logging disabled for ${CMAKE_BUILD_TYPE} build")
 endif()
 
-# Include dependencies
-include(cmake-scripts/dependencies.cmake)
 
 add_subdirectory(src/thresh-core)
+add_subdirectory(src/thresh-windowing)
 
 add_subdirectory(examples/demo-app)
