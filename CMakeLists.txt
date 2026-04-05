@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 4.2)
 project(THRESH
         VERSION 0.1.0
         LANGUAGES C CXX
-        DESCRIPTION "A Modern Vulkan-based Game Engine"
+        DESCRIPTION "A Modern Game Engine"
 )
 
 # Set C++26 standard
@@ -30,12 +30,6 @@ endif()
 # Include dependencies
 include(cmake-scripts/dependencies.cmake)
 
-message(STATUS "Vulkan include: ${Vulkan_INCLUDE_DIRS}")
+add_subdirectory(src/thresh-core)
 
-add_subdirectory(src/engine/libs/substratum)
-add_subdirectory(src/engine/libs/horizon)
-add_subdirectory(src/engine/libs/flux)
-
-add_subdirectory(src/engine/thresh)
-
-add_subdirectory(src/apps/demo-game)
+add_subdirectory(examples/demo-app)
