@@ -1,4 +1,4 @@
-add_library(Horizon SHARED
+add_library(Horizon STATIC
 
         horizon/window.hpp
         horizon/window.cpp

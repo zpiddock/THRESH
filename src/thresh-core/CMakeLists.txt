@@ -1,4 +1,4 @@
-add_library(Substratum SHARED
+add_library(Substratum STATIC
         substratum/log.cpp
         substratum/log.hpp
 )
