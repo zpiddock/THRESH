@@ -125,8 +125,23 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 
+# GLAD - OpenGL Function loader
+FetchContent_Declare(
+        glad
+        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+        GIT_TAG glad2
+        GIT_SHALLOW    TRUE
+        SOURCE_SUBDIR cmake
+)
+
 FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(sdl ser20 glm physfs stb ktx cgltf entt)
+FetchContent_MakeAvailable(sdl glad ser20 glm physfs stb ktx cgltf entt)
+
+glad_add_library(glad_gl_core REPRODUCIBLE API gl:core=4.6
+        EXTENSIONS
+            GL_KHR_debug
+            GL_ARB_bindless_texture
+)
 
 # stb is not a CMake project — create an INTERFACE target for includ path
 if(NOT TARGET stb)
