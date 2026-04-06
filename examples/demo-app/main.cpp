@@ -4,41 +4,26 @@
 
 #include <SDL3/SDL.h>
 
+#include "game_app.hpp"
 #include "horizon/window.hpp"
 #include "substratum/log.hpp"
+#include "thresh/engine.hpp"
 
 int main() {
 
+    substratum::Logger::set_level(substratum::LogLevel::Trace);
+
     SUB_INFO("Demo Game Starting");
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
-        SUB_FATAL("SDL could not initialize! SDL_Error: {}", SDL_GetError());
+    auto& engine = thresh::Engine::create(new demo::GameApp());
+
+    if (engine.init({.title = "TRESH DEMO", .width = 1280, .height = 720})) {
+
+        SUB_INFO("Engine Initialized");
+        engine.run();
+        SUB_INFO("Demo Game Ending");
+    } else {
+        SUB_FATAL("Engine could not initialize!");
     }
-
-    auto window = thresh::Window("TRHESH DEMO", 1280, 720, 0);
-
-    if (window.getWindow() == nullptr) {
-
-        SUB_FATAL("Window could not be created! SDL_Error: {}", SDL_GetError());
-    }
-
-    while (!window.shouldClose()) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-
-            switch (event.type) {
-                case SDL_EVENT_QUIT: {
-                    window.setShouldClose(true);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
-
-    SDL_Quit();
-
-    SUB_INFO("Demo Game Ending");
     return 0;
 }

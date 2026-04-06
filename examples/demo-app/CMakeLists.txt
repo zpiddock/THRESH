@@ -1,9 +1,11 @@
 add_executable(demo
     main.cpp
+        game_app.cpp
+        game_app.hpp
 )
 
 target_compile_features(demo PUBLIC cxx_std_26)
-target_link_libraries(demo PUBLIC Substratum Horizon)
+target_link_libraries(demo PUBLIC Thresh)
 
 # Copy DLLs to output directory (Windows)
 if (WIN32)
