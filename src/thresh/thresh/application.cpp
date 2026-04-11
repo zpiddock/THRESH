@@ -5,4 +5,6 @@
 #include "application.hpp"
 
 namespace thresh {
+    auto Application::shutdown() -> void {
+    }
 } // thresh

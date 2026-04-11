@@ -37,7 +37,7 @@ endif()
 
 add_subdirectory(src/thresh-core)
 add_subdirectory(src/thresh-windowing)
-
+add_subdirectory(src/thresh-rendering)
 add_subdirectory(src/thresh)
 
 add_subdirectory(examples/demo-app)

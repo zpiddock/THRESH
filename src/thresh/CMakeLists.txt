@@ -5,7 +5,7 @@ add_library(Thresh SHARED
         thresh/application.hpp
 )
 
-target_link_libraries(Thresh PUBLIC Substratum Horizon)
+target_link_libraries(Thresh PUBLIC Substratum Horizon Flux)
 
 target_include_directories(Thresh PUBLIC
         ${CMAKE_SOURCE_DIR}/src/thresh

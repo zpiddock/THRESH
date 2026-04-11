@@ -6,31 +6,20 @@
 
 #include <string>
 
-#include "glad/gl.h"
+#include "SDL3/SDL_init.h"
 #include "substratum/log.hpp"
 
 namespace thresh {
-    Window::Window(const std::string& title, const int width, const int height, const SDL_WindowFlags flags) {
 
-        SUB_DEBUG("Creating Window: ", title);
+    Window::Window(const WindowContext& ctx) : m_context(ctx) {
 
-        m_window = SDL_CreateWindow(title.c_str(), width, height, flags);
-        m_gl_context = SDL_GL_CreateContext(m_window);
-
-        SDL_GL_MakeCurrent(m_window, m_gl_context);
-
-        int result = gladLoadGL(SDL_GL_GetProcAddress);
-        if (result == 0){
-            SUB_FATAL("Failed to initialize GLAD");
-        } else {
-            SUB_DEBUG("GLAD Initialized");
-            SUB_TRACE("GLAD Version: {}.{}", GLAD_VERSION_MAJOR(result), GLAD_VERSION_MINOR(result));
-        }
+        SUB_DEBUG("Creating Window: ", ctx.title);
     }
 
     Window::~Window() {
 
         SUB_DEBUG("Destroying Window: " + std::string(SDL_GetWindowTitle(m_window)));
+        SDL_Quit();
         SDL_DestroyWindow(m_window);
     }
 

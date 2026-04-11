@@ -12,6 +12,8 @@ class Application {
         virtual ~Application() = default;
 
         virtual auto update(float delta_time) -> void = 0;
+
+        virtual auto shutdown() -> void;
 };
 
 } // thresh

@@ -9,6 +9,8 @@
 
 #include "engine.hpp"
 
+#include "flux-opengl/open_gl_graphics_api.hpp"
+#include "flux-opengl/open_gl_window.hpp"
 #include "substratum/log.hpp"
 
 namespace thresh {
@@ -33,14 +35,20 @@ namespace thresh {
             SUB_FATAL("SDL could not initialize! SDL_Error: {}", SDL_GetError());
         }
 
-        // Set SDL Context Flags
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, ctx.GL_CONTEXT_MAJOR_VERSION);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, ctx.GL_CONTEXT_MINOR_VERSION);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, ctx.GL_CONTEXT_PROFILE);
-        // for now always assign GL Debug Flags
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+        switch (ctx.API_TYPE) {
 
-        m_window = std::make_unique<Window>(ctx.title.c_str(), ctx.width, ctx.height, ctx.window_flags);
+            case flux::API_TYPE::OpenGL: {
+
+                m_window = flux::OpenGLWindow::create({.title = ctx.title, .width = ctx.width, .height = ctx.height, .flags = ctx.window_flags});
+                m_graphics_api = std::make_unique<flux::OpenGLGraphicsAPI>();
+                break;
+            }
+
+            default: {
+                std::unreachable();
+                break;
+            }
+        }
 
         return true;
     }
@@ -81,16 +89,18 @@ namespace thresh {
             int fb_width, fb_height;
             SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
             if (fb_width == 0 || fb_height == 0) {
-                SDL_GL_SwapWindow(m_window->getWindow());
+                m_graphics_api->swap_buffers(m_window.get());
                 continue;
             }
-            ::glClearColor(1.f, 0.f, 0.f, 1.0f);
-            ::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            m_graphics_api->clear_colour(1.f, 0.f, 0.f, 1.0f);
+            m_graphics_api->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            SDL_GL_SwapWindow(m_window->getWindow());
+            m_graphics_api->swap_buffers(m_window.get());
         }
 
-        SDL_Quit();
+        m_application->shutdown();
+        m_application = nullptr;
+        m_window.reset();
     }
 
     auto Engine::get_window() -> Window* {

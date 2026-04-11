@@ -9,6 +9,7 @@
 #include <string>
 
 #include "application.hpp"
+#include "flux-common/graphics_api.hpp"
 #include "horizon/window.hpp"
 
 namespace thresh {
@@ -19,9 +20,7 @@ namespace thresh {
         int width;
         int height;
 
-        int GL_CONTEXT_MAJOR_VERSION = 4;
-        int GL_CONTEXT_MINOR_VERSION = 6;
-        int GL_CONTEXT_PROFILE = SDL_GL_CONTEXT_PROFILE_CORE;
+        flux::API_TYPE API_TYPE = flux::API_TYPE::OpenGL;
 
         SDL_InitFlags init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 
@@ -57,7 +56,8 @@ class Engine {
         std::chrono::high_resolution_clock::time_point m_last_frame_time;
 
         Application* m_application = nullptr;
-        std::unique_ptr<Window> m_window = nullptr;
+        std::unique_ptr<Window> m_window;
+        std::unique_ptr<flux::GraphicsAPI> m_graphics_api;
 };
 
 } // thresh
