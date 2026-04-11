@@ -3,19 +3,22 @@
 //
 
 #pragma once
+
 #include <chrono>
 #include <expected>
 #include <memory>
 #include <string>
 
+#include "SDL3/SDL.h"
+
 #include "application.hpp"
 #include "flux-common/graphics_api.hpp"
+#include "flux-common/shader_cache.hpp"
 #include "horizon/window.hpp"
 
 namespace thresh {
 
     struct EngineContext {
-
         std::string title;
         int width;
         int height;
@@ -28,17 +31,12 @@ namespace thresh {
     };
 
 class Engine {
-
     public:
-
         Engine() = default;
 
         Engine(const Engine&) = delete;
-
         Engine(Engine&&) = delete;
-
         Engine& operator=(const Engine&) = delete;
-
         Engine& operator=(Engine&&) = delete;
 
         static auto get_instance() -> Engine&;
@@ -51,8 +49,11 @@ class Engine {
 
         auto get_window() -> Window*;
 
-    private:
+        auto get_graphics_api() -> flux::GraphicsAPI&;
 
+        auto shutdown() -> void;
+
+    private:
         std::chrono::high_resolution_clock::time_point m_last_frame_time;
 
         Application* m_application = nullptr;

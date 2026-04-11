@@ -7,11 +7,14 @@
 namespace thresh {
 
 class Application {
-
     public:
         virtual ~Application() = default;
 
+        virtual auto startup() -> void {}
+
         virtual auto update(float delta_time) -> void = 0;
+
+        virtual auto render() -> void {}
 
         virtual auto shutdown() -> void;
 };

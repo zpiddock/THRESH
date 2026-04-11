@@ -2,10 +2,8 @@
 // Created by Admin on 05/04/2026.
 //
 
-#include <SDL3/SDL.h>
 
 #include "game_app.hpp"
-#include "horizon/window.hpp"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 
