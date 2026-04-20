@@ -3,18 +3,12 @@
 //
 
 #include <expected>
-
-#include "SDL3/SDL.h"
-#include "glad/gl.h"
-
-#include "engine.hpp"
-
 #include <filesystem>
 
-#include <glslang/Public/ShaderLang.h>
+#include "SDL3/SDL.h"
 
-#include "flux-opengl/open_gl_graphics_api.hpp"
-#include "flux-opengl/open_gl_window.hpp"
+#include "engine.hpp"
+#include "flux.hpp"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
 
@@ -44,24 +38,16 @@ namespace thresh {
             SUB_FATAL("SDL could not initialize! SDL_Error: {}", SDL_GetError());
         }
 
-        switch (ctx.API_TYPE) {
-            case flux::API_TYPE::OpenGL: {
-                m_window = flux::OpenGLWindow::create({.title = ctx.title,
-                                                       .width = ctx.width,
-                                                       .height = ctx.height,
-                                                       .flags = ctx.window_flags});
-                m_graphics_api = std::make_unique<flux::OpenGLGraphicsAPI>();
-                break;
-            }
-            default: {
-                std::unreachable();
-                break;
-            }
-        }
+        m_window = flux::create_window(ctx.API_TYPE, {.title = ctx.title,
+                                                      .width = ctx.width,
+                                                      .height = ctx.height,
+                                                      .flags = ctx.window_flags});
 
-        m_graphics_api->init();
+        flux::init(ctx.API_TYPE);
 
-        glslang::InitializeProcess();
+
+        m_input_manager = std::make_unique<horizon::InputManager>();
+        m_input_manager->init();
 
         m_application->startup();
 
@@ -76,6 +62,7 @@ namespace thresh {
         m_last_frame_time = std::chrono::high_resolution_clock::now();
 
         while (!m_window->shouldClose()) {
+            m_input_manager->flush_key_state();
             // Poll events
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
@@ -87,7 +74,8 @@ namespace thresh {
                     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
                         int32_t w, h;
                         SDL_GetWindowSizeInPixels(m_window->getWindow(), &w, &h);
-                        m_graphics_api->on_resize(w, h);
+                        flux::on_resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+                        break;
                     }
                     default:
                         break;
@@ -106,31 +94,31 @@ namespace thresh {
             int fb_width, fb_height;
             SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
             if (fb_width == 0 || fb_height == 0) {
-                m_graphics_api->swap_buffers(m_window.get());
+                flux::swap_buffers(m_window.get());
                 continue;
             }
 
-            m_graphics_api->clear_colour(1.f, 0.f, 0.f, 1.0f);
-            m_graphics_api->clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            flux::clear_colour(1.f, 0.f, 0.f, 1.0f);
+            flux::clear(flux::ClearFlags::Color | flux::ClearFlags::Depth);
 
             m_application->render();
 
-            m_graphics_api->swap_buffers(m_window.get());
+            flux::swap_buffers(m_window.get());
         }
 
         shutdown();
     }
 
-    auto Engine::get_window() -> Window* {
+    auto Engine::window() -> Window* {
         return m_window.get();
     }
 
-    auto Engine::get_graphics_api() -> flux::GraphicsAPI& {
-        return *m_graphics_api;
+    auto Engine::input() -> horizon::InputManager* {
+        return m_input_manager.get();
     }
 
     auto Engine::shutdown() -> void {
-        glslang::FinalizeProcess();
+        flux::shutdown();
 
         m_application->shutdown();
         m_application = nullptr;

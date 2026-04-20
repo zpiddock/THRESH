@@ -12,8 +12,8 @@
 #include "SDL3/SDL.h"
 
 #include "application.hpp"
-#include "flux-common/graphics_api.hpp"
-#include "flux-common/shader_cache.hpp"
+#include "flux.hpp"
+#include "horizon/input_manager.hpp"
 #include "horizon/window.hpp"
 
 namespace thresh {
@@ -47,9 +47,9 @@ class Engine {
 
         auto run() -> void;
 
-        auto get_window() -> Window*;
+        auto window() -> Window*;
 
-        auto get_graphics_api() -> flux::GraphicsAPI&;
+        auto input() -> horizon::InputManager*;
 
         auto shutdown() -> void;
 
@@ -58,7 +58,7 @@ class Engine {
 
         Application* m_application = nullptr;
         std::unique_ptr<Window> m_window;
-        std::unique_ptr<flux::GraphicsAPI> m_graphics_api;
+        std::unique_ptr<horizon::InputManager> m_input_manager;
 };
 
 } // thresh

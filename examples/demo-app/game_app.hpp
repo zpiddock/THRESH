@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <memory>
-
 #include "thresh/application.hpp"
-#include "flux-common/shader_program.hpp"
-#include "flux-common/vertex_array.hpp"
+#include "flux.hpp"
 
 namespace demo {
 
@@ -23,8 +20,8 @@ class GameApp : public thresh::Application {
         auto shutdown() -> void override;
 
     private:
-        std::shared_ptr<flux::ShaderProgram> m_shader;
-        std::unique_ptr<flux::VertexArray> m_vao;
+        flux::ShaderHandle      m_shader{};
+        flux::VertexArrayHandle m_vao{};
 };
 
 } // demo

@@ -10,33 +10,35 @@
 namespace demo {
 
     auto GameApp::startup() -> void {
-        auto& engine = thresh::Engine::get_instance();
+        m_shader = flux::load_shader("mesh_shader",
+                       { flux::ShaderStage::Vertex, flux::ShaderStage::Fragment });
 
-        m_shader = engine.get_graphics_api().load_shader("mesh_shader",
-                       flux::Shader::Stage::Vertex,
-                       flux::Shader::Stage::Fragment);
-
-        m_vao = engine.get_graphics_api().create_vertex_array();
+        m_vao = flux::create_vertex_array();
     }
 
-    auto GameApp::update(float delta_time) -> void {
+    auto GameApp::update(float /*delta_time*/) -> void {
+
+        auto* input = thresh::Engine::get_instance().input();
+        if (input->key_just_released(SDL_SCANCODE_ESCAPE)) {
+            thresh::Engine::get_instance().window()->setShouldClose(true);
+        }
     }
 
     auto GameApp::render() -> void {
-        if (!m_shader || !m_vao) {
+        if (!m_shader.valid() || !m_vao.valid()) {
             return;
         }
 
-        auto& api = thresh::Engine::get_instance().get_graphics_api();
-
-        m_shader->bind();
-        api.draw(*m_vao, flux::PrimitiveType::Triangles, 3);
-        m_shader->unbind();
+        flux::bind_shader(m_shader);
+        flux::draw(m_vao, flux::PrimitiveType::Triangles, 3);
+        flux::unbind_shader();
     }
 
     auto GameApp::shutdown() -> void {
-        m_shader.reset();
-        m_vao.reset();
+        flux::destroy_shader(m_shader);
+        flux::destroy_vertex_array(m_vao);
+        m_shader = {};
+        m_vao    = {};
         SUB_INFO("Shutting Down Demo Game, Flushing to disk, etc.");
     }
 
