@@ -4,72 +4,39 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-# SPIRV-Headers - Required by SPIRV-Tools
-FetchContent_Declare(
-        spirv-headers
-        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Headers.git
-        GIT_TAG vulkan-sdk-1.4.341.0
-        GIT_SHALLOW TRUE
-)
+# SPIRV Headers
+CPMAddPackage("gh:KhronosGroup/SPIRV-Headers#vulkan-sdk-1.4.341.0")
 
 # SPIRV-Tools - Required by GLSLang for optimization
-FetchContent_Declare(
-        spirv-tools
-        GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Tools.git
-        GIT_TAG v2026.1
-        GIT_SHALLOW TRUE
+CPMAddPackage("gh:KhronosGroup/SPIRV-Tools#2026.1"
+        NAME spirv-tools
+        OPTIONS "SPIRV_SKIP_EXECUTABLES ON" "SPIRV_SKIP_TESTS ON" "SPIRV_WERROR OFF"
 )
-
-set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
-set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
-set(SPIRV_WERROR OFF CACHE BOOL "" FORCE)
 
 # GLSLang - GLSL to SPIR-V compiler (built from source for ABI compatibility)
-FetchContent_Declare(
-        glslang
-        GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
-        GIT_TAG 16.2.0
-        GIT_SHALLOW TRUE
+CPMAddPackage("gh:KhronosGroup/glslang#16.2.0"
+        NAME glslang
+        OPTIONS "ENABLE_SPVREMAPPER OFF"
+            "ENABLE_GLSLANG_BINARIES OFF"
+            "ENABLE_GLSLANG_JS OFF"
+            "ENABLE_RTTI ON"
+            "ENABLE_EXCEPTIONS ON"
+            "ENABLE_OPT ON"
+            "BUILD_SHARED_LIBS OFF"
+            "GLSLANG_TESTS OFF"
 )
-
-# Configure glslang build options
-set(ENABLE_SPVREMAPPER OFF CACHE BOOL "" FORCE)
-set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
-set(ENABLE_GLSLANG_JS OFF CACHE BOOL "" FORCE)
-set(ENABLE_RTTI ON CACHE BOOL "" FORCE)
-set(ENABLE_EXCEPTIONS ON CACHE BOOL "" FORCE)
-set(ENABLE_OPT ON CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(GLSLANG_TESTS OFF CACHE BOOL "" FORCE)
 
 # SDL3 - Windowing & Controller Support
 # SDL3 must be shared — static SDL3 embedded in a DLL violates Windows DLL init rules
-set(SDL_SHARED ON CACHE BOOL "" FORCE)
-set(SDL_STATIC OFF CACHE BOOL "" FORCE)
-set(SDL_WERROR OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(
-        sdl
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL
-        GIT_TAG release-3.4.4
-        GIT_SHALLOW TRUE
+CPMAddPackage(
+        "gh:libsdl-org/SDL#release-3.4.4"
+        NAME sdl
+        OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF" "SDL_WERROR OFF"
         SYSTEM
 )
 
-# Ser20 Serialisation Library
-FetchContent_Declare(
-        ser20
-        GIT_REPOSITORY https://github.com/royjacobson/ser20
-        GIT_TAG v0.9.1
-        GIT_SHALLOW TRUE
-)
-
 # GLM - Mathematics library
-FetchContent_Declare(
-        glm
-        GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 1.0.1
-        GIT_SHALLOW TRUE
-)
+CPMAddPackage("gh:g-truc/glm#1.0.3")
 
 # PhysicsFS - Virtual filesystem abstraction (mount folders or archives)
 # PhysicsFS 3.2.0 uses cmake_minimum_required(VERSION 2.8.12) which CMake 4.x rejects.
@@ -109,22 +76,6 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 
-# cgltf - Single-header glTF 2.0 parser
-FetchContent_Declare(
-        cgltf
-        GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
-        GIT_TAG v1.14
-        GIT_SHALLOW TRUE
-)
-
-# entt - Entity Component System (header-only)
-FetchContent_Declare(
-        entt
-        GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v3.14.0
-        GIT_SHALLOW TRUE
-)
-
 # GLAD - OpenGL Function loader
 FetchContent_Declare(
         glad
@@ -134,8 +85,7 @@ FetchContent_Declare(
         SOURCE_SUBDIR cmake
 )
 
-FetchContent_MakeAvailable(spirv-headers spirv-tools glslang)
-FetchContent_MakeAvailable(sdl glad ser20 glm physfs stb ktx cgltf entt)
+FetchContent_MakeAvailable(glad physfs stb ktx)
 
 glad_add_library(glad_gl_core REPRODUCIBLE API gl:core=4.6
         EXTENSIONS
@@ -147,10 +97,4 @@ glad_add_library(glad_gl_core REPRODUCIBLE API gl:core=4.6
 if(NOT TARGET stb)
     add_library(stb INTERFACE)
     target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
-endif()
-
-# cgltf is not a CMake project — create an INTERFACE target for include path
-if(NOT TARGET cgltf)
-    add_library(cgltf INTERFACE)
-    target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
 endif()
