@@ -38,16 +38,16 @@ namespace thresh {
             SUB_FATAL("SDL could not initialize! SDL_Error: {}", SDL_GetError());
         }
 
-        m_window = flux::create_window(ctx.API_TYPE, {.title = ctx.title,
+        WindowContext window_context = {.title = ctx.title,
                                                       .width = ctx.width,
                                                       .height = ctx.height,
-                                                      .flags = ctx.window_flags});
-
-        flux::init(ctx.API_TYPE);
+                                                      .flags = ctx.window_flags};
+        m_window = std::make_unique<Window>(window_context);
 
 
         m_input_manager = std::make_unique<horizon::InputManager>();
         m_input_manager->init();
+        // flux::init();
 
         m_application->startup();
 
@@ -74,7 +74,8 @@ namespace thresh {
                     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
                         int32_t w, h;
                         SDL_GetWindowSizeInPixels(m_window->getWindow(), &w, &h);
-                        flux::on_resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+
+                        // flux::on_resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
                         break;
                     }
                     default:
@@ -94,16 +95,16 @@ namespace thresh {
             int fb_width, fb_height;
             SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
             if (fb_width == 0 || fb_height == 0) {
-                flux::swap_buffers(m_window.get());
+                // flux::swap_buffers(m_window.get());
                 continue;
             }
 
-            flux::clear_colour(1.f, 0.f, 0.f, 1.0f);
-            flux::clear(flux::ClearFlags::Color | flux::ClearFlags::Depth);
+            // flux::clear_colour(1.f, 0.f, 0.f, 1.0f);
+            // flux::clear(flux::ClearFlags::Color | flux::ClearFlags::Depth);
 
             m_application->render();
 
-            flux::swap_buffers(m_window.get());
+            // flux::swap_buffers(m_window.get());
         }
 
         shutdown();
@@ -114,11 +115,20 @@ namespace thresh {
     }
 
     auto Engine::input() -> horizon::InputManager* {
+
         return m_input_manager.get();
     }
 
+    auto Engine::graphics() -> flux::GraphicsUtils* {
+
+        if (!m_graphics_utils) {
+            m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
+        }
+        return m_graphics_utils.get();
+    }
+
     auto Engine::shutdown() -> void {
-        flux::shutdown();
+        // flux::shutdown();
 
         m_application->shutdown();
         m_application = nullptr;

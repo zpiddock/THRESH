@@ -20,8 +20,6 @@ class GameApp : public thresh::Application {
         auto shutdown() -> void override;
 
     private:
-        flux::ShaderHandle      m_shader{};
-        flux::VertexArrayHandle m_vao{};
 };
 
 } // demo

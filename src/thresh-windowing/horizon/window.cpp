@@ -14,6 +14,7 @@ namespace thresh {
     Window::Window(const WindowContext& ctx) : m_context(ctx) {
 
         SUB_DEBUG("Creating Window: ", ctx.title);
+        init_window(ctx);
     }
 
     Window::~Window() {
@@ -21,6 +22,14 @@ namespace thresh {
         SUB_DEBUG("Destroying Window: " + std::string(SDL_GetWindowTitle(m_window)));
         SDL_Quit();
         SDL_DestroyWindow(m_window);
+    }
+
+    auto Window::init_window(const WindowContext& ctx) -> void {
+
+        m_window = SDL_CreateWindow(ctx.title.c_str(), ctx.width, ctx.height, ctx.flags);
+        if (!m_window) {
+            SUB_FATAL("Could not create window: ", SDL_GetError());
+        }
     }
 
     auto Window::getWindow() const -> SDL_Window* {

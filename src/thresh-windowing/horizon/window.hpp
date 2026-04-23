@@ -20,11 +20,11 @@ namespace thresh {
 class Window {
 
     public:
-        explicit Window(const WindowContext& ctx);
+        Window(const WindowContext& ctx);
 
-        virtual ~Window();
+        ~Window();
 
-        virtual auto init_window(const WindowContext& ctx) -> void = 0;
+        auto init_window(const WindowContext& ctx) -> void;
 
         [[nodiscard]] auto getWindow() const -> SDL_Window*;
         auto setWindowTitle(const char* title) const -> bool;

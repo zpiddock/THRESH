@@ -1,14 +1,12 @@
 add_library(Flux STATIC
         flux.hpp
-        opengl_backend.cpp
-        flux-opengl/open_gl_window.hpp
-        flux-opengl/open_gl_window.cpp
+        flux.cpp
 )
 
 target_link_libraries(Flux PUBLIC
         Substratum
         Horizon
-        glad_gl_core
+        Vulkan::Vulkan
         glslang
         SPIRV
         glslang-default-resource-limits

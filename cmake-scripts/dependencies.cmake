@@ -4,6 +4,9 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
+# Find Vulkan SDK
+find_package(Vulkan REQUIRED)
+
 # SPIRV Headers
 CPMAddPackage("gh:KhronosGroup/SPIRV-Headers#vulkan-sdk-1.4.341.0")
 
@@ -66,7 +69,7 @@ set(KTX_FEATURE_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
 set(KTX_FEATURE_TESTS OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "" FORCE)
-set(KTX_FEATURE_VK_UPLOAD OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_VK_UPLOAD ON CACHE BOOL "" FORCE)
 set(KTX_FEATURE_DOC OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_LOADTEST_APPS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
@@ -76,22 +79,7 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 
-# GLAD - OpenGL Function loader
-FetchContent_Declare(
-        glad
-        GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-        GIT_TAG glad2
-        GIT_SHALLOW    TRUE
-        SOURCE_SUBDIR cmake
-)
-
-FetchContent_MakeAvailable(glad physfs stb ktx)
-
-glad_add_library(glad_gl_core REPRODUCIBLE API gl:core=4.6
-        EXTENSIONS
-            GL_KHR_debug
-            GL_ARB_bindless_texture
-)
+FetchContent_MakeAvailable(physfs stb ktx)
 
 # stb is not a CMake project — create an INTERFACE target for includ path
 if(NOT TARGET stb)

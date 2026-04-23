@@ -23,11 +23,9 @@ namespace thresh {
         int width;
         int height;
 
-        flux::API_TYPE API_TYPE = flux::API_TYPE::OpenGL;
-
         SDL_InitFlags init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 
-        SDL_WindowFlags window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+        SDL_WindowFlags window_flags = SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE;
     };
 
 class Engine {
@@ -51,6 +49,8 @@ class Engine {
 
         auto input() -> horizon::InputManager*;
 
+        auto graphics() -> flux::GraphicsUtils*;
+
         auto shutdown() -> void;
 
     private:
@@ -58,6 +58,7 @@ class Engine {
 
         Application* m_application = nullptr;
         std::unique_ptr<Window> m_window;
+        std::unique_ptr<flux::GraphicsUtils> m_graphics_utils;
         std::unique_ptr<horizon::InputManager> m_input_manager;
 };
 
