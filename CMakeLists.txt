@@ -16,6 +16,8 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 # Include CMP for Dependency management
 include(cmake-scripts/get_cpm.cmake)
+# Find Vulkan (Khronos Official Vulkan cmake script)
+include(cmake-scripts/FindVulkan.cmake)
 # Include dependencies
 include(cmake-scripts/dependencies.cmake)
 
