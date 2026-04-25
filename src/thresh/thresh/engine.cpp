@@ -131,6 +131,8 @@ namespace thresh {
     auto Engine::shutdown() -> void {
         m_application->shutdown();
         m_application = nullptr;
+        m_input_manager.reset();
+        m_graphics_utils.reset();
         substratum::VFS::shutdown();
         m_window.reset();
     }
