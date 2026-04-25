@@ -5,7 +5,7 @@
 #pragma once
 
 #include "thresh/application.hpp"
-#include "flux.hpp"
+#include "../../src/thresh-rendering/flux/graphics_utils.hpp"
 
 namespace demo {
 

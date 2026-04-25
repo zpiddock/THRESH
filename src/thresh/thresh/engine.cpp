@@ -8,7 +8,7 @@
 #include "SDL3/SDL.h"
 
 #include "engine.hpp"
-#include "flux.hpp"
+#include "flux/graphics_utils.hpp"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
 
@@ -44,10 +44,11 @@ namespace thresh {
                                                       .flags = ctx.window_flags};
         m_window = std::make_unique<Window>(window_context);
 
+        m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
+        m_graphics_utils->init_vulkan();
 
         m_input_manager = std::make_unique<horizon::InputManager>();
         m_input_manager->init();
-        // flux::init();
 
         m_application->startup();
 
