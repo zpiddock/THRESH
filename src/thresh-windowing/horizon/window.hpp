@@ -32,6 +32,8 @@ class Window {
         [[nodiscard]] auto shouldClose() const -> bool;
         auto setShouldClose(bool shouldClose) -> void;
 
+        auto get_frame_buffer_size(int &width, int &height) const -> void;
+
     protected:
         WindowContext m_context = {};
         SDL_Window* m_window = nullptr;

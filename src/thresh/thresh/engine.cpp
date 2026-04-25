@@ -45,7 +45,7 @@ namespace thresh {
         m_window = std::make_unique<Window>(window_context);
 
         m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
-        m_graphics_utils->init_vulkan();
+        m_graphics_utils->init_vulkan(*m_window);
 
         m_input_manager = std::make_unique<horizon::InputManager>();
         m_input_manager->init();
@@ -129,8 +129,6 @@ namespace thresh {
     }
 
     auto Engine::shutdown() -> void {
-        // flux::shutdown();
-
         m_application->shutdown();
         m_application = nullptr;
         substratum::VFS::shutdown();

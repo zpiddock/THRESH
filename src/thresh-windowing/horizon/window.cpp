@@ -47,4 +47,9 @@ namespace thresh {
     auto Window::setShouldClose(bool shouldClose) -> void {
         m_window_should_close = shouldClose;
     }
+
+    auto Window::get_frame_buffer_size(int& width, int& height) const -> void {
+
+        SDL_GetWindowSizeInPixels(m_window, &width, &height);
+    }
 } // thresh
