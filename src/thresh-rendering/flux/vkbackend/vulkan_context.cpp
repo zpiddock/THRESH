@@ -5,6 +5,7 @@
 #include "vulkan_context.hpp"
 
 #include <iostream>
+#include <set>
 
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
@@ -23,17 +24,19 @@ namespace flux {
         return vk::False;
     }
 
-    VulkanContext::VulkanContext(const VulkanInstanceContext& ctx) {
+    VulkanContext::VulkanContext(const VulkanInstanceContext& ctx, const thresh::Window& window) {
 
         create_instance(ctx);
         setup_debug_messenger(ctx);
+        create_surface(window);
         pick_suitable_device();
         create_logical_device();
+        create_swapchain(window);
     }
 
     VulkanContext::~VulkanContext() {
 
-    };
+    }
 
     auto VulkanContext::create_instance(const VulkanInstanceContext& ctx) -> void {
 
@@ -43,7 +46,7 @@ namespace flux {
             .pEngineName = ctx.engine_name.c_str(),
             .engineVersion = VK_MAKE_VERSION(1, 0, 0),
             .apiVersion = VK_API_VERSION_1_4
-            };
+        };
 
         // Get required vulkan layers
         std::vector<const char*> layers_required;
@@ -111,6 +114,18 @@ namespace flux {
         m_debugMessenger = m_instance.createDebugUtilsMessengerEXT( debugUtilsMessengerCreateInfoEXT );
     }
 
+    auto VulkanContext::create_surface(const thresh::Window& window) -> void {
+
+        SUB_INFO("Creating Vulkan Surface");
+        VkSurfaceKHR surface;
+        if (SDL_Vulkan_CreateSurface(window.getWindow(), *m_instance, nullptr, &surface) != false) {
+            m_surface = vk::raii::SurfaceKHR(m_instance, surface);
+        }
+        else {
+            throw std::runtime_error("Failed to create Vulkan Surface");
+        }
+    }
+
     auto VulkanContext::pick_suitable_device() -> void {
 
         auto devices = m_instance.enumeratePhysicalDevices();
@@ -127,6 +142,129 @@ namespace flux {
 
     auto VulkanContext::create_logical_device() -> void {
 
+        uint32_t queue_index = ~0u;
+
+        const auto queue_family_properties = m_physicalDevice.getQueueFamilyProperties();
+
+        for (uint32_t qfpIndex = 0; qfpIndex < queue_family_properties.size(); qfpIndex++)
+        {
+            if ((queue_family_properties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
+                m_physicalDevice.getSurfaceSupportKHR(qfpIndex, *m_surface))
+            {
+                // found a queue family that supports both graphics and present
+                queue_index = qfpIndex;
+                break;
+            }
+        }
+        if (queue_index == ~0u)
+        {
+            throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
+        }
+
+        vk::StructureChain<
+            vk::PhysicalDeviceFeatures2,
+            vk::PhysicalDeviceVulkan13Features,
+            vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+        features {
+            {},
+            {
+                .dynamicRendering = true,
+            },
+            {
+                .extendedDynamicState = true
+            }
+        };
+
+        float queue_priority = .5f;
+        vk::DeviceQueueCreateInfo queue_info {
+            .queueFamilyIndex = queue_index,
+            .queueCount       = 1,
+            .pQueuePriorities = &queue_priority
+        };
+
+        vk::DeviceCreateInfo device_info {
+            .pNext = &features.get<vk::PhysicalDeviceFeatures2>(),
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos    = &queue_info,
+            .enabledExtensionCount = static_cast<uint32_t>(m_required_device_extensions.size()),
+            .ppEnabledExtensionNames = m_required_device_extensions.data()
+        };
+
+        m_device = vk::raii::Device(m_physicalDevice, device_info);
+        m_graphics_queue = vk::raii::Queue(m_device, queue_index, 0);
+    }
+
+    auto VulkanContext::create_swapchain(const thresh::Window& window) -> void {
+
+        vk::SurfaceCapabilitiesKHR surface_capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(*m_surface);
+        m_swapchain_extent = choose_swap_extents(surface_capabilities, window);
+        uint32_t min_swap_image_count = choose_min_swap_image_count(surface_capabilities);
+
+        std::vector<vk::SurfaceFormatKHR> formats = m_physicalDevice.getSurfaceFormatsKHR(*m_surface);
+        m_swapchain_surface_format = choose_swap_surface_format(formats);
+
+        vk::PresentModeKHR present_mode = choose_swapchain_present_mode(m_physicalDevice.getSurfacePresentModesKHR(*m_surface));
+        vk::SwapchainCreateInfoKHR swapchain_info {
+            .surface = *m_surface,
+            .minImageCount = min_swap_image_count,
+            .imageFormat = m_swapchain_surface_format.format,
+            .imageColorSpace = m_swapchain_surface_format.colorSpace,
+            .imageExtent = m_swapchain_extent,
+            .imageArrayLayers = 1, // Only ever higher if doing Stereoscopic
+            .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+            .imageSharingMode = vk::SharingMode::eExclusive,
+            .preTransform = surface_capabilities.currentTransform,
+            .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+            .presentMode = present_mode,
+            .clipped = vk::True,
+            .oldSwapchain = nullptr
+        };
+
+        m_swapchain = vk::raii::SwapchainKHR(m_device, swapchain_info);
+        m_swapchain_images = m_swapchain.getImages();
+    }
+
+    auto VulkanContext::choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities, const thresh::Window& window) -> vk::Extent2D {
+
+        if (surface_capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+            return surface_capabilities.currentExtent;
+        }
+
+        int width, height;
+        window.get_frame_buffer_size(width, height);
+        return {
+            std::clamp<uint32_t>(width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width),
+            std::clamp<uint32_t>(height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height)
+        };
+    }
+
+    auto VulkanContext::choose_swap_surface_format(
+        const std::vector<vk::SurfaceFormatKHR>& formats) -> vk::SurfaceFormatKHR {
+
+        const auto format_interator = std::ranges::find_if(formats, [](const auto& format) {
+            return format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
+        });
+
+        return format_interator != formats.end() ? *format_interator : formats[0];
+    }
+
+    auto VulkanContext::choose_min_swap_image_count(
+        const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t {
+
+        auto min_image_count = std::max(3u, surface_capabilities.minImageCount);
+        if ((0 > surface_capabilities.maxImageCount) && (min_image_count > surface_capabilities.maxImageCount)) {
+            min_image_count = surface_capabilities.maxImageCount;
+        }
+        return min_image_count;
+    }
+
+    auto VulkanContext::choose_swapchain_present_mode(
+        const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR {
+        assert(std::ranges::any_of(present_modes, [](auto presentMode) { return presentMode == vk::PresentModeKHR::eFifo; }));
+        return std::ranges::any_of(present_modes,
+                                   [](const vk::PresentModeKHR value) { return vk::PresentModeKHR::eMailbox == value; }) ?
+                   vk::PresentModeKHR::eMailbox :
+                   vk::PresentModeKHR::eFifo;
     }
 
     auto VulkanContext::get_required_extensions(const VulkanInstanceContext& ctx) -> std::vector<const char*> {
