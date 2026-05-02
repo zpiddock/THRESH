@@ -9,6 +9,7 @@
 
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
+#include "substratum/filesystem/vfs.hpp"
 #include "vulkan/vulkan.h"
 
 namespace flux {
@@ -165,10 +166,14 @@ namespace flux {
 
         vk::StructureChain<
             vk::PhysicalDeviceFeatures2,
+            vk::PhysicalDeviceVulkan11Features,
             vk::PhysicalDeviceVulkan13Features,
             vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
         features {
             {},
+            {
+                .shaderDrawParameters = true,
+            },
             {
                 .dynamicRendering = true,
             },
@@ -348,5 +353,17 @@ namespace flux {
                                         features.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
         return support_VK1_4 && support_graphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
+    }
+
+    auto VulkanContext::load_shader(const std::string& shader_path) -> vk::raii::ShaderModule {
+
+        const auto shader_code = substratum::VFS::read_file(shader_path);
+
+        vk::ShaderModuleCreateInfo shader_module_info {
+            .codeSize = shader_code.size() * sizeof(uint8_t),
+            .pCode = reinterpret_cast<const uint32_t*>(shader_code.data())
+        };
+
+        return {m_device, shader_module_info};
     }
 } // flux

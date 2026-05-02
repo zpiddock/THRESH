@@ -49,6 +49,9 @@ namespace flux {
             auto choose_min_swap_image_count(const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t;
             auto choose_swapchain_present_mode(const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR;
 
+            // Shader Functions - TODO: Create Shader Wrapper Class
+            auto load_shader(const std::string& shader_path) -> vk::raii::ShaderModule;
+
             std::vector<const char*> m_required_device_extensions = {
                 vk::KHRSwapchainExtensionName
             };
@@ -69,5 +72,10 @@ namespace flux {
 
             // Image View stuff
             std::vector<vk::raii::ImageView> m_swapchain_image_views;
+
+            // const strings
+            const std::string vertex_main = "vertexMain";
+            const std::string fragment_main = "fragmentMain";
+
     };
 } // flux
