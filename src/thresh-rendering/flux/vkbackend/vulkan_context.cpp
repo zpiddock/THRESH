@@ -32,6 +32,8 @@ namespace flux {
         pick_suitable_device();
         create_logical_device();
         create_swapchain(window);
+        create_image_views();
+        create_graphics_pipelines();
     }
 
     VulkanContext::~VulkanContext() {
@@ -222,6 +224,36 @@ namespace flux {
 
         m_swapchain = vk::raii::SwapchainKHR(m_device, swapchain_info);
         m_swapchain_images = m_swapchain.getImages();
+    }
+
+    auto VulkanContext::create_image_views() -> void {
+
+        assert(m_swapchain_image_views.empty());
+
+        vk::ImageViewCreateInfo view_info {
+            .viewType = vk::ImageViewType::e2D,
+            .format = m_swapchain_surface_format.format,
+            .components = {
+                vk::ComponentSwizzle::eIdentity,
+                vk::ComponentSwizzle::eIdentity,
+                vk::ComponentSwizzle::eIdentity,
+                vk::ComponentSwizzle::eIdentity
+            },
+            .subresourceRange = {
+                vk::ImageAspectFlagBits::eColor,
+                0, 1,
+                0, 1
+            }
+        };
+
+        for (const auto& image : m_swapchain_images) {
+            view_info.image = image;
+            m_swapchain_image_views.emplace_back(m_device, view_info);
+        }
+    }
+
+    auto VulkanContext::create_graphics_pipelines() -> void {
+        
     }
 
     auto VulkanContext::choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities, const thresh::Window& window) -> vk::Extent2D {

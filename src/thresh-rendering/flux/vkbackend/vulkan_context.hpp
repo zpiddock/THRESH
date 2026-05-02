@@ -29,16 +29,21 @@ namespace flux {
             ~VulkanContext();
 
         private:
+            // Vulkan Init Functions
             auto create_instance(const VulkanInstanceContext& ctx) -> void;
             auto setup_debug_messenger(const VulkanInstanceContext& ctx) -> void;
             auto create_surface(const thresh::Window& window) -> void;
             auto pick_suitable_device() -> void;
             auto create_logical_device() -> void;
             auto create_swapchain(const thresh::Window& window) -> void;
+            auto create_image_views() -> void;
+            auto create_graphics_pipelines() -> void;
 
+            // Device Private functions
             auto get_required_extensions(const VulkanInstanceContext& ctx) -> std::vector<const char *>;
             auto is_device_suitable(const vk::PhysicalDevice& device) -> bool;
 
+            // Swapchain Private Functions
             auto choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR>& formats) -> vk::SurfaceFormatKHR;
             auto choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities, const thresh::Window& window) -> vk::Extent2D;
             auto choose_min_swap_image_count(const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t;
@@ -61,5 +66,8 @@ namespace flux {
             std::vector<vk::Image> m_swapchain_images;
             vk::SurfaceFormatKHR m_swapchain_surface_format;
             vk::Extent2D m_swapchain_extent;
+
+            // Image View stuff
+            std::vector<vk::raii::ImageView> m_swapchain_image_views;
     };
 } // flux
