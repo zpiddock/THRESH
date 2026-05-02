@@ -258,7 +258,92 @@ namespace flux {
     }
 
     auto VulkanContext::create_graphics_pipelines() -> void {
-        
+
+        assert(substratum::VFS::is_initialized());
+
+        auto triangle_shader_module = load_shader("/shader/triangle.spv");
+        const vk::PipelineShaderStageCreateInfo vert_stage_info {
+            .stage = vk::ShaderStageFlagBits::eVertex,
+            .module = triangle_shader_module,
+            .pName = vertex_main.c_str()
+        };
+        const vk::PipelineShaderStageCreateInfo frag_stage_info {
+            .stage = vk::ShaderStageFlagBits::eFragment,
+            .module = triangle_shader_module,
+            .pName = fragment_main.c_str()
+        };
+        vk::PipelineShaderStageCreateInfo shader_stages[] = {vert_stage_info, frag_stage_info};
+        vk::PipelineVertexInputStateCreateInfo vertex_input_info {};
+        vk::PipelineInputAssemblyStateCreateInfo input_assembly_info {
+            .topology = vk::PrimitiveTopology::eTriangleList,
+        };
+        vk::PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
+
+        vk::PipelineRasterizationStateCreateInfo rasterization_info {
+            .depthClampEnable        = vk::False,
+            .rasterizerDiscardEnable = vk::False,
+            .polygonMode             = vk::PolygonMode::eFill,
+            .cullMode                = vk::CullModeFlagBits::eBack,
+            .frontFace               = vk::FrontFace::eClockwise,
+            .depthBiasEnable         = vk::False,
+            .lineWidth               = 1.0f,
+        };
+
+        vk::PipelineMultisampleStateCreateInfo multisampling_info {
+            .rasterizationSamples = vk::SampleCountFlagBits::e1,
+            .sampleShadingEnable = vk::False,
+        };
+
+        // Depth Stencil is nullptr for now
+
+        vk::PipelineColorBlendAttachmentState blend_attachment {
+            .blendEnable = vk::False,
+            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA,
+        };
+        vk::PipelineColorBlendStateCreateInfo color_blending_info {
+            .logicOpEnable = vk::False,
+            .logicOp = vk::LogicOp::eCopy,
+            .attachmentCount = 1,
+            .pAttachments = &blend_attachment,
+        };
+
+        std::vector<vk::DynamicState> dynamic_states = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+        vk::PipelineDynamicStateCreateInfo dynamic_state_info {
+            .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+            .pDynamicStates = dynamic_states.data()
+        };
+
+        vk::PipelineLayoutCreateInfo pipeline_layout_info {
+            .setLayoutCount = 0,
+            .pushConstantRangeCount = 0
+        };
+
+        m_pipeline_layout = vk::raii::PipelineLayout(m_device, pipeline_layout_info);
+
+        vk::StructureChain<
+            vk::GraphicsPipelineCreateInfo,
+            vk::PipelineRenderingCreateInfo> pipeline_create_info_chain = {
+                {
+                    .stageCount = 2,
+                    .pStages = shader_stages,
+                    .pVertexInputState = &vertex_input_info,
+                    .pInputAssemblyState = &input_assembly_info,
+                    .pViewportState = &viewportState,
+                    .pRasterizationState = &rasterization_info,
+                    .pMultisampleState = &multisampling_info,
+                    .pDepthStencilState = nullptr,
+                    .pColorBlendState = &color_blending_info,
+                    .pDynamicState = &dynamic_state_info,
+                    .layout = m_pipeline_layout,
+                    .renderPass = nullptr
+                },
+            {
+                .colorAttachmentCount = 1,
+                .pColorAttachmentFormats = &m_swapchain_surface_format.format
+                }
+            };
+
+        m_graphics_pipeline = m_device.createGraphicsPipeline(nullptr, pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>());
     }
 
     auto VulkanContext::choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities, const thresh::Window& window) -> vk::Extent2D {

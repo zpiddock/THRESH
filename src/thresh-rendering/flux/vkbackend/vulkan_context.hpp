@@ -63,6 +63,8 @@ namespace flux {
             vk::raii::Device m_device = nullptr;
             vk::raii::Queue m_graphics_queue = nullptr;
             vk::raii::SurfaceKHR m_surface = nullptr;
+            vk::raii::PipelineLayout m_pipeline_layout = nullptr;
+            vk::raii::Pipeline m_graphics_pipeline = nullptr;
 
             // Swapchain Stuff
             vk::raii::SwapchainKHR m_swapchain = nullptr;
