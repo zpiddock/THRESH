@@ -35,6 +35,7 @@ namespace flux {
         create_graphics_pipelines();
         create_command_pool();
         create_command_buffer();
+        create_sync_objects();
     }
 
     VulkanContext::~VulkanContext() {
@@ -170,7 +171,8 @@ namespace flux {
                         .shaderDrawParameters = true,
                     },
                     {
-                        .dynamicRendering = true,
+                        .synchronization2 = true,
+                        .dynamicRendering = true
                     },
                     {
                         .extendedDynamicState = true
@@ -360,7 +362,15 @@ namespace flux {
         m_command_buffer = std::move(m_device.allocateCommandBuffers(alloc_info)[0]);
     }
 
-    auto VulkanContext::record_command_buffer(const uint32_t image_index) {
+    auto VulkanContext::create_sync_objects() -> void {
+
+        m_present_complete_semaphore = vk::raii::Semaphore(m_device, vk::SemaphoreCreateInfo{});
+        m_render_complete_semaphore  = vk::raii::Semaphore(m_device, vk::SemaphoreCreateInfo{});
+        m_draw_fence                 = vk::raii::Fence(m_device,
+                            {.flags = vk::FenceCreateFlagBits::eSignaled});
+    }
+
+    auto VulkanContext::record_command_buffer(const uint32_t image_index) -> void {
         const vk::CommandBufferBeginInfo begin_info{};
         m_command_buffer.begin(begin_info);
 

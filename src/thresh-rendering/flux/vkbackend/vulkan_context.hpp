@@ -49,6 +49,8 @@ namespace flux {
 
             auto create_command_buffer() -> void;
 
+            auto create_sync_objects() -> void;
+
             // Device Private functions
             auto get_required_extensions(const VulkanInstanceContext& ctx) -> std::vector<const char*>;
 
@@ -69,7 +71,7 @@ namespace flux {
             auto load_shader(const std::string& shader_path) -> vk::raii::ShaderModule;
 
             // Rendering functions
-            auto record_command_buffer(uint32_t image_index);
+            auto record_command_buffer(uint32_t image_index) -> void;
 
             auto transition_image_layout(uint32_t                imageIndex,
                                          vk::ImageLayout         old_layout,
@@ -84,21 +86,21 @@ namespace flux {
             };
 
             vk::raii::Context                m_context;
-            vk::raii::Instance               m_instance                 = nullptr;
-            vk::raii::DebugUtilsMessengerEXT m_debugMessenger           = nullptr;
-            vk::raii::PhysicalDevice         m_physicalDevice           = nullptr;
-            vk::raii::Device                 m_device                   = nullptr;
-            uint32_t                         m_queue_family_index       = ~0u;
-            vk::raii::Queue                  m_graphics_queue           = nullptr;
-            vk::raii::SurfaceKHR             m_surface                  = nullptr;
-            vk::raii::PipelineLayout         m_pipeline_layout          = nullptr;
-            vk::raii::Pipeline               m_graphics_pipeline        = nullptr;
-            vk::raii::CommandPool            m_command_pool             = nullptr;
-            vk::raii::CommandBuffer          m_command_buffer           = nullptr;
+            vk::raii::Instance               m_instance                   = nullptr;
+            vk::raii::DebugUtilsMessengerEXT m_debugMessenger             = nullptr;
+            vk::raii::PhysicalDevice         m_physicalDevice             = nullptr;
+            vk::raii::Device                 m_device                     = nullptr;
+            uint32_t                         m_queue_family_index         = ~0u;
+            vk::raii::Queue                  m_graphics_queue             = nullptr;
+            vk::raii::SurfaceKHR             m_surface                    = nullptr;
+            vk::raii::PipelineLayout         m_pipeline_layout            = nullptr;
+            vk::raii::Pipeline               m_graphics_pipeline          = nullptr;
+            vk::raii::CommandPool            m_command_pool               = nullptr;
+            vk::raii::CommandBuffer          m_command_buffer             = nullptr;
 
-            vk::raii::Semaphore              present_complete_semaphore = nullptr;
-            vk::raii::Semaphore              render_complete_semaphore  = nullptr;
-            vk::raii::Fence                  draw_fence                 = nullptr;
+            vk::raii::Semaphore              m_present_complete_semaphore = nullptr;
+            vk::raii::Semaphore              m_render_complete_semaphore  = nullptr;
+            vk::raii::Fence                  m_draw_fence                 = nullptr;
 
             // Swapchain Stuff
             vk::raii::SwapchainKHR m_swapchain = nullptr;
@@ -112,5 +114,7 @@ namespace flux {
             // const strings
             const std::string vertex_main   = "vertexMain";
             const std::string fragment_main = "fragmentMain";
+
+            friend class GraphicsUtils;
     };
 } // flux

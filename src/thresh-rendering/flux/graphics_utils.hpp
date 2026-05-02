@@ -17,6 +17,10 @@ namespace flux {
 
             auto get_vulkan_context() -> VulkanContext*;
 
+            auto draw_frame() -> void;
+
+            auto shutdown() -> void;
+
         private:
             std::unique_ptr<VulkanContext> m_context;
 

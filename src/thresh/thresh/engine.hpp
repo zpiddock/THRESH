@@ -54,11 +54,12 @@ class Engine {
         auto shutdown() -> void;
 
     private:
+
         std::chrono::high_resolution_clock::time_point m_last_frame_time;
 
-        Application* m_application = nullptr;
-        std::unique_ptr<Window> m_window;
-        std::unique_ptr<flux::GraphicsUtils> m_graphics_utils;
+        Application*                           m_application = nullptr;
+        std::unique_ptr<Window>                m_window;
+        std::unique_ptr<flux::GraphicsUtils>   m_graphics_utils;
         std::unique_ptr<horizon::InputManager> m_input_manager;
 };
 
