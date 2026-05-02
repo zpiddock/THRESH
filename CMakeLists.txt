@@ -20,6 +20,8 @@ include(cmake-scripts/get_cpm.cmake)
 include(cmake-scripts/FindVulkan.cmake)
 # Include dependencies
 include(cmake-scripts/dependencies.cmake)
+# Set up custom commands
+include(cmake-scripts/add_slang_shader.cmake)
 
 # Treat warnings as errors
 if(MSVC)

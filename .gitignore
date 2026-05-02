@@ -17,10 +17,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -46,8 +42,9 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
-##
+# THRESH Specific
 .idea
 cmake-build-debug
 build
 shader_cache
+*.spv

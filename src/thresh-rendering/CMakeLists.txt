@@ -19,3 +19,7 @@ target_compile_definitions(Flux PUBLIC
 target_include_directories(Flux PUBLIC
         ${CMAKE_SOURCE_DIR}/src/thresh-rendering
 )
+
+add_slang_shader_target(triangle SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/triangle.slang)
+add_dependencies(Flux triangle)
+
