@@ -6,12 +6,20 @@
 
 #include <iostream>
 #include <set>
+#include "glm/glm.hpp"
 
+#include "flux/graphics_types.hpp"
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
 
 namespace flux {
+    const std::vector<Vertex> vertices = {
+        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    };
+
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
         vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
         vk::DebugUtilsMessageTypeFlagsEXT             messageType,
@@ -33,6 +41,7 @@ namespace flux {
         create_image_views();
         create_graphics_pipelines();
         create_command_pool();
+        create_vertex_buffer();
         create_command_buffers();
         create_sync_objects();
     }
@@ -267,7 +276,14 @@ namespace flux {
             .pName  = fragment_main.c_str()
         };
         vk::PipelineShaderStageCreateInfo        shader_stages[] = {vert_stage_info, frag_stage_info};
-        vk::PipelineVertexInputStateCreateInfo   vertex_input_info{};
+        auto binding_description = Vertex::get_binding_description();
+        auto attribute_descriptions = Vertex::get_attribute_descriptions();
+        vk::PipelineVertexInputStateCreateInfo   vertex_input_info{
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions    = &binding_description,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size()),
+            .pVertexAttributeDescriptions   = attribute_descriptions.data()
+        };
         vk::PipelineInputAssemblyStateCreateInfo input_assembly_info{
             .topology = vk::PrimitiveTopology::eTriangleList,
         };
@@ -361,6 +377,26 @@ namespace flux {
         m_command_buffers = vk::raii::CommandBuffers(m_device, alloc_info);
     }
 
+    auto VulkanContext::create_vertex_buffer() -> void {
+
+        vk::DeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
+
+        auto [staging_buffer, staging_buffer_memory] =
+            create_buffer(buffer_size,
+                vk::BufferUsageFlagBits::eTransferSrc,
+                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+                );
+
+        void* data_staging = staging_buffer_memory.mapMemory(0, buffer_size);
+        memcpy(data_staging, vertices.data(), buffer_size);
+        staging_buffer_memory.unmapMemory();
+
+        std::tie(m_vertex_buffer, m_vertex_buffer_memory) =
+             create_buffer(buffer_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        copy_buffer(staging_buffer, m_vertex_buffer, buffer_size);
+    }
+
     auto VulkanContext::create_sync_objects() -> void {
 
         assert(m_present_complete_semaphores.empty() && m_render_complete_semaphores.empty() && m_inflight_fences.empty());
@@ -416,7 +452,8 @@ namespace flux {
                 , static_cast<float>(m_swapchain_extent.height), 0, 1});
         command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_swapchain_extent});
 
-        command_buffer.draw(3, 1, 0, 0);
+        command_buffer.bindVertexBuffers(0, {*m_vertex_buffer}, {0});
+        command_buffer.draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
         command_buffer.endRendering();
 
@@ -570,6 +607,67 @@ namespace flux {
         };
 
         return {m_device, shader_module_info};
+    }
+
+    auto VulkanContext::find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t {
+
+        vk::PhysicalDeviceMemoryProperties memory_properties = m_physicalDevice.getMemoryProperties();
+        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
+            if ((type_filter & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+                return i;
+            }
+        }
+        SUB_FATAL("Failed to find suitable memory type!");
+        std::unreachable();
+    }
+
+    auto VulkanContext::create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
+        vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> {
+
+        const vk::BufferCreateInfo buffer_info{
+            .size = size,
+            .usage = usage,
+            .sharingMode = vk::SharingMode::eExclusive
+          };
+
+        auto buffer = vk::raii::Buffer(m_device, buffer_info);
+
+        auto mem_reqs = buffer.getMemoryRequirements();
+
+        vk::MemoryAllocateInfo alloc_info{
+            .allocationSize = mem_reqs.size,
+            .memoryTypeIndex = find_memory_type(mem_reqs.memoryTypeBits, properties)
+        };
+
+        auto buffer_memory = vk::raii::DeviceMemory(m_device, alloc_info);
+
+        buffer.bindMemory(*buffer_memory, 0);
+
+        return {std::move(buffer), std::move(buffer_memory)};
+    }
+
+    auto VulkanContext::copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer,
+        vk::DeviceSize size) -> void {
+
+        vk::CommandBufferAllocateInfo alloc_info{
+            .commandPool = m_command_pool,
+            .level       = vk::CommandBufferLevel::ePrimary,
+            .commandBufferCount = 1
+        };
+        vk::raii::CommandBuffer command_copy_buffer = std::move(m_device.allocateCommandBuffers(alloc_info).front());
+
+        command_copy_buffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+
+        command_copy_buffer.copyBuffer(*src_buffer, *dst_buffer, vk::BufferCopy(0, 0, size));
+
+        command_copy_buffer.end();
+
+        m_graphics_queue.submit(vk::SubmitInfo{
+        .commandBufferCount = 1,
+        .pCommandBuffers    = &*command_copy_buffer},
+        nullptr);
+
+        m_graphics_queue.waitIdle();
     }
 
     auto VulkanContext::cleanup_swapchain() -> void {

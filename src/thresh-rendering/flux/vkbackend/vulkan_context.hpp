@@ -47,6 +47,8 @@ namespace flux {
 
             auto create_command_pool() -> void;
 
+            auto create_vertex_buffer() -> void;
+
             auto create_command_buffers() -> void;
 
             auto create_sync_objects() -> void;
@@ -83,6 +85,12 @@ namespace flux {
                                          vk::PipelineStageFlags2 src_stage_mask,
                                          vk::PipelineStageFlags2 dst_stage_mask) -> void;
 
+            auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
+
+            auto create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>;
+
+            auto copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer, vk::DeviceSize size) -> void;
+
             std::vector<const char*> m_required_device_extensions = {
                 vk::KHRSwapchainExtensionName
             };
@@ -113,6 +121,8 @@ namespace flux {
 
             // Image View stuff
             std::vector<vk::raii::ImageView> m_swapchain_image_views;
+            vk::raii::Buffer                 m_vertex_buffer = nullptr;
+            vk::raii::DeviceMemory           m_vertex_buffer_memory = nullptr;
 
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
