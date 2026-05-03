@@ -32,7 +32,7 @@ CPMAddPackage("gh:KhronosGroup/glslang#16.2.0"
 # SDL3 - Windowing & Controller Support
 # SDL3 must be shared — static SDL3 embedded in a DLL violates Windows DLL init rules
 CPMAddPackage(
-        "gh:libsdl-org/SDL#release-3.4.4"
+        "gh:libsdl-org/SDL#release-3.4.8"
         NAME sdl
         OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF" "SDL_WERROR OFF"
         SYSTEM
