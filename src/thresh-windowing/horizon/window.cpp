@@ -52,4 +52,8 @@ namespace thresh {
 
         SDL_GetWindowSizeInPixels(m_window, &width, &height);
     }
+
+    auto Window::is_minimised() const -> bool {
+        return SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED;
+    }
 } // thresh

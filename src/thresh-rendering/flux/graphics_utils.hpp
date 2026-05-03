@@ -21,9 +21,16 @@ namespace flux {
 
             auto shutdown() -> void;
 
+            auto recreate_swapchain() -> void;
+
+            auto set_framebuffer_resized(bool resized) -> void;
+
         private:
             std::unique_ptr<VulkanContext> m_context;
 
+            bool                   m_framebuffer_resized = false;
+            // Non Owning
+            const thresh::Window* m_window = nullptr;
     };
 
 } // namespace flux

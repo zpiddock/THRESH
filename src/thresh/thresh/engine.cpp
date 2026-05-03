@@ -73,10 +73,7 @@ namespace thresh {
                         break;
                     }
                     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
-                        int32_t w, h;
-                        SDL_GetWindowSizeInPixels(m_window->getWindow(), &w, &h);
-
-                        // flux::on_resize(static_cast<uint32_t>(w), static_cast<uint32_t>(h));
+                        m_graphics_utils->set_framebuffer_resized(true);
                         break;
                     }
                     default:
@@ -95,11 +92,11 @@ namespace thresh {
             // Rendering
             int fb_width, fb_height;
             SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
-            if (fb_width == 0 || fb_height == 0) {
-                // flux::swap_buffers(m_window.get());
+            if (fb_width == 0 || fb_height == 0 || m_window->is_minimised()) {
+                SDL_WaitEvent(nullptr);
+                SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
                 continue;
             }
-
             m_graphics_utils->draw_frame();
 
             // flux::clear_colour(1.f, 0.f, 0.f, 1.0f);

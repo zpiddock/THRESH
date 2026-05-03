@@ -47,7 +47,7 @@ namespace flux {
 
             auto create_command_pool() -> void;
 
-            auto create_command_buffer() -> void;
+            auto create_command_buffers() -> void;
 
             auto create_sync_objects() -> void;
 
@@ -66,6 +66,8 @@ namespace flux {
 
             auto choose_swapchain_present_mode(
                 const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR;
+
+            auto cleanup_swapchain() -> void;
 
             // Shader Functions - TODO: Create Shader Wrapper Class
             auto load_shader(const std::string& shader_path) -> vk::raii::ShaderModule;
@@ -96,11 +98,12 @@ namespace flux {
             vk::raii::PipelineLayout         m_pipeline_layout            = nullptr;
             vk::raii::Pipeline               m_graphics_pipeline          = nullptr;
             vk::raii::CommandPool            m_command_pool               = nullptr;
-            vk::raii::CommandBuffer          m_command_buffer             = nullptr;
+            std::vector<vk::raii::CommandBuffer>          m_command_buffers;
 
-            vk::raii::Semaphore              m_present_complete_semaphore = nullptr;
-            vk::raii::Semaphore              m_render_complete_semaphore  = nullptr;
-            vk::raii::Fence                  m_draw_fence                 = nullptr;
+            std::vector<vk::raii::Semaphore>              m_present_complete_semaphores;
+            std::vector<vk::raii::Semaphore>              m_render_complete_semaphores;
+            std::vector<vk::raii::Fence>                  m_inflight_fences;
+            uint32_t                                      m_frame_index = 0;
 
             // Swapchain Stuff
             vk::raii::SwapchainKHR m_swapchain = nullptr;
@@ -111,7 +114,8 @@ namespace flux {
             // Image View stuff
             std::vector<vk::raii::ImageView> m_swapchain_image_views;
 
-            // const strings
+            // const bits
+            constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
             const std::string vertex_main   = "vertexMain";
             const std::string fragment_main = "fragmentMain";
 

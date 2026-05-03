@@ -34,6 +34,8 @@ class Window {
 
         auto get_frame_buffer_size(int &width, int &height) const -> void;
 
+        [[nodiscard]] auto is_minimised() const -> bool;
+
     protected:
         WindowContext m_context = {};
         SDL_Window* m_window = nullptr;

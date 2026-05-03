@@ -10,7 +10,6 @@
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
-#include "vulkan/vulkan.h"
 
 namespace flux {
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
@@ -34,7 +33,7 @@ namespace flux {
         create_image_views();
         create_graphics_pipelines();
         create_command_pool();
-        create_command_buffer();
+        create_command_buffers();
         create_sync_objects();
     }
 
@@ -352,27 +351,36 @@ namespace flux {
         m_command_pool = vk::raii::CommandPool(m_device, pool_info);
     }
 
-    auto VulkanContext::create_command_buffer() -> void {
+    auto VulkanContext::create_command_buffers() -> void {
         vk::CommandBufferAllocateInfo alloc_info{
             .commandPool        = m_command_pool,
             .level              = vk::CommandBufferLevel::ePrimary,
-            .commandBufferCount = 1
+            .commandBufferCount = MAX_FRAMES_IN_FLIGHT
         };
 
-        m_command_buffer = std::move(m_device.allocateCommandBuffers(alloc_info)[0]);
+        m_command_buffers = vk::raii::CommandBuffers(m_device, alloc_info);
     }
 
     auto VulkanContext::create_sync_objects() -> void {
 
-        m_present_complete_semaphore = vk::raii::Semaphore(m_device, vk::SemaphoreCreateInfo{});
-        m_render_complete_semaphore  = vk::raii::Semaphore(m_device, vk::SemaphoreCreateInfo{});
-        m_draw_fence                 = vk::raii::Fence(m_device,
-                            {.flags = vk::FenceCreateFlagBits::eSignaled});
+        assert(m_present_complete_semaphores.empty() && m_render_complete_semaphores.empty() && m_inflight_fences.empty());
+
+        for (size_t i = 0; i < m_swapchain_images.size(); i++) {
+            m_render_complete_semaphores.emplace_back(m_device, vk::SemaphoreCreateInfo{});
+        }
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            m_present_complete_semaphores.emplace_back(m_device, vk::SemaphoreCreateInfo{});
+            m_inflight_fences.emplace_back(m_device, vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});
+        }
     }
 
     auto VulkanContext::record_command_buffer(const uint32_t image_index) -> void {
         const vk::CommandBufferBeginInfo begin_info{};
-        m_command_buffer.begin(begin_info);
+
+        auto& command_buffer = m_command_buffers[m_frame_index];
+
+        command_buffer.begin(begin_info);
 
         transition_image_layout(
             image_index,
@@ -400,17 +408,17 @@ namespace flux {
             .pColorAttachments = &attachment_info
         };
 
-        m_command_buffer.beginRendering(rendering_info);
+        command_buffer.beginRendering(rendering_info);
 
-        m_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_graphics_pipeline);
-        m_command_buffer.setViewport(0,
+        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_graphics_pipeline);
+        command_buffer.setViewport(0,
             vk::Viewport{0, 0, static_cast<float>(m_swapchain_extent.width)
                 , static_cast<float>(m_swapchain_extent.height), 0, 1});
-        m_command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_swapchain_extent});
+        command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_swapchain_extent});
 
-        m_command_buffer.draw(3, 1, 0, 0);
+        command_buffer.draw(3, 1, 0, 0);
 
-        m_command_buffer.endRendering();
+        command_buffer.endRendering();
 
         transition_image_layout(
             image_index,
@@ -421,7 +429,7 @@ namespace flux {
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,     // srcStage
             vk::PipelineStageFlagBits2::eBottomOfPipe               // dstStage
         );
-        m_command_buffer.end();
+        command_buffer.end();
     }
 
     auto VulkanContext::transition_image_layout(uint32_t                imageIndex, vk::ImageLayout  old_layout,
@@ -452,7 +460,7 @@ namespace flux {
             .imageMemoryBarrierCount = 1,
             .pImageMemoryBarriers    = &barrier
         };
-        m_command_buffer.pipelineBarrier2(dependency_info);
+        m_command_buffers[m_frame_index].pipelineBarrier2(dependency_info);
     }
 
     auto VulkanContext::choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities,
@@ -562,5 +570,11 @@ namespace flux {
         };
 
         return {m_device, shader_module_info};
+    }
+
+    auto VulkanContext::cleanup_swapchain() -> void {
+
+        m_swapchain_image_views.clear();
+        m_swapchain = nullptr;
     }
 } // flux
