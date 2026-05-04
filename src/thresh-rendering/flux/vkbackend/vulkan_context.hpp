@@ -49,6 +49,14 @@ namespace flux {
 
             auto create_command_pool() -> void;
 
+            auto create_depth_resources() -> void;
+
+            auto create_texture_image() -> void; // Move to assets loading system
+
+            auto create_texture_image_view() -> void;
+
+            auto create_texture_sampler() -> void;
+
             auto create_vertex_buffer() -> void;
 
             auto create_index_buffer() -> void;
@@ -87,19 +95,37 @@ namespace flux {
             // Rendering functions
             auto record_command_buffer(uint32_t image_index) -> void;
 
-            auto transition_image_layout(uint32_t                imageIndex,
+            auto transition_image_layout(vk::Image         image,
                                          vk::ImageLayout         old_layout,
                                          vk::ImageLayout         new_layout,
                                          vk::AccessFlags2        src_access_mask,
                                          vk::AccessFlags2        dst_access_mask,
                                          vk::PipelineStageFlags2 src_stage_mask,
-                                         vk::PipelineStageFlags2 dst_stage_mask) -> void;
+                                         vk::PipelineStageFlags2 dst_stage_mask, vk::ImageAspectFlags aspect_flags) -> void;
+
+            auto transition_image_layout(const vk::raii::Image& image, vk::ImageLayout old_layout, vk::ImageLayout new_layout, vk::ImageAspectFlags aspect_flags) -> void;
 
             auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
 
             auto create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>;
 
+            auto begin_single_time_commands() -> vk::raii::CommandBuffer;
+
+            auto end_single_time_commands(const vk::raii::CommandBuffer& command_buffer) -> void;
+
             auto copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer, vk::DeviceSize size) -> void;
+
+            auto copy_buffer_to_image(const vk::raii::Buffer& buffer, vk::raii::Image& image, uint32_t width, uint32_t height) -> void;
+
+            auto create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode, vk::ImageUsageFlags usage_flags, vk::MemoryPropertyFlags memory_props) -> std::pair<vk::raii::Image, vk::raii::DeviceMemory>;
+
+            auto create_image_view(const vk::Image& image, vk::Format format, vk::ImageAspectFlags flags) -> vk::raii::ImageView;
+
+            auto find_supported_format(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features) -> vk::Format;
+
+            auto find_depth_format() -> vk::Format;
+
+            auto has_stencil_component(vk::Format format) -> bool;
 
             std::vector<const char*> m_required_device_extensions = {
                 vk::KHRSwapchainExtensionName
@@ -133,7 +159,7 @@ namespace flux {
             vk::Extent2D           m_swapchain_extent;
 
             // Image View stuff
-            std::vector<vk::raii::ImageView>     m_swapchain_image_views;
+            std::vector<vk::raii::ImageView>     m_swapchain_image_views = {};
             vk::raii::Buffer                     m_vertex_buffer           = nullptr;
             vk::raii::DeviceMemory               m_vertex_buffer_memory    = nullptr;
             vk::raii::Buffer                     m_index_buffer            = nullptr;
@@ -141,6 +167,16 @@ namespace flux {
             std::vector<vk::raii::Buffer>        m_uniform_buffers;
             std::vector<vk::raii::DeviceMemory>  m_uniform_buffer_memory;
             std::vector<void*>                   m_uniform_buffers_mapped;
+
+            vk::raii::Image m_image = nullptr;
+            vk::raii::DeviceMemory m_image_memory = nullptr;
+            vk::raii::ImageView m_image_view = nullptr;
+
+            vk::raii::Sampler m_texture_sampler = nullptr;
+
+            vk::raii::Image m_depth_image = nullptr;
+            vk::raii::DeviceMemory m_depth_image_memory = nullptr;
+            vk::raii::ImageView m_depth_image_view = nullptr;
 
             vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
             std::vector<vk::raii::DescriptorSet> m_descriptor_sets;

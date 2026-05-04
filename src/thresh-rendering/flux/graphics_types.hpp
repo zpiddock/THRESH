@@ -17,22 +17,23 @@ namespace flux {
 
     struct Vertex {
 
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 colour;
+        glm::vec2 tex_coord;
 
         static auto get_binding_description() -> vk::VertexInputBindingDescription {
 
             return {.binding = 0, .stride = sizeof(Vertex), .inputRate = vk::VertexInputRate::eVertex};
         }
 
-        static auto get_attribute_descriptions() -> std::array<vk::VertexInputAttributeDescription, 2> {
+        static auto get_attribute_descriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {
 
             return {
                     {
                         {
                             .location = 0,
                             .binding = 0,
-                            .format = vk::Format::eR32G32Sfloat, //slang float2, glsl vec3
+                            .format = vk::Format::eR32G32B32Sfloat, //slang float3, glsl vec3
                             .offset = offsetof(Vertex, position)
                         },
                         {
@@ -40,6 +41,12 @@ namespace flux {
                             .binding = 0,
                             .format = vk::Format::eR32G32B32Sfloat, // slang float3, glsl vec3
                             .offset = offsetof(Vertex, colour)
+                        },
+                        {
+                            .location = 2,
+                            .binding = 0,
+                            .format = vk::Format::eR32G32Sfloat, // slang float2, glsl vec3
+                            .offset = offsetof(Vertex, tex_coord)
                         }
                     }
             };

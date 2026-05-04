@@ -2,10 +2,9 @@
 // Created by Admin on 06/04/2026.
 //
 
-#include <expected>
-#include <filesystem>
+#include <SDL3/SDL.h>
 
-#include "SDL3/SDL.h"
+#include "thresh.hpp"
 
 #include "engine.hpp"
 #include "flux/graphics_utils.hpp"
@@ -83,7 +82,7 @@ namespace thresh {
 
             // Time calculations
             auto current_time = std::chrono::high_resolution_clock::now();
-            auto delta_time   = std::chrono::duration<float>(current_time - m_last_frame_time).count();
+            const auto delta_time   = std::chrono::duration<float>(current_time - m_last_frame_time).count();
             m_last_frame_time = current_time;
 
             // Application update

@@ -112,6 +112,7 @@ namespace flux {
 
         m_context->create_swapchain(*m_window);
         m_context->create_image_views();
+        m_context->create_depth_resources();
     }
 
     auto GraphicsUtils::shutdown() -> void {

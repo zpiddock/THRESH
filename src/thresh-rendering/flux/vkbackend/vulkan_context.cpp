@@ -6,6 +6,10 @@
 
 #include <iostream>
 #include <set>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 
 #include "flux/graphics_types.hpp"
@@ -15,13 +19,21 @@
 
 namespace flux {
     const std::vector<Vertex> vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+        {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+        {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+        {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+        {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
     };
 
-    const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+    const std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0,
+        4, 5, 6, 6, 7, 4
+    };
 
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
         vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
@@ -45,6 +57,10 @@ namespace flux {
         create_descriptor_set_layouts();
         create_graphics_pipelines();
         create_command_pool();
+        create_depth_resources();
+        create_texture_image();
+        create_texture_image_view();
+        create_texture_sampler();
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
@@ -182,7 +198,11 @@ namespace flux {
                     vk::PhysicalDeviceVulkan13Features,
                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
                 features{
-                    {},
+                    {
+                        .features = {
+                            .samplerAnisotropy = true,
+                        }
+                    },
                     {
                         .shaderDrawParameters = true,
                     },
@@ -245,36 +265,35 @@ namespace flux {
     }
 
     auto VulkanContext::create_image_views() -> void {
-        assert(m_swapchain_image_views.empty());
 
-        vk::ImageViewCreateInfo view_info{
-            .viewType   = vk::ImageViewType::e2D,
-            .format     = m_swapchain_surface_format.format,
-            .components = {
-                vk::ComponentSwizzle::eIdentity,
-                vk::ComponentSwizzle::eIdentity,
-                vk::ComponentSwizzle::eIdentity,
-                vk::ComponentSwizzle::eIdentity
-            },
-            .subresourceRange = {
-                vk::ImageAspectFlagBits::eColor,
-                0, 1,
-                0, 1
-            }
-        };
+        m_swapchain_image_views.reserve(m_swapchain_images.size());
 
         for (const auto& image : m_swapchain_images) {
-            view_info.image = image;
-            m_swapchain_image_views.emplace_back(m_device, view_info);
+            m_swapchain_image_views.emplace_back(create_image_view(image, m_swapchain_surface_format.format, vk::ImageAspectFlagBits::eColor));
         }
     }
 
     auto VulkanContext::create_descriptor_set_layouts() -> void {
+        std::array bindings = {
+            vk::DescriptorSetLayoutBinding{
+                .binding           = 0,
+                .descriptorType    = vk::DescriptorType::eUniformBuffer,
+                .descriptorCount    = 1,
+                .stageFlags         = vk::ShaderStageFlagBits::eVertex,
+                .pImmutableSamplers = nullptr
+            },
+            vk::DescriptorSetLayoutBinding{
+                .binding           = 1,
+                .descriptorType    = vk::DescriptorType::eCombinedImageSampler,
+                .descriptorCount    = 1,
+                .stageFlags         = vk::ShaderStageFlagBits::eFragment,
+                .pImmutableSamplers = nullptr
+            }
+        };
+        vk::DescriptorSetLayoutCreateInfo layout_info {
 
-        vk::DescriptorSetLayoutBinding layout_binding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
-        vk::DescriptorSetLayoutCreateInfo layout_info{
-            .bindingCount = 1,
-            .pBindings    = &layout_binding
+            .bindingCount = static_cast<uint32_t>(bindings.size()),
+            .pBindings    = bindings.data(),
         };
         m_descriptor_set_layout = vk::raii::DescriptorSetLayout(m_device, layout_info);
     }
@@ -322,7 +341,13 @@ namespace flux {
             .sampleShadingEnable  = vk::False,
         };
 
-        // Depth Stencil is nullptr for now
+        vk::PipelineDepthStencilStateCreateInfo depth_stencil_info {
+            .depthTestEnable          = vk::True,
+            .depthWriteEnable         = vk::True,
+            .depthCompareOp           = vk::CompareOp::eLess,
+            .depthBoundsTestEnable    = vk::False,
+            .stencilTestEnable        = vk::False,
+        };
 
         vk::PipelineColorBlendAttachmentState blend_attachment{
             .blendEnable    = vk::False,
@@ -361,7 +386,7 @@ namespace flux {
                 .pViewportState      = &viewportState,
                 .pRasterizationState = &rasterization_info,
                 .pMultisampleState   = &multisampling_info,
-                .pDepthStencilState  = nullptr,
+                .pDepthStencilState  = &depth_stencil_info,
                 .pColorBlendState    = &color_blending_info,
                 .pDynamicState       = &dynamic_state_info,
                 .layout              = m_pipeline_layout,
@@ -369,7 +394,8 @@ namespace flux {
             },
             {
                 .colorAttachmentCount    = 1,
-                .pColorAttachmentFormats = &m_swapchain_surface_format.format
+                .pColorAttachmentFormats = &m_swapchain_surface_format.format,
+                .depthAttachmentFormat = find_depth_format()
             }
         };
 
@@ -386,6 +412,16 @@ namespace flux {
         m_command_pool = vk::raii::CommandPool(m_device, pool_info);
     }
 
+    auto VulkanContext::create_depth_resources() -> void {
+
+        vk::Format format = find_depth_format();
+        auto [depth_image, depth_image_memory] = create_image(m_swapchain_extent.width, m_swapchain_extent.height, format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        m_depth_image = std::move(depth_image);
+        m_depth_image_memory = std::move(depth_image_memory);
+        m_depth_image_view = create_image_view(m_depth_image, format, vk::ImageAspectFlagBits::eDepth);
+    }
+
     auto VulkanContext::create_command_buffers() -> void {
         vk::CommandBufferAllocateInfo alloc_info{
             .commandPool        = m_command_pool,
@@ -394,6 +430,70 @@ namespace flux {
         };
 
         m_command_buffers = vk::raii::CommandBuffers(m_device, alloc_info);
+    }
+
+    auto VulkanContext::create_texture_image() -> void {
+
+        int width, height, nrChannels;
+
+        auto texture_data = substratum::VFS::read_file("textures/brick.png");
+
+        stbi_uc* data = stbi_load_from_memory(texture_data.data(), texture_data.size(), &width, &height, &nrChannels, STBI_rgb_alpha);
+
+        vk::DeviceSize image_size = width * height * STBI_rgb_alpha;
+
+        if (!data || width <= 0 || height <= 0) {
+            SUB_FATAL("Failed to load texture image!");
+        }
+
+        SUB_TRACE("Texture Data: Size:{}, Width:{}, Height:{}, Channels:{}", texture_data.size(), width, height, nrChannels);
+
+        auto [buffer, buffer_memory] = create_buffer(
+            image_size,
+            vk::BufferUsageFlagBits::eTransferSrc,
+            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+            );
+
+        void* data_staging = buffer_memory.mapMemory(0, image_size);
+        memcpy(data_staging, data, image_size);
+        buffer_memory.unmapMemory();
+
+        // Free STB memory
+        stbi_image_free(data);
+
+        auto [texture, texture_memory] = create_image(width, height, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        transition_image_layout(texture, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
+        copy_buffer_to_image(buffer, texture, width, height);
+        transition_image_layout(texture, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);
+
+        m_image = std::move(texture);
+        m_image_memory = std::move(texture_memory);
+    }
+
+    auto VulkanContext::create_texture_image_view() -> void {
+
+        m_image_view = create_image_view(m_image, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
+    }
+
+    auto VulkanContext::create_texture_sampler() -> void {
+
+        vk::PhysicalDeviceProperties props = m_physicalDevice.getProperties();
+        vk::SamplerCreateInfo sampler_info{
+            .magFilter = vk::Filter::eLinear,
+            .minFilter = vk::Filter::eLinear,
+            .mipmapMode = vk::SamplerMipmapMode::eLinear,
+            .addressModeU = vk::SamplerAddressMode::eMirroredRepeat,
+            .addressModeV = vk::SamplerAddressMode::eMirroredRepeat,
+            .addressModeW = vk::SamplerAddressMode::eMirroredRepeat,
+            .anisotropyEnable = vk::True,
+            .maxAnisotropy = props.limits.maxSamplerAnisotropy,
+            .compareEnable = vk::False,
+            .compareOp = vk::CompareOp::eAlways,
+
+        };
+
+        m_texture_sampler = vk::raii::Sampler(m_device, sampler_info);
     }
 
     auto VulkanContext::create_vertex_buffer() -> void {
@@ -456,12 +556,17 @@ namespace flux {
 
     auto VulkanContext::create_descriptor_pool() -> void {
 
-        vk::DescriptorPoolSize pool_size{vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT};
+        std::array pool_size {
+
+            vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT },
+            vk::DescriptorPoolSize { vk::DescriptorType::eCombinedImageSampler, MAX_FRAMES_IN_FLIGHT },
+        };
+
         vk::DescriptorPoolCreateInfo pool_create_info {
             .flags          = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets        = MAX_FRAMES_IN_FLIGHT,
-            .poolSizeCount  = 1,
-            .pPoolSizes     = &pool_size
+            .poolSizeCount  = pool_size.size(),
+            .pPoolSizes     = pool_size.data()
         };
 
         m_descriptor_pool = vk::raii::DescriptorPool(m_device, pool_create_info);
@@ -484,13 +589,29 @@ namespace flux {
                 .offset = 0,
                 .range  = sizeof(UniformBufferObject)
             };
-            vk::WriteDescriptorSet   descriptor_writes{
+            vk::DescriptorImageInfo image_info {
+                .sampler = m_texture_sampler,
+                .imageView = m_image_view,
+                .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+            };
+            std::array descriptor_writes {
+
+                vk::WriteDescriptorSet {
+                    .dstSet = m_descriptor_sets[i],
+                    .dstBinding = 0,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eUniformBuffer,
+                    .pBufferInfo = &buffer_info
+                },
+                vk::WriteDescriptorSet {
                 .dstSet = m_descriptor_sets[i],
-                .dstBinding = 0,
+                .dstBinding = 1,
                 .dstArrayElement = 0,
                 .descriptorCount = 1,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
-                .pBufferInfo = &buffer_info
+                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+                .pImageInfo = &image_info
+                }
             };
             m_device.updateDescriptorSets(descriptor_writes, {});
         }
@@ -518,16 +639,29 @@ namespace flux {
         command_buffer.begin(begin_info);
 
         transition_image_layout(
-            image_index,
+            m_swapchain_images[image_index],
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
             {},
             vk::AccessFlagBits2::eColorAttachmentWrite,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::ImageAspectFlagBits::eColor
             );
 
+        transition_image_layout(
+            m_depth_image,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::ImageAspectFlagBits::eDepth
+        );
+
         constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.f, 0.f, 0.f, 1.f);
+        constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
         vk::RenderingAttachmentInfo attachment_info {
             .imageView = m_swapchain_image_views[image_index],
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
@@ -536,11 +670,20 @@ namespace flux {
             .clearValue = clear_color
         };
 
+        vk::RenderingAttachmentInfo depth_attachment_info {
+            .imageView = m_depth_image_view,
+            .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+            .loadOp = vk::AttachmentLoadOp::eClear,
+            .storeOp = vk::AttachmentStoreOp::eDontCare,
+            .clearValue = depth_clear_value
+        };
+
         vk::RenderingInfo rendering_info {
             .renderArea = {.offset = {0, 0}, .extent = m_swapchain_extent},
             .layerCount = 1,
             .colorAttachmentCount = 1,
-            .pColorAttachments = &attachment_info
+            .pColorAttachments = &attachment_info,
+            .pDepthAttachment = &depth_attachment_info
         };
 
         command_buffer.beginRendering(rendering_info);
@@ -559,22 +702,23 @@ namespace flux {
         command_buffer.endRendering();
 
         transition_image_layout(
-            image_index,
+            m_swapchain_images[image_index],
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::ePresentSrcKHR,
             vk::AccessFlagBits2::eColorAttachmentWrite,             // srcAccessMask
             {},                                                     // dstAccessMask
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,     // srcStage
-            vk::PipelineStageFlagBits2::eBottomOfPipe               // dstStage
+            vk::PipelineStageFlagBits2::eBottomOfPipe,               // dstStage
+            vk::ImageAspectFlagBits::eColor
         );
         command_buffer.end();
     }
 
-    auto VulkanContext::transition_image_layout(uint32_t                imageIndex, vk::ImageLayout  old_layout,
+    auto VulkanContext::transition_image_layout(vk::Image         image, vk::ImageLayout  old_layout,
                                                 vk::ImageLayout         new_layout, vk::AccessFlags2 src_access_mask,
                                                 vk::AccessFlags2        dst_access_mask,
                                                 vk::PipelineStageFlags2 src_stage_mask,
-                                                vk::PipelineStageFlags2 dst_stage_mask) -> void {
+                                                vk::PipelineStageFlags2 dst_stage_mask, vk::ImageAspectFlags aspect_flags) -> void {
         vk::ImageMemoryBarrier2 barrier = {
             .srcStageMask        = src_stage_mask,
             .srcAccessMask       = src_access_mask,
@@ -584,9 +728,9 @@ namespace flux {
             .newLayout           = new_layout,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = m_swapchain_images[imageIndex],
+            .image               = image,
             .subresourceRange    = {
-                .aspectMask     = vk::ImageAspectFlagBits::eColor,
+                .aspectMask     = aspect_flags,
                 .baseMipLevel   = 0,
                 .levelCount     = 1,
                 .baseArrayLayer = 0,
@@ -747,28 +891,184 @@ namespace flux {
         return {std::move(buffer), std::move(buffer_memory)};
     }
 
-    auto VulkanContext::copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer,
-        vk::DeviceSize size) -> void {
+    auto VulkanContext::begin_single_time_commands() -> vk::raii::CommandBuffer {
 
         vk::CommandBufferAllocateInfo alloc_info{
             .commandPool = m_command_pool,
             .level       = vk::CommandBufferLevel::ePrimary,
             .commandBufferCount = 1
         };
-        vk::raii::CommandBuffer command_copy_buffer = std::move(m_device.allocateCommandBuffers(alloc_info).front());
+        vk::raii::CommandBuffer command_buffer = std::move(m_device.allocateCommandBuffers(alloc_info).front());
 
-        command_copy_buffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+        command_buffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
 
-        command_copy_buffer.copyBuffer(*src_buffer, *dst_buffer, vk::BufferCopy(0, 0, size));
+        return command_buffer;
+    }
 
-        command_copy_buffer.end();
+    auto VulkanContext::end_single_time_commands(const vk::raii::CommandBuffer& command_buffer) -> void {
+
+        command_buffer.end();
 
         m_graphics_queue.submit(vk::SubmitInfo{
         .commandBufferCount = 1,
-        .pCommandBuffers    = &*command_copy_buffer},
+        .pCommandBuffers    = &*command_buffer},
         nullptr);
 
         m_graphics_queue.waitIdle();
+    }
+
+    auto VulkanContext::copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer,
+                                    vk::DeviceSize size) -> void {
+
+        const auto command_buffer = begin_single_time_commands();
+
+        command_buffer.copyBuffer(*src_buffer, *dst_buffer, vk::BufferCopy(0, 0, size));
+
+        end_single_time_commands(command_buffer);
+    }
+
+    auto VulkanContext::copy_buffer_to_image(const vk::raii::Buffer& buffer, vk::raii::Image& image, uint32_t width,
+        uint32_t height) -> void {
+
+        const auto command_buffer = begin_single_time_commands();
+
+        vk::BufferImageCopy region {
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource = vk::ImageSubresourceLayers{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            },
+            .imageOffset = {0, 0, 0},
+            .imageExtent = {width, height, 1}
+        };
+        command_buffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, {region});
+
+        end_single_time_commands(command_buffer);
+    }
+
+    auto VulkanContext::create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode,
+                                     vk::ImageUsageFlags usage_flags,
+                                     vk::MemoryPropertyFlags memory_props) -> std::pair<vk::raii::Image, vk::raii::DeviceMemory> {
+
+        vk::raii::Image texture_image_temp({});
+        vk::raii::DeviceMemory texture_image_memory_temp({});
+
+        vk::ImageCreateInfo image_info{
+            .imageType = vk::ImageType::e2D,
+            .format = format,
+            .extent = {width, height, 1},
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = vk::SampleCountFlagBits::e1,
+            .tiling = tiling_mode,
+            .usage = usage_flags,
+            .sharingMode = vk::SharingMode::eExclusive,
+        };
+        texture_image_temp = vk::raii::Image(m_device, image_info);
+        texture_image_memory_temp = vk::raii::DeviceMemory(m_device, vk::MemoryAllocateInfo{
+            .allocationSize = texture_image_temp.getMemoryRequirements().size,
+            .memoryTypeIndex = find_memory_type(texture_image_temp.getMemoryRequirements().memoryTypeBits, memory_props)
+        });
+        texture_image_temp.bindMemory(*texture_image_memory_temp, 0);
+
+        return {std::move(texture_image_temp), std::move(texture_image_memory_temp)};
+    }
+
+    auto VulkanContext::transition_image_layout(const vk::raii::Image& image, const vk::ImageLayout old_layout,
+        const vk::ImageLayout new_layout, vk::ImageAspectFlags aspect_flags) -> void {
+
+        const auto command_buffer = begin_single_time_commands();
+
+        vk::ImageMemoryBarrier barrier{
+            .oldLayout = old_layout,
+            .newLayout = new_layout,
+            .image = image,
+            .subresourceRange = {
+                .aspectMask = aspect_flags,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        vk::PipelineStageFlags source_stage;
+        vk::PipelineStageFlags destination_stage;
+
+        if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal)
+        {
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+            source_stage      = vk::PipelineStageFlagBits::eTopOfPipe;
+            destination_stage = vk::PipelineStageFlagBits::eTransfer;
+        }
+        else if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal)
+        {
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+            source_stage      = vk::PipelineStageFlagBits::eTransfer;
+            destination_stage = vk::PipelineStageFlagBits::eFragmentShader;
+        }
+        else
+        {
+            SUB_FATAL("unsupported layout transition!");
+        }
+
+        command_buffer.pipelineBarrier(source_stage, destination_stage, {}, {}, nullptr, barrier);
+
+        end_single_time_commands(command_buffer);
+    }
+
+    auto VulkanContext::create_image_view(const vk::Image& image, vk::Format format, vk::ImageAspectFlags flags) -> vk::raii::ImageView {
+
+        vk::ImageViewCreateInfo view_info{
+            .image = image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = format,
+            .subresourceRange = {
+            .aspectMask = flags,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        return vk::raii::ImageView(m_device, view_info);
+    }
+
+    auto VulkanContext::find_supported_format(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling,
+        vk::FormatFeatureFlags features) -> vk::Format {
+
+        for (const auto& candidate : candidates) {
+            auto format_properties = m_physicalDevice.getFormatProperties(candidate);
+
+            if (tiling == vk::ImageTiling::eLinear && (format_properties.linearTilingFeatures & features) == features) {
+                return candidate;
+            }
+            if (tiling == vk::ImageTiling::eOptimal && (format_properties.optimalTilingFeatures & features) == features) {
+                return candidate;
+            }
+        }
+        SUB_FATAL("Failed to find supported format!");
+        std::unreachable();
+    }
+
+    auto VulkanContext::find_depth_format() -> vk::Format {
+        return find_supported_format(
+            {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint}, vk::ImageTiling::eOptimal,
+            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+    }
+
+    auto VulkanContext::has_stencil_component(vk::Format format) -> bool {
+
+        return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
     }
 
     auto VulkanContext::cleanup_swapchain() -> void {
