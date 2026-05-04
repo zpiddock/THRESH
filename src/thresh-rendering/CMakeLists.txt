@@ -3,15 +3,16 @@ add_library(Flux STATIC
         flux/graphics_utils.cpp
         flux/vkbackend/vulkan_context.cpp
         flux/vkbackend/vulkan_context.hpp
+        flux/graphics_types.hpp
+        flux/vkbackend/texture.cpp
+        flux/vkbackend/texture.hpp
 )
 
 target_link_libraries(Flux PUBLIC
         Substratum
         Horizon
         Vulkan::Vulkan
-        glslang
-        SPIRV
-        glslang-default-resource-limits
+        stb
 )
 target_compile_definitions(Flux PUBLIC
         VULKAN_HPP_NO_STRUCT_CONSTRUCTORS

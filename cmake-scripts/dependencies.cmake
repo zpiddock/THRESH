@@ -41,6 +41,9 @@ CPMAddPackage(
 # GLM - Mathematics library
 CPMAddPackage("gh:g-truc/glm#1.0.3")
 
+# Flecs ECS
+CPMAddPackage("gh:SanderMertens/flecs#master")
+
 # PhysicsFS - Virtual filesystem abstraction (mount folders or archives)
 # PhysicsFS 3.2.0 uses cmake_minimum_required(VERSION 2.8.12) which CMake 4.x rejects.
 # Allow it via the compatibility policy variable.
