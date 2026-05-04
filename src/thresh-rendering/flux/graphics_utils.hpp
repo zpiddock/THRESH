@@ -25,6 +25,8 @@ namespace flux {
 
             auto set_framebuffer_resized(bool resized) -> void;
 
+            auto update_uniform_buffers(uint32_t frame_index) -> void;
+
         private:
             std::unique_ptr<VulkanContext> m_context;
 

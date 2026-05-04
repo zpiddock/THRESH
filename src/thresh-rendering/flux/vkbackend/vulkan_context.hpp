@@ -43,11 +43,21 @@ namespace flux {
 
             auto create_image_views() -> void;
 
+            auto create_descriptor_set_layouts() -> void;
+
             auto create_graphics_pipelines() -> void;
 
             auto create_command_pool() -> void;
 
             auto create_vertex_buffer() -> void;
+
+            auto create_index_buffer() -> void;
+
+            auto create_uniform_buffers() -> void;
+
+            auto create_descriptor_pool() -> void;
+
+            auto create_descriptor_sets() -> void;
 
             auto create_command_buffers() -> void;
 
@@ -95,18 +105,21 @@ namespace flux {
                 vk::KHRSwapchainExtensionName
             };
 
-            vk::raii::Context                m_context;
-            vk::raii::Instance               m_instance                   = nullptr;
-            vk::raii::DebugUtilsMessengerEXT m_debugMessenger             = nullptr;
-            vk::raii::PhysicalDevice         m_physicalDevice             = nullptr;
-            vk::raii::Device                 m_device                     = nullptr;
-            uint32_t                         m_queue_family_index         = ~0u;
-            vk::raii::Queue                  m_graphics_queue             = nullptr;
-            vk::raii::SurfaceKHR             m_surface                    = nullptr;
-            vk::raii::PipelineLayout         m_pipeline_layout            = nullptr;
-            vk::raii::Pipeline               m_graphics_pipeline          = nullptr;
-            vk::raii::CommandPool            m_command_pool               = nullptr;
+            vk::raii::Context                             m_context;
+            vk::raii::Instance                            m_instance                   = nullptr;
+            vk::raii::DebugUtilsMessengerEXT              m_debugMessenger             = nullptr;
+            vk::raii::PhysicalDevice                      m_physicalDevice             = nullptr;
+            vk::raii::Device                              m_device                     = nullptr;
+            uint32_t                                      m_queue_family_index         = ~0u;
+            vk::raii::Queue                               m_graphics_queue             = nullptr;
+            vk::raii::SurfaceKHR                          m_surface                    = nullptr;
+            vk::raii::DescriptorSetLayout                 m_descriptor_set_layout      = nullptr;
+            vk::raii::PipelineLayout                      m_pipeline_layout            = nullptr;
+            vk::raii::Pipeline                            m_graphics_pipeline          = nullptr;
+            vk::raii::CommandPool                         m_command_pool               = nullptr;
+
             std::vector<vk::raii::CommandBuffer>          m_command_buffers;
+
 
             std::vector<vk::raii::Semaphore>              m_present_complete_semaphores;
             std::vector<vk::raii::Semaphore>              m_render_complete_semaphores;
@@ -120,9 +133,17 @@ namespace flux {
             vk::Extent2D           m_swapchain_extent;
 
             // Image View stuff
-            std::vector<vk::raii::ImageView> m_swapchain_image_views;
-            vk::raii::Buffer                 m_vertex_buffer = nullptr;
-            vk::raii::DeviceMemory           m_vertex_buffer_memory = nullptr;
+            std::vector<vk::raii::ImageView>     m_swapchain_image_views;
+            vk::raii::Buffer                     m_vertex_buffer           = nullptr;
+            vk::raii::DeviceMemory               m_vertex_buffer_memory    = nullptr;
+            vk::raii::Buffer                     m_index_buffer            = nullptr;
+            vk::raii::DeviceMemory               m_index_buffer_memory     = nullptr;
+            std::vector<vk::raii::Buffer>        m_uniform_buffers;
+            std::vector<vk::raii::DeviceMemory>  m_uniform_buffer_memory;
+            std::vector<void*>                   m_uniform_buffers_mapped;
+
+            vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
+            std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;

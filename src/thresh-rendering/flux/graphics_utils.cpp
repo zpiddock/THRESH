@@ -4,6 +4,11 @@
 
 #include "graphics_utils.hpp"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "graphics_types.hpp"
 #include "horizon/window.hpp"
 #include "SDL3/SDL_events.h"
 #include "substratum/log.hpp"
@@ -55,6 +60,8 @@ namespace flux {
         if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
             SUB_FATAL("Failed to acquire next image!");
         }
+
+        update_uniform_buffers(m_context->m_frame_index);
 
         m_context->m_device.resetFences(fence);
 
@@ -114,5 +121,28 @@ namespace flux {
 
     auto GraphicsUtils::set_framebuffer_resized(bool resized) -> void {
         m_framebuffer_resized = resized;
+    }
+
+    auto GraphicsUtils::update_uniform_buffers(uint32_t frame_index) -> void {
+
+        // Testing Purposes only, all updates to be done in update loop, not draw loop
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float>(currentTime - startTime).count();
+
+
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.projection = glm::perspective(
+            glm::radians(45.f),
+            static_cast<float>(m_context->m_swapchain_extent.width) /
+            static_cast<float>(m_context->m_swapchain_extent.height),
+            0.1f, 10.f
+            );
+        ubo.projection[1][1] *= -1; // Invert Y due to glm being designed for OpenGL
+
+        memcpy(m_context->m_uniform_buffers_mapped[frame_index], &ubo, sizeof(ubo));
     }
 } // namespace flux

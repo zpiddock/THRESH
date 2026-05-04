@@ -15,10 +15,13 @@
 
 namespace flux {
     const std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
     };
+
+    const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
     static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
         vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
@@ -39,9 +42,14 @@ namespace flux {
         create_logical_device();
         create_swapchain(window);
         create_image_views();
+        create_descriptor_set_layouts();
         create_graphics_pipelines();
         create_command_pool();
         create_vertex_buffer();
+        create_index_buffer();
+        create_uniform_buffers();
+        create_descriptor_pool();
+        create_descriptor_sets();
         create_command_buffers();
         create_sync_objects();
     }
@@ -261,6 +269,16 @@ namespace flux {
         }
     }
 
+    auto VulkanContext::create_descriptor_set_layouts() -> void {
+
+        vk::DescriptorSetLayoutBinding layout_binding(0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex);
+        vk::DescriptorSetLayoutCreateInfo layout_info{
+            .bindingCount = 1,
+            .pBindings    = &layout_binding
+        };
+        m_descriptor_set_layout = vk::raii::DescriptorSetLayout(m_device, layout_info);
+    }
+
     auto VulkanContext::create_graphics_pipelines() -> void {
         assert(substratum::VFS::is_initialized());
 
@@ -294,7 +312,7 @@ namespace flux {
             .rasterizerDiscardEnable = vk::False,
             .polygonMode             = vk::PolygonMode::eFill,
             .cullMode                = vk::CullModeFlagBits::eBack,
-            .frontFace               = vk::FrontFace::eClockwise,
+            .frontFace               = vk::FrontFace::eCounterClockwise,
             .depthBiasEnable         = vk::False,
             .lineWidth               = 1.0f,
         };
@@ -325,7 +343,8 @@ namespace flux {
         };
 
         vk::PipelineLayoutCreateInfo pipeline_layout_info{
-            .setLayoutCount         = 0,
+            .setLayoutCount         = 1,
+            .pSetLayouts            = &*m_descriptor_set_layout,
             .pushConstantRangeCount = 0
         };
 
@@ -397,6 +416,86 @@ namespace flux {
         copy_buffer(staging_buffer, m_vertex_buffer, buffer_size);
     }
 
+    auto VulkanContext::create_index_buffer() -> void {
+
+        vk::DeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+        auto [staging_buffer, staging_buffer_memory] =
+            create_buffer(buffer_size,
+                vk::BufferUsageFlagBits::eTransferSrc,
+                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+                );
+        void* data_staging = staging_buffer_memory.mapMemory(0, buffer_size);
+        memcpy(data_staging, indices.data(), buffer_size);
+        staging_buffer_memory.unmapMemory();
+        std::tie(m_index_buffer, m_index_buffer_memory) =
+             create_buffer(buffer_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
+        copy_buffer(staging_buffer, m_index_buffer, buffer_size);
+    }
+
+    auto VulkanContext::create_uniform_buffers() -> void {
+
+        m_uniform_buffers.clear();
+        m_uniform_buffer_memory.clear();
+        m_uniform_buffers_mapped.clear();
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+            vk::DeviceSize buffer_size = sizeof(UniformBufferObject);
+
+            auto [buffer, memory] =
+                create_buffer(buffer_size,
+                    vk::BufferUsageFlagBits::eUniformBuffer,
+                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+                    );
+
+            m_uniform_buffers.emplace_back(std::move(buffer));
+            m_uniform_buffer_memory.emplace_back(std::move(memory));
+            m_uniform_buffers_mapped.emplace_back(m_uniform_buffer_memory[i].mapMemory(0, buffer_size));
+        }
+    }
+
+    auto VulkanContext::create_descriptor_pool() -> void {
+
+        vk::DescriptorPoolSize pool_size{vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT};
+        vk::DescriptorPoolCreateInfo pool_create_info {
+            .flags          = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets        = MAX_FRAMES_IN_FLIGHT,
+            .poolSizeCount  = 1,
+            .pPoolSizes     = &pool_size
+        };
+
+        m_descriptor_pool = vk::raii::DescriptorPool(m_device, pool_create_info);
+    }
+
+    auto VulkanContext::create_descriptor_sets() -> void {
+
+        std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *m_descriptor_set_layout);
+        vk::DescriptorSetAllocateInfo alloc_info{
+            .descriptorPool = m_descriptor_pool,
+            .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+            .pSetLayouts = layouts.data()
+        };
+        m_descriptor_sets.clear();
+        m_descriptor_sets = vk::raii::DescriptorSets(m_device, alloc_info);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            vk::DescriptorBufferInfo buffer_info{
+                .buffer = m_uniform_buffers[i],
+                .offset = 0,
+                .range  = sizeof(UniformBufferObject)
+            };
+            vk::WriteDescriptorSet   descriptor_writes{
+                .dstSet = m_descriptor_sets[i],
+                .dstBinding = 0,
+                .dstArrayElement = 0,
+                .descriptorCount = 1,
+                .descriptorType = vk::DescriptorType::eUniformBuffer,
+                .pBufferInfo = &buffer_info
+            };
+            m_device.updateDescriptorSets(descriptor_writes, {});
+        }
+    }
+
     auto VulkanContext::create_sync_objects() -> void {
 
         assert(m_present_complete_semaphores.empty() && m_render_complete_semaphores.empty() && m_inflight_fences.empty());
@@ -453,7 +552,9 @@ namespace flux {
         command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_swapchain_extent});
 
         command_buffer.bindVertexBuffers(0, {*m_vertex_buffer}, {0});
-        command_buffer.draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        command_buffer.bindIndexBuffer(*m_index_buffer, 0, vk::IndexType::eUint32);
+        command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_pipeline_layout, 0, *m_descriptor_sets[m_frame_index], nullptr);
+        command_buffer.drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         command_buffer.endRendering();
 
