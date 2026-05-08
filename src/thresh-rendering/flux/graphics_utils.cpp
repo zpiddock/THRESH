@@ -51,7 +51,7 @@ namespace flux {
 
         auto present_semaphore = *m_context->m_present_complete_semaphores[m_context->m_frame_index];
         auto [result, image_index] =
-            m_context->m_swapchain.acquireNextImage(
+            m_context->m_vk_swapchain.swapchain().acquireNextImage(
                 UINT64_MAX, present_semaphore, nullptr);
         if (result == vk::Result::eErrorOutOfDateKHR) {
             recreate_swapchain();
@@ -86,7 +86,7 @@ namespace flux {
             .waitSemaphoreCount = 1,
             .pWaitSemaphores = &render_semaphore,
             .swapchainCount = 1,
-            .pSwapchains = &*m_context->m_swapchain,
+            .pSwapchains = &*m_context->m_vk_swapchain.swapchain(),
             .pImageIndices = &image_index,
         };
 
@@ -106,12 +106,7 @@ namespace flux {
 
     auto GraphicsUtils::recreate_swapchain() -> void {
 
-        m_context->m_vk_device.logical().waitIdle();
-
-        m_context->cleanup_swapchain();
-
-        m_context->create_swapchain(*m_window);
-        m_context->create_image_views();
+        m_context->m_vk_swapchain.recreate(*m_window, m_context->m_vk_instance, m_context->m_vk_device);
         m_context->create_depth_resources();
     }
 
@@ -138,8 +133,8 @@ namespace flux {
         ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.projection = glm::perspective(
             glm::radians(45.f),
-            static_cast<float>(m_context->m_swapchain_extent.width) /
-            static_cast<float>(m_context->m_swapchain_extent.height),
+            static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width) /
+            static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height),
             0.1f, 10.f
             );
         ubo.projection[1][1] *= -1; // Invert Y due to glm being designed for OpenGL

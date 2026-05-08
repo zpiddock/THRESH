@@ -98,12 +98,7 @@ namespace thresh {
             }
             m_graphics_utils->draw_frame();
 
-            // flux::clear_colour(1.f, 0.f, 0.f, 1.0f);
-            // flux::clear(flux::ClearFlags::Color | flux::ClearFlags::Depth);
-
             // m_application->render();
-
-            // flux::swap_buffers(m_window.get());
         }
         m_graphics_utils->shutdown();
 

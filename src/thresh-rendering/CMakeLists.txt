@@ -11,6 +11,8 @@ add_library(Flux STATIC
         flux/vkbackend/texture.hpp
         flux/vkbackend/vulkan_device.cpp
         flux/vkbackend/vulkan_device.hpp
+        flux/vkbackend/vulkan_swapchain.cpp
+        flux/vkbackend/vulkan_swapchain.hpp
 )
 
 target_link_libraries(Flux PUBLIC

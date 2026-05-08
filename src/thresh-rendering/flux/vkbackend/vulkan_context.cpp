@@ -35,23 +35,11 @@ namespace flux {
         4, 5, 6, 6, 7, 4
     };
 
-    // static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
-    //     vk::DebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-    //     vk::DebugUtilsMessageTypeFlagsEXT             messageType,
-    //     const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    //     void*                                         pUserData) {
-    //     std::cerr << "Vulkan Validation Type: " << vk::to_string(messageSeverity) << " " << vk::to_string(messageType)
-    //             << "\n";
-    //     std::cerr << "Validation Message: " << pCallbackData->pMessage << std::endl;
-    //     return vk::False;
-    // }
-
     VulkanContext::VulkanContext(const VulkanInstanceContext& ctx, const thresh::Window& window) :
     m_vk_instance(ctx, window),
-    m_vk_device(m_vk_instance.instance(), m_vk_instance.surface()) {
+    m_vk_device(m_vk_instance.instance(), m_vk_instance.surface()),
+    m_vk_swapchain(window, m_vk_instance, m_vk_device) {
 
-        create_swapchain(window);
-        create_image_views();
         create_descriptor_set_layouts();
         create_graphics_pipelines();
         create_depth_resources();
@@ -68,47 +56,6 @@ namespace flux {
     }
 
     VulkanContext::~VulkanContext() {
-    }
-
-    auto VulkanContext::create_swapchain(const thresh::Window& window) -> void {
-        const auto surface = m_vk_instance.surface();
-
-        vk::SurfaceCapabilitiesKHR surface_capabilities = m_vk_device.physical().getSurfaceCapabilitiesKHR(surface);
-        m_swapchain_extent                              = choose_swap_extents(surface_capabilities, window);
-        uint32_t min_swap_image_count                   = choose_min_swap_image_count(surface_capabilities);
-
-        std::vector<vk::SurfaceFormatKHR> formats = m_vk_device.physical().getSurfaceFormatsKHR(surface);
-        m_swapchain_surface_format                = choose_swap_surface_format(formats);
-
-        vk::PresentModeKHR present_mode =
-                choose_swapchain_present_mode(m_vk_device.physical().getSurfacePresentModesKHR(surface));
-        vk::SwapchainCreateInfoKHR swapchain_info{
-            .surface          = surface,
-            .minImageCount    = min_swap_image_count,
-            .imageFormat      = m_swapchain_surface_format.format,
-            .imageColorSpace  = m_swapchain_surface_format.colorSpace,
-            .imageExtent      = m_swapchain_extent,
-            .imageArrayLayers = 1, // Only ever higher if doing Stereoscopic
-            .imageUsage       = vk::ImageUsageFlagBits::eColorAttachment,
-            .imageSharingMode = vk::SharingMode::eExclusive,
-            .preTransform     = surface_capabilities.currentTransform,
-            .compositeAlpha   = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-            .presentMode      = present_mode,
-            .clipped          = vk::True,
-            .oldSwapchain     = nullptr
-        };
-
-        m_swapchain        = vk::raii::SwapchainKHR(m_vk_device.logical(), swapchain_info);
-        m_swapchain_images = m_swapchain.getImages();
-    }
-
-    auto VulkanContext::create_image_views() -> void {
-
-        m_swapchain_image_views.reserve(m_swapchain_images.size());
-
-        for (const auto& image : m_swapchain_images) {
-            m_swapchain_image_views.emplace_back(m_vk_device.create_image_view(image, m_swapchain_surface_format.format, vk::ImageAspectFlagBits::eColor));
-        }
     }
 
     auto VulkanContext::create_descriptor_set_layouts() -> void {
@@ -232,7 +179,7 @@ namespace flux {
             },
             {
                 .colorAttachmentCount    = 1,
-                .pColorAttachmentFormats = &m_swapchain_surface_format.format,
+                .pColorAttachmentFormats = &m_vk_swapchain.swapchain_surface_format().format,
                 .depthAttachmentFormat = m_vk_device.find_depth_format()
             }
         };
@@ -245,7 +192,7 @@ namespace flux {
     auto VulkanContext::create_depth_resources() -> void {
 
         vk::Format format = m_vk_device.find_depth_format();
-        auto [depth_image, depth_image_memory] = m_vk_device.create_image(m_swapchain_extent.width, m_swapchain_extent.height, format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
+        auto [depth_image, depth_image_memory] = m_vk_device.create_image(m_vk_swapchain.swapchain_extent().width, m_vk_swapchain.swapchain_extent().height, format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         m_depth_image = std::move(depth_image);
         m_depth_image_memory = std::move(depth_image_memory);
@@ -451,7 +398,7 @@ namespace flux {
 
         assert(m_present_complete_semaphores.empty() && m_render_complete_semaphores.empty() && m_inflight_fences.empty());
 
-        for (size_t i = 0; i < m_swapchain_images.size(); i++) {
+        for (size_t i = 0; i < m_vk_swapchain.swapchain_images().size(); i++) {
             m_render_complete_semaphores.emplace_back(m_vk_device.logical(), vk::SemaphoreCreateInfo{});
         }
 
@@ -469,7 +416,7 @@ namespace flux {
         command_buffer.begin(begin_info);
 
         transition_image_layout(
-            m_swapchain_images[image_index],
+            m_vk_swapchain.swapchain_images()[image_index],
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
             {},
@@ -493,7 +440,7 @@ namespace flux {
         constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.f, 0.f, 0.f, 1.f);
         constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
         vk::RenderingAttachmentInfo attachment_info {
-            .imageView = m_swapchain_image_views[image_index],
+            .imageView = m_vk_swapchain.swapchain_image_views()[image_index],
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
@@ -509,7 +456,7 @@ namespace flux {
         };
 
         vk::RenderingInfo rendering_info {
-            .renderArea = {.offset = {0, 0}, .extent = m_swapchain_extent},
+            .renderArea = {.offset = {0, 0}, .extent = m_vk_swapchain.swapchain_extent()},
             .layerCount = 1,
             .colorAttachmentCount = 1,
             .pColorAttachments = &attachment_info,
@@ -520,9 +467,9 @@ namespace flux {
 
         command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_graphics_pipeline);
         command_buffer.setViewport(0,
-            vk::Viewport{0, 0, static_cast<float>(m_swapchain_extent.width)
-                , static_cast<float>(m_swapchain_extent.height), 0, 1});
-        command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_swapchain_extent});
+            vk::Viewport{0, 0, static_cast<float>(m_vk_swapchain.swapchain_extent().width)
+                , static_cast<float>(m_vk_swapchain.swapchain_extent().height), 0, 1});
+        command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_vk_swapchain.swapchain_extent()});
 
         command_buffer.bindVertexBuffers(0, {*m_vertex_buffer}, {0});
         command_buffer.bindIndexBuffer(*m_index_buffer, 0, vk::IndexType::eUint32);
@@ -532,7 +479,7 @@ namespace flux {
         command_buffer.endRendering();
 
         transition_image_layout(
-            m_swapchain_images[image_index],
+            m_vk_swapchain.swapchain_images()[image_index],
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::ePresentSrcKHR,
             vk::AccessFlagBits2::eColorAttachmentWrite,             // srcAccessMask
@@ -575,51 +522,6 @@ namespace flux {
         m_command_buffers[m_frame_index].pipelineBarrier2(dependency_info);
     }
 
-    auto VulkanContext::choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities,
-                                            const thresh::Window&             window) -> vk::Extent2D {
-        if (surface_capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-            return surface_capabilities.currentExtent;
-        }
-
-        int width, height;
-        window.get_frame_buffer_size(width, height);
-        return {
-            std::clamp<uint32_t>(width, surface_capabilities.minImageExtent.width,
-                                 surface_capabilities.maxImageExtent.width),
-            std::clamp<uint32_t>(height, surface_capabilities.minImageExtent.height,
-                                 surface_capabilities.maxImageExtent.height)
-        };
-    }
-
-    auto VulkanContext::choose_swap_surface_format(
-        const std::vector<vk::SurfaceFormatKHR>& formats) -> vk::SurfaceFormatKHR {
-        const auto format_interator = std::ranges::find_if(formats, [](const auto& format) {
-            return format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace ==
-                    vk::ColorSpaceKHR::eSrgbNonlinear;
-        });
-
-        return format_interator != formats.end() ? *format_interator : formats[0];
-    }
-
-    auto VulkanContext::choose_min_swap_image_count(
-        const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t {
-        auto min_image_count = std::max(3u, surface_capabilities.minImageCount);
-        if ((0 > surface_capabilities.maxImageCount) && (min_image_count > surface_capabilities.maxImageCount)) {
-            min_image_count = surface_capabilities.maxImageCount;
-        }
-        return min_image_count;
-    }
-
-    auto VulkanContext::choose_swapchain_present_mode(
-        const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR {
-        assert(std::ranges::any_of(present_modes, [](auto presentMode) { return presentMode == vk::PresentModeKHR::eFifo
-                   ; }));
-        return std::ranges::any_of(present_modes,
-                                   [](const vk::PresentModeKHR value) { return vk::PresentModeKHR::eMailbox == value; })
-                   ? vk::PresentModeKHR::eMailbox
-                   : vk::PresentModeKHR::eFifo;
-    }
-
     auto VulkanContext::load_shader(const std::string& shader_path) -> vk::raii::ShaderModule {
         const auto shader_code = substratum::VFS::read_file(shader_path);
 
@@ -629,11 +531,5 @@ namespace flux {
         };
 
         return {m_vk_device.logical(), shader_module_info};
-    }
-
-    auto VulkanContext::cleanup_swapchain() -> void {
-
-        m_swapchain_image_views.clear();
-        m_swapchain = nullptr;
     }
 } // flux

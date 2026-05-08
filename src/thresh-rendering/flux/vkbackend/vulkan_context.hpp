@@ -9,6 +9,7 @@
 #include "vk_structs.hpp"
 #include "vulkan_device.hpp"
 #include "vulkan_instance.hpp"
+#include "vulkan_swapchain.hpp"
 #include "horizon/window.hpp"
 
 namespace flux {
@@ -20,16 +21,6 @@ namespace flux {
             ~VulkanContext();
 
         private:
-            // Vulkan Init Functions
-            // auto create_instance(const VulkanInstanceContext& ctx) -> void;
-            //
-            // auto setup_debug_messenger(const VulkanInstanceContext& ctx) -> void;
-            //
-            // auto create_surface(const thresh::Window& window) -> void;
-
-            auto create_swapchain(const thresh::Window& window) -> void;
-
-            auto create_image_views() -> void;
 
             auto create_descriptor_set_layouts() -> void;
 
@@ -57,19 +48,6 @@ namespace flux {
 
             auto create_sync_objects() -> void;
 
-            // Swapchain Private Functions
-            auto choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR>& formats) -> vk::SurfaceFormatKHR;
-
-            auto choose_swap_extents(const vk::SurfaceCapabilitiesKHR& surface_capabilities,
-                                     const thresh::Window&             window) -> vk::Extent2D;
-
-            auto choose_min_swap_image_count(const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t;
-
-            auto choose_swapchain_present_mode(
-                const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR;
-
-            auto cleanup_swapchain() -> void;
-
             // Shader Functions - TODO: Create Shader Wrapper Class
             auto load_shader(const std::string& shader_path) -> vk::raii::ShaderModule;
 
@@ -88,6 +66,7 @@ namespace flux {
 
             ThreshVkInstance                                m_vk_instance;
             ThreshVkDevice                                  m_vk_device;
+            ThreshVkSwapchain                               m_vk_swapchain;
             vk::raii::DescriptorSetLayout                 m_descriptor_set_layout      = nullptr;
             vk::raii::PipelineLayout                      m_pipeline_layout            = nullptr;
             vk::raii::Pipeline                            m_graphics_pipeline          = nullptr;
@@ -100,14 +79,6 @@ namespace flux {
             std::vector<vk::raii::Fence>                  m_inflight_fences;
             uint32_t                                      m_frame_index = 0;
 
-            // Swapchain Stuff
-            vk::raii::SwapchainKHR m_swapchain = nullptr;
-            std::vector<vk::Image> m_swapchain_images;
-            vk::SurfaceFormatKHR   m_swapchain_surface_format;
-            vk::Extent2D           m_swapchain_extent;
-
-            // Image View stuff
-            std::vector<vk::raii::ImageView>     m_swapchain_image_views = {};
             vk::raii::Buffer                     m_vertex_buffer           = nullptr;
             vk::raii::DeviceMemory               m_vertex_buffer_memory    = nullptr;
             vk::raii::Buffer                     m_index_buffer            = nullptr;

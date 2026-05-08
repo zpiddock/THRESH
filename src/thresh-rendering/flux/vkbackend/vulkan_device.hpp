@@ -60,7 +60,7 @@ namespace flux {
 
             auto create_command_pool() -> void;
 
-            vk::raii::PhysicalDevice m_physical_device     = nullptr;
+            vk::raii::PhysicalDevice m_physical_device    = nullptr;
             vk::raii::Device         m_device             = nullptr;
             uint32_t                 m_queue_family_index = ~0u;
             vk::raii::Queue          m_graphics_queue     = nullptr;
