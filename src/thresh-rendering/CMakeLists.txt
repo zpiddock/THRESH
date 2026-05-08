@@ -13,6 +13,8 @@ add_library(Flux STATIC
         flux/vkbackend/vulkan_device.hpp
         flux/vkbackend/vulkan_swapchain.cpp
         flux/vkbackend/vulkan_swapchain.hpp
+        flux/vkbackend/vulkan_pipeline.cpp
+        flux/vkbackend/vulkan_pipeline.hpp
 )
 
 target_link_libraries(Flux PUBLIC

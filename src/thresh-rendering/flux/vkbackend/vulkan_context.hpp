@@ -9,6 +9,7 @@
 #include "vk_structs.hpp"
 #include "vulkan_device.hpp"
 #include "vulkan_instance.hpp"
+#include "vulkan_pipeline.hpp"
 #include "vulkan_swapchain.hpp"
 #include "horizon/window.hpp"
 
@@ -22,9 +23,6 @@ namespace flux {
 
         private:
 
-            auto create_descriptor_set_layouts() -> void;
-
-            auto create_graphics_pipelines() -> void;
 
             auto create_depth_resources() -> void;
 
@@ -48,9 +46,6 @@ namespace flux {
 
             auto create_sync_objects() -> void;
 
-            // Shader Functions - TODO: Create Shader Wrapper Class
-            auto load_shader(const std::string& shader_path) -> vk::raii::ShaderModule;
-
             // Rendering functions
             auto record_command_buffer(uint32_t image_index) -> void;
 
@@ -64,12 +59,10 @@ namespace flux {
 
 
 
-            ThreshVkInstance                                m_vk_instance;
-            ThreshVkDevice                                  m_vk_device;
-            ThreshVkSwapchain                               m_vk_swapchain;
-            vk::raii::DescriptorSetLayout                 m_descriptor_set_layout      = nullptr;
-            vk::raii::PipelineLayout                      m_pipeline_layout            = nullptr;
-            vk::raii::Pipeline                            m_graphics_pipeline          = nullptr;
+            ThreshVkInstance  m_vk_instance;
+            ThreshVkDevice    m_vk_device;
+            ThreshVkSwapchain m_vk_swapchain;
+            ThreshVkPipeline  m_vk_pipeline;
 
             std::vector<vk::raii::CommandBuffer>          m_command_buffers;
 
@@ -102,8 +95,6 @@ namespace flux {
 
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
-            const std::string vertex_main   = "vertexMain";
-            const std::string fragment_main = "fragmentMain";
 
             friend class GraphicsUtils;
     };
