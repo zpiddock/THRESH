@@ -38,7 +38,7 @@ namespace flux {
     auto GraphicsUtils::draw_frame() -> void {
 
         const auto fence = *m_context->m_inflight_fences[m_context->m_frame_index];
-        auto fence_result = m_context->m_device.waitForFences(fence, vk::True, UINT64_MAX);
+        auto fence_result = m_context->m_vk_device.logical().waitForFences(fence, vk::True, UINT64_MAX);
         if (fence_result != vk::Result::eSuccess) {
             SUB_FATAL("Failed to wait for fence!");
         }
@@ -63,7 +63,7 @@ namespace flux {
 
         update_uniform_buffers(m_context->m_frame_index);
 
-        m_context->m_device.resetFences(fence);
+        m_context->m_vk_device.logical().resetFences(fence);
 
         m_context->m_command_buffers[m_context->m_frame_index].reset();
         m_context->record_command_buffer(image_index);
@@ -80,7 +80,7 @@ namespace flux {
             .pSignalSemaphores = &render_semaphore
         };
 
-        m_context->m_graphics_queue.submit(submit_info, fence);
+        m_context->m_vk_device.graphics_queue().submit(submit_info, fence);
 
         const vk::PresentInfoKHR present_info = {
             .waitSemaphoreCount = 1,
@@ -91,7 +91,7 @@ namespace flux {
         };
 
         try {
-            result = m_context->m_graphics_queue.presentKHR(present_info);
+            result = m_context->m_vk_device.graphics_queue().presentKHR(present_info);
             if (result == vk::Result::eErrorOutOfDateKHR) {
                 set_framebuffer_resized(false);
                 recreate_swapchain();
@@ -106,7 +106,7 @@ namespace flux {
 
     auto GraphicsUtils::recreate_swapchain() -> void {
 
-        m_context->m_device.waitIdle();
+        m_context->m_vk_device.logical().waitIdle();
 
         m_context->cleanup_swapchain();
 
@@ -117,7 +117,7 @@ namespace flux {
 
     auto GraphicsUtils::shutdown() -> void {
 
-        m_context->m_device.waitIdle();
+        m_context->m_vk_device.logical().waitIdle();
     }
 
     auto GraphicsUtils::set_framebuffer_resized(bool resized) -> void {

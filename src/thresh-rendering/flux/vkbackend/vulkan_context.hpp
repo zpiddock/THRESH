@@ -5,21 +5,13 @@
 #pragma once
 #include <string>
 
-#include "horizon/window.hpp"
 #include "vulkan/vulkan_raii.hpp"
+#include "vk_structs.hpp"
+#include "vulkan_device.hpp"
+#include "vulkan_instance.hpp"
+#include "horizon/window.hpp"
 
 namespace flux {
-    struct VulkanInstanceContext {
-        std::string              application_name;
-        std::string              engine_name               = "THRΞSH";
-        std::string              engine_version            = "0.0.1";
-        std::string              application_version       = "0.0.1";
-        bool                     enable_validation_layers  = true;
-        std::vector<const char*> enabled_validation_layers = {
-            "VK_LAYER_KHRONOS_validation"
-        };
-        std::vector<const char*> required_instance_extensions = {};
-    };
 
     class VulkanContext {
         public:
@@ -29,11 +21,11 @@ namespace flux {
 
         private:
             // Vulkan Init Functions
-            auto create_instance(const VulkanInstanceContext& ctx) -> void;
-
-            auto setup_debug_messenger(const VulkanInstanceContext& ctx) -> void;
-
-            auto create_surface(const thresh::Window& window) -> void;
+            // auto create_instance(const VulkanInstanceContext& ctx) -> void;
+            //
+            // auto setup_debug_messenger(const VulkanInstanceContext& ctx) -> void;
+            //
+            // auto create_surface(const thresh::Window& window) -> void;
 
             auto pick_suitable_device() -> void;
 
@@ -127,22 +119,22 @@ namespace flux {
 
             auto has_stencil_component(vk::Format format) -> bool;
 
-            std::vector<const char*> m_required_device_extensions = {
-                vk::KHRSwapchainExtensionName
-            };
+            // std::vector<const char*> m_required_device_extensions = {
+            //     vk::KHRSwapchainExtensionName
+            // };
 
-            vk::raii::Context                             m_context;
-            vk::raii::Instance                            m_instance                   = nullptr;
-            vk::raii::DebugUtilsMessengerEXT              m_debugMessenger             = nullptr;
-            vk::raii::PhysicalDevice                      m_physicalDevice             = nullptr;
-            vk::raii::Device                              m_device                     = nullptr;
-            uint32_t                                      m_queue_family_index         = ~0u;
-            vk::raii::Queue                               m_graphics_queue             = nullptr;
-            vk::raii::SurfaceKHR                          m_surface                    = nullptr;
+
+            // WIP Working on Device!!!!
+            ThreshVkInstance                                m_vk_instance;
+            ThreshVkDevice                                  m_vk_device;
+            // vk::raii::PhysicalDevice                      m_physicalDevice             = nullptr;
+            // vk::raii::Device                              m_device                     = nullptr;
+            // uint32_t                                      m_queue_family_index         = ~0u;
+            // vk::raii::Queue                               m_graphics_queue             = nullptr;
             vk::raii::DescriptorSetLayout                 m_descriptor_set_layout      = nullptr;
             vk::raii::PipelineLayout                      m_pipeline_layout            = nullptr;
             vk::raii::Pipeline                            m_graphics_pipeline          = nullptr;
-            vk::raii::CommandPool                         m_command_pool               = nullptr;
+            // vk::raii::CommandPool                         m_command_pool               = nullptr;
 
             std::vector<vk::raii::CommandBuffer>          m_command_buffers;
 

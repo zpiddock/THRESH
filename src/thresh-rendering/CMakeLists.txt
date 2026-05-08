@@ -1,11 +1,16 @@
 add_library(Flux STATIC
         flux/graphics_utils.hpp
         flux/graphics_utils.cpp
+        flux/vkbackend/vk_structs.hpp
+        flux/vkbackend/vulkan_instance.cpp
+        flux/vkbackend/vulkan_instance.hpp
         flux/vkbackend/vulkan_context.cpp
         flux/vkbackend/vulkan_context.hpp
         flux/graphics_types.hpp
         flux/vkbackend/texture.cpp
         flux/vkbackend/texture.hpp
+        flux/vkbackend/vulkan_device.cpp
+        flux/vkbackend/vulkan_device.hpp
 )
 
 target_link_libraries(Flux PUBLIC
