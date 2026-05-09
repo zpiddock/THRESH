@@ -32,6 +32,8 @@ class InputManager {
 
         auto get_mouse_state() -> std::pair<float, float>;
 
+        auto get_relative_mouse_state() -> std::pair<float, float>;
+
         auto flush_key_state() -> void;
     private:
         const bool*       m_current_key_state = nullptr;

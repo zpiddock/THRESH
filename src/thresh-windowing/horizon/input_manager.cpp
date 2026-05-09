@@ -56,6 +56,10 @@ namespace horizon {
         return {x, y};
     }
 
+    auto InputManager::get_relative_mouse_state() -> std::pair<float, float> {
+        return {m_mouse_dx, m_mouse_dy};
+    }
+
     auto InputManager::flush_key_state() -> void {
         std::memcpy(m_last_key_state.data(), m_current_key_state, m_last_key_state.size() * sizeof(bool));
         m_last_mouse_state = m_current_mouse_state;

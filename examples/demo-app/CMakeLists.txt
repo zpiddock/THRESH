@@ -10,7 +10,7 @@ target_link_libraries(demo PUBLIC Thresh)
 # Copy DLLs to output directory (Windows)
 if (WIN32)
     add_custom_command(TARGET demo POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            COMMAND ${CMAKE_COMMAND} -E copy
             $<TARGET_RUNTIME_DLLS:demo>
             $<TARGET_FILE_DIR:demo>
             COMMAND_EXPAND_LISTS

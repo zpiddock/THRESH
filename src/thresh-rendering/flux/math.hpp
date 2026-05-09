@@ -38,4 +38,13 @@ namespace flux::math {
     using glm::cross;
     using glm::length;
     using glm::mat4_cast;
+    using glm::clamp;
+    using glm::radians;
+    using glm::degrees;
+    using glm::max;
+    using glm::min;
+    using glm::angleAxis;
+    using glm::sin;
+    using glm::cos;
+    using glm::tan;
 }

@@ -13,13 +13,13 @@ namespace thresh {
 
     Window::Window(const WindowContext& ctx) : m_context(ctx) {
 
-        SUB_DEBUG("Creating Window: ", ctx.title);
+        SUB_DEBUG("Creating Window: {}", ctx.title);
         init_window(ctx);
     }
 
     Window::~Window() {
 
-        SUB_DEBUG("Destroying Window: " + std::string(SDL_GetWindowTitle(m_window)));
+        SUB_DEBUG("Destroying Window: {}", std::string(m_context.title));
         SDL_Quit();
         SDL_DestroyWindow(m_window);
     }
@@ -28,7 +28,7 @@ namespace thresh {
 
         m_window = SDL_CreateWindow(ctx.title.c_str(), ctx.width, ctx.height, ctx.flags);
         if (!m_window) {
-            SUB_FATAL("Could not create window: ", SDL_GetError());
+            SUB_FATAL("Could not create window: {}", SDL_GetError());
         }
     }
 
@@ -44,8 +44,8 @@ namespace thresh {
         return m_window_should_close;
     }
 
-    auto Window::setShouldClose(bool shouldClose) -> void {
-        m_window_should_close = shouldClose;
+    auto Window::setShouldClose(const bool should_close) -> void {
+        m_window_should_close = should_close;
     }
 
     auto Window::get_frame_buffer_size(int& width, int& height) const -> void {
@@ -55,5 +55,10 @@ namespace thresh {
 
     auto Window::is_minimised() const -> bool {
         return SDL_GetWindowFlags(m_window) & SDL_WINDOW_MINIMIZED;
+    }
+
+    auto Window::set_relative_mouse_mode(const bool enabled) -> void {
+
+        SDL_SetWindowRelativeMouseMode(m_window, enabled);
     }
 } // thresh

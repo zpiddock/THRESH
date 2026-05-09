@@ -61,6 +61,8 @@ namespace thresh {
 
         m_last_frame_time = std::chrono::high_resolution_clock::now();
 
+        m_window->set_relative_mouse_mode(true);
+
         while (!m_window->shouldClose()) {
             m_input_manager->flush_key_state();
             // Poll events

@@ -10,14 +10,14 @@ struct Transform {
 
     flux::float3 position = {};
     flux::quat rotation = {};
-    flux::float3 scale = {};
+    flux::float3 scale = flux::float3(1.f);
 };
 
 struct ActiveCamera {};
 
 struct Camera {
 
-    float fov = 90.0f;
+    float fov = flux::math::radians(90.0f);
     float near_plane = 0.1f;
     float far_plane = 100.0f;
 };
@@ -27,7 +27,7 @@ struct CameraController {
     float yaw = 0.0f;
     float pitch = 0.0f;
 
-    float movement_speed = 1.0f;
+    float movement_speed = 5.0f;
     float mouse_sensitivity = 0.1f;
 };
 

@@ -30,11 +30,13 @@ class Window {
         auto setWindowTitle(const char* title) const -> bool;
 
         [[nodiscard]] auto shouldClose() const -> bool;
-        auto setShouldClose(bool shouldClose) -> void;
+        auto setShouldClose(bool should_close) -> void;
 
         auto get_frame_buffer_size(int &width, int &height) const -> void;
 
         [[nodiscard]] auto is_minimised() const -> bool;
+
+        auto set_relative_mouse_mode(bool enabled) -> void;
 
     protected:
         WindowContext m_context = {};
