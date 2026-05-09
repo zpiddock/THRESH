@@ -3,14 +3,17 @@
 //
 
 #pragma once
+#include "flux/math.hpp"
 #include "thresh/thresh.hpp"
 
 struct Transform {
 
-    glm::vec3 position = {};
-    glm::quat rotation = {};
-    glm::vec3 scale = {};
+    flux::float3 position = {};
+    flux::quat rotation = {};
+    flux::float3 scale = {};
 };
+
+struct ActiveCamera {};
 
 struct Camera {
 
@@ -19,9 +22,18 @@ struct Camera {
     float far_plane = 100.0f;
 };
 
+struct CameraController {
+
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+
+    float movement_speed = 1.0f;
+    float mouse_sensitivity = 0.1f;
+};
+
 struct Light {
 
-    glm::vec3 colour = glm::vec3(1.f);
+    flux::float3 colour = flux::float3(1.f);
     float intensity = 1.f;
 };
 

@@ -88,6 +88,13 @@ namespace thresh {
             // Application update
             m_application->update(delta_time);
 
+            if (m_active_scene) {
+                m_active_scene->update(delta_time);
+                if (auto cam = m_active_scene->compute_active_camera_data(m_graphics_utils->get_aspect_ratio())) {
+                    m_graphics_utils->set_camera_data(*cam);
+                }
+            }
+
             // Rendering
             int fb_width, fb_height;
             SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
@@ -120,6 +127,14 @@ namespace thresh {
             m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
         }
         return m_graphics_utils.get();
+    }
+
+    auto Engine::active_scene() -> Scene* {
+        return m_active_scene.get();
+    }
+
+    auto Engine::transition_scene(std::unique_ptr<Scene> new_scene) -> void {
+        m_active_scene = std::move(new_scene);
     }
 
     auto Engine::shutdown() -> void {

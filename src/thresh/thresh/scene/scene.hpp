@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "flux/graphics_types.hpp"
 #include "thresh/thresh.hpp"
 
 namespace thresh {
@@ -20,6 +21,8 @@ namespace thresh {
             auto create_entity(const std::string& name) -> flecs::entity;
 
             auto create_entity() -> flecs::entity;
+
+            auto compute_active_camera_data(float aspect) -> std::optional<flux::CameraData>;
         private:
             flecs::world m_world;
     };

@@ -15,7 +15,7 @@ int main() {
 
     auto& engine = thresh::Engine::create(new demo::GameApp());
 
-    if (engine.init({.title = "TRESH DEMO", .width = 1280, .height = 720})) {
+    if (engine.init({.title = "THRESH DEMO", .width = 1280, .height = 720})) {
 
         SUB_INFO("Engine Initialized");
         engine.run();
