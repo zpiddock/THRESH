@@ -15,6 +15,8 @@ add_library(Flux STATIC
         flux/vkbackend/vulkan_swapchain.hpp
         flux/vkbackend/vulkan_pipeline.cpp
         flux/math.hpp
+        flux/mesh/mesh_primitive.hpp
+        flux/render_resources.hpp
 )
 
 target_link_libraries(Flux PUBLIC
