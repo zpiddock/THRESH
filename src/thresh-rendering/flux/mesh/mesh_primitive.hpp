@@ -15,10 +15,8 @@ namespace flux {
         std::vector<uint32_t> indices;
     };
 
-    constexpr MeshData BOX = {
-        .vertices = {
-        },
-        .indices = {
-        }
-    };
+    namespace primitives {
+
+        auto box(flux::float3 extents = {1.f, 1.f, 1.f}) -> MeshData;
+    }
 }

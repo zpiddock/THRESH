@@ -17,6 +17,7 @@ add_library(Flux STATIC
         flux/math.hpp
         flux/mesh/mesh_primitive.hpp
         flux/render_resources.hpp
+        flux/mesh/mesh_primitive.cpp
 )
 
 target_link_libraries(Flux PUBLIC
