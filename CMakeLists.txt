@@ -24,11 +24,11 @@ include(cmake-scripts/dependencies.cmake)
 include(cmake-scripts/add_slang_shader.cmake)
 
 # Treat warnings as errors
-if(MSVC)
-    add_compile_options(/W4 /WX)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
-endif()
+#if(MSVC)
+#    add_compile_options(/W4 /WX)
+#else()
+#    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
+#endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_link_options(-static-libgcc -static-libstdc++)

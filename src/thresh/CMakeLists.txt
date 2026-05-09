@@ -10,7 +10,7 @@ add_library(Thresh SHARED
         thresh/scene/ecs_types.hpp
 )
 
-target_link_libraries(Thresh PUBLIC Substratum Horizon Flux flecs::flecs_static stb)
+target_link_libraries(Thresh PUBLIC Substratum Horizon Flux flecs::flecs stb)
 
 target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)
 
