@@ -5,21 +5,21 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "glm/glm.hpp"
+#include "math.hpp"
 
 namespace flux {
 
     struct UniformBufferObject {
-        alignas(16) glm::mat4 model;
-        alignas(16) glm::mat4 view;
-        alignas(16) glm::mat4 projection;
+        alignas(16) flux::float4x4 model;
+        alignas(16) flux::float4x4 view;
+        alignas(16) flux::float4x4 projection;
     };
 
     struct Vertex {
 
-        glm::vec3 position;
-        glm::vec3 colour;
-        glm::vec2 tex_coord;
+        flux::float3 position;
+        flux::float3 colour;
+        flux::float2 tex_coord;
 
         static auto get_binding_description() -> vk::VertexInputBindingDescription {
 

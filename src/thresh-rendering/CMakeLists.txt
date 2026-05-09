@@ -14,7 +14,7 @@ add_library(Flux STATIC
         flux/vkbackend/vulkan_swapchain.cpp
         flux/vkbackend/vulkan_swapchain.hpp
         flux/vkbackend/vulkan_pipeline.cpp
-        flux/vkbackend/vulkan_pipeline.hpp
+        flux/math.hpp
 )
 
 target_link_libraries(Flux PUBLIC
@@ -22,6 +22,8 @@ target_link_libraries(Flux PUBLIC
         Horizon
         Vulkan::Vulkan
         stb
+        PRIVATE
+        glm
 )
 target_compile_definitions(Flux PUBLIC
         VULKAN_HPP_NO_STRUCT_CONSTRUCTORS

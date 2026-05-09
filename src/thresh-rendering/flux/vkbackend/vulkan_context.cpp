@@ -9,10 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "glm/glm.hpp"
-
 #include "flux/graphics_types.hpp"
+#include "flux/math.hpp"
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
@@ -41,8 +39,6 @@ namespace flux {
     m_vk_swapchain(window, m_vk_instance, m_vk_device),
     m_vk_pipeline("triangle.spv", m_vk_device, m_vk_swapchain) {
 
-        // create_descriptor_set_layouts();
-        // create_graphics_pipelines();
         create_depth_resources();
         create_texture_image();
         create_texture_image_view();
@@ -221,7 +217,7 @@ namespace flux {
 
     auto VulkanContext::create_descriptor_sets() -> void {
 
-        std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *m_vk_pipeline.descriptor_set_layout());
+        std::vector layouts(MAX_FRAMES_IN_FLIGHT, *m_vk_pipeline.descriptor_set_layout());
         vk::DescriptorSetAllocateInfo alloc_info{
             .descriptorPool = m_descriptor_pool,
             .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
