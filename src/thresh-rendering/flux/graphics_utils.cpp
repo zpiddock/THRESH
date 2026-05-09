@@ -119,6 +119,10 @@ namespace flux {
         m_framebuffer_resized = resized;
     }
 
+    auto GraphicsUtils::set_camera_data(const CameraData& camera_data) -> void {
+        m_camera_data = camera_data;
+    }
+
     auto GraphicsUtils::update_uniform_buffers(uint32_t frame_index) -> void {
 
         // Testing Purposes only, all updates to be done in update loop, not draw loop
@@ -129,16 +133,29 @@ namespace flux {
 
 
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.f), time * glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.projection = glm::perspective(
-            glm::radians(45.f),
-            static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width) /
-            static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height),
-            0.1f, 10.f
-            );
-        ubo.projection[1][1] *= -1; // Invert Y due to glm being designed for OpenGL
+        ubo.model = glm::rotate(flux::float4x4(1.f), time * glm::radians(90.f), flux::float3(0.f, 0.f, 1.f));
+
+        if (m_camera_data != std::nullopt) {
+
+            memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(CameraData));
+            ubo.view = m_camera_data.value().view;
+            ubo.projection = m_camera_data.value().projection;
+        } else {
+            ubo.view = glm::lookAt(flux::float3(2.0f, 2.0f, 2.0f), flux::float3(0.0f, 0.0f, 0.0f), flux::float3(0.0f, 0.0f, 1.0f));
+            ubo.projection = flux::math::perspective(
+                glm::radians(45.f),
+                static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width) /
+                static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height),
+                0.1f, 10.f
+                );
+            ubo.projection[1][1] *= -1; // Invert Y due to glm being designed for OpenGL
+        }
 
         memcpy(m_context->m_uniform_buffers_mapped[frame_index], &ubo, sizeof(ubo));
+    }
+
+    auto GraphicsUtils::get_aspect_ratio() -> float {
+
+        return static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width) / static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height);
     }
 } // namespace flux

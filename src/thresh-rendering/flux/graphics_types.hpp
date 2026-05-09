@@ -15,6 +15,11 @@ namespace flux {
         alignas(16) flux::float4x4 projection;
     };
 
+    struct CameraData {
+        alignas(16) flux::float4x4 view;
+        alignas(16) flux::float4x4 projection;
+    };
+
     struct Vertex {
 
         flux::float3 position;

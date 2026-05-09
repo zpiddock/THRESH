@@ -5,6 +5,7 @@ struct VertexInput
     float2 in_texcoord;
 };
 
+[vk::binding(0)]
 struct UniformBuffer
 {
     float4x4 model;
@@ -12,6 +13,13 @@ struct UniformBuffer
     float4x4 projection;
 };
 ConstantBuffer<UniformBuffer> ubo;
+
+[vk::binding(2)]
+struct CameraData {
+
+    float4x4 view;
+    float4x4 projection;
+};
 
 struct VertexOutput
 {
@@ -30,6 +38,7 @@ VertexOutput vertexMain(VertexInput input)
     return output;
 }
 
+[vk::binding(1)]
 Sampler2D textureSampler;
 
 [shader("fragment")]

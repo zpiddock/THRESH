@@ -180,20 +180,33 @@ namespace flux {
         m_uniform_buffers.clear();
         m_uniform_buffer_memory.clear();
         m_uniform_buffers_mapped.clear();
+        m_camera_buffers.clear();
+        m_camera_buffer_memory.clear();
+        m_camera_buffers_mapped.clear();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-            vk::DeviceSize buffer_size = sizeof(UniformBufferObject);
+            vk::DeviceSize ubo_size = sizeof(UniformBufferObject);
 
             auto [buffer, memory] =
-                m_vk_device.create_buffer(buffer_size,
+                m_vk_device.create_buffer(ubo_size,
                     vk::BufferUsageFlagBits::eUniformBuffer,
                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
                     );
 
             m_uniform_buffers.emplace_back(std::move(buffer));
             m_uniform_buffer_memory.emplace_back(std::move(memory));
-            m_uniform_buffers_mapped.emplace_back(m_uniform_buffer_memory[i].mapMemory(0, buffer_size));
+            m_uniform_buffers_mapped.emplace_back(m_uniform_buffer_memory[i].mapMemory(0, ubo_size));
+
+            vk::DeviceSize camera_buffer_size = sizeof(CameraData);
+            auto [camera_buffer, camera_memory] =
+                m_vk_device.create_buffer(camera_buffer_size,
+                    vk::BufferUsageFlagBits::eUniformBuffer,
+                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+                    );
+            m_camera_buffers.emplace_back(std::move(camera_buffer));
+            m_camera_buffer_memory.emplace_back(std::move(camera_memory));
+            m_camera_buffers_mapped.emplace_back(m_camera_buffer_memory[i].mapMemory(0, camera_buffer_size));
         }
     }
 
@@ -203,6 +216,7 @@ namespace flux {
 
             vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT },
             vk::DescriptorPoolSize { vk::DescriptorType::eCombinedImageSampler, MAX_FRAMES_IN_FLIGHT },
+            vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT },
         };
 
         vk::DescriptorPoolCreateInfo pool_create_info {
@@ -237,6 +251,11 @@ namespace flux {
                 .imageView = m_image_view,
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
             };
+            vk::DescriptorBufferInfo camera_data_info {
+                .buffer = m_camera_buffers[i],
+                .offset = 0,
+                .range  = sizeof(CameraData)
+            };
             std::array descriptor_writes {
 
                 vk::WriteDescriptorSet {
@@ -254,6 +273,14 @@ namespace flux {
                 .descriptorCount = 1,
                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                 .pImageInfo = &image_info
+                },
+                vk::WriteDescriptorSet {
+                    .dstSet = m_descriptor_sets[i],
+                    .dstBinding = 2,
+                    .dstArrayElement = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eUniformBuffer,
+                    .pBufferInfo = &camera_data_info
                 }
             };
             m_vk_device.logical().updateDescriptorSets(descriptor_writes, {});

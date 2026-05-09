@@ -31,6 +31,13 @@ namespace flux {
                 .descriptorCount    = 1,
                 .stageFlags         = vk::ShaderStageFlagBits::eFragment,
                 .pImmutableSamplers = nullptr
+            },
+            vk::DescriptorSetLayoutBinding{
+                .binding           = 2,
+                .descriptorType    = vk::DescriptorType::eUniformBuffer,
+                .descriptorCount    = 1,
+                .stageFlags = vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eVertex,
+                .pImmutableSamplers = nullptr
             }
         };
         vk::DescriptorSetLayoutCreateInfo layout_info {
