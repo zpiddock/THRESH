@@ -12,7 +12,7 @@ namespace flux {
     struct MeshData {
 
         std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<std::uint32_t> indices;
     };
 
     namespace primitives {

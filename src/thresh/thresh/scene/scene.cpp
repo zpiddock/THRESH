@@ -30,7 +30,7 @@ namespace thresh {
                     camera_controller.yaw -= flux::math::radians(dx * camera_controller.mouse_sensitivity);
                     camera_controller.pitch -= flux::math::radians(dy * camera_controller.mouse_sensitivity);
 
-                    camera_controller.pitch = flux::math::clamp(camera_controller.pitch, -89.f, 89.f);
+                    camera_controller.pitch = flux::math::clamp(camera_controller.pitch, flux::math::radians(-89.f), flux::math::radians(89.f));
 
                     const auto q_yaw = flux::math::angleAxis(camera_controller.yaw, flux::float3(0.f, 1.f, 0.f));
                     const auto q_pitch = flux::math::angleAxis(camera_controller.pitch, flux::float3(1.f, 0.f, 0.f));
@@ -38,18 +38,18 @@ namespace thresh {
                     transform.rotation = q_yaw * q_pitch;
 
                     // movement vectors
-                    const auto forward = flux::float3{-flux::math::sin(camera_controller.yaw), 0.f, flux::math::cos(camera_controller.yaw)};
-                    const auto right = flux::float3{flux::math::cos(camera_controller.yaw), 0.f, flux::math::sin(camera_controller.yaw)};
+                    const auto forward = flux::float3{-flux::math::sin(camera_controller.yaw), 0.f, -flux::math::cos(camera_controller.yaw)};
+                    const auto right = flux::float3{flux::math::cos(camera_controller.yaw), 0.f, -flux::math::sin(camera_controller.yaw)};
                     constexpr auto world_up = flux::float3{0.f, 1.f, 0.f};
 
                     flux::float3 wish{0.f};
 
                     if (input->is_key_held(SDL_SCANCODE_W)) {
 
-                        wish -= forward;
+                        wish += forward;
                     }
                     if (input->is_key_held(SDL_SCANCODE_S)) {
-                        wish += forward;
+                        wish -= forward;
                     }
                     if (input->is_key_held(SDL_SCANCODE_A)) {
                         wish -= right;
@@ -69,6 +69,32 @@ namespace thresh {
                         transform.position += wish * camera_controller.movement_speed * delta_time;
                     }
                 }
+        );
+
+        m_world.system<const Transform, const Mesh>().kind(flecs::OnUpdate).each(
+            [](flecs::iter& it, size_t, const Transform& transform, const Mesh& mesh) {
+
+                auto* graphics = Engine::get_instance().graphics();
+
+                const auto* material = graphics->get_material_resource(mesh.material_handle);
+
+                if (!material) {
+                    return;
+                }
+
+                constexpr auto identity = flux::float4x4{1.f};
+                const auto model = flux::math::translate(identity, transform.position)
+                                                * flux::math::mat4_cast(transform.rotation)
+                                                * flux::math::scale(identity, transform.scale);
+
+
+                graphics->submit_draw_command({
+                    .model           = model,
+                    .base_colour     = material->albedo_color,
+                    .mesh_handle     = mesh.handle,
+                    .material_handle = mesh.material_handle,
+                });
+            }
         );
     }
 

@@ -15,9 +15,20 @@ namespace flux {
         alignas(16) flux::float4x4 projection;
     };
 
+    struct PushConstants {
+        alignas(16) flux::float4x4 model;
+        alignas(16) flux::float4 base_colour;
+    };
+
     struct CameraData {
         alignas(16) flux::float4x4 view;
         alignas(16) flux::float4x4 projection;
+    };
+
+    struct TextureData {
+
+        int width, height, num_channels;
+        std::span<std::uint8_t> pixel_data;
     };
 
     struct Vertex {

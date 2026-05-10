@@ -2,38 +2,17 @@ include(FetchContent)
 
 # Set FetchContent options
 set(FETCHCONTENT_QUIET OFF)
-set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 
-# SPIRV Headers
-CPMAddPackage("gh:KhronosGroup/SPIRV-Headers#vulkan-sdk-1.4.341.0")
-
-# SPIRV-Tools - Required by GLSLang for optimization
-CPMAddPackage("gh:KhronosGroup/SPIRV-Tools#2026.1"
-        NAME spirv-tools
-        OPTIONS "SPIRV_SKIP_EXECUTABLES ON" "SPIRV_SKIP_TESTS ON" "SPIRV_WERROR OFF"
-)
-
-# GLSLang - GLSL to SPIR-V compiler (built from source for ABI compatibility)
-CPMAddPackage("gh:KhronosGroup/glslang#16.2.0"
-        NAME glslang
-        OPTIONS "ENABLE_SPVREMAPPER OFF"
-            "ENABLE_GLSLANG_BINARIES OFF"
-            "ENABLE_GLSLANG_JS OFF"
-            "ENABLE_RTTI ON"
-            "ENABLE_EXCEPTIONS ON"
-            "ENABLE_OPT ON"
-            "BUILD_SHARED_LIBS OFF"
-            "GLSLANG_TESTS OFF"
-)
-
 # SDL3 - Windowing & Controller Support
 # SDL3 must be shared — static SDL3 embedded in a DLL violates Windows DLL init rules
 CPMAddPackage(
-        "gh:libsdl-org/SDL#release-3.4.8"
         NAME sdl
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-3.4.8
+        GIT_SHALLOW TRUE
         OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF" "SDL_WERROR OFF"
         SYSTEM
 )

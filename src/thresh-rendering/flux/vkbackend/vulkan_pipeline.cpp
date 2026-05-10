@@ -31,13 +31,6 @@ namespace flux {
                 .descriptorCount    = 1,
                 .stageFlags         = vk::ShaderStageFlagBits::eFragment,
                 .pImmutableSamplers = nullptr
-            },
-            vk::DescriptorSetLayoutBinding{
-                .binding           = 2,
-                .descriptorType    = vk::DescriptorType::eUniformBuffer,
-                .descriptorCount    = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment | vk::ShaderStageFlagBits::eVertex,
-                .pImmutableSamplers = nullptr
             }
         };
         vk::DescriptorSetLayoutCreateInfo layout_info {
@@ -118,10 +111,17 @@ namespace flux {
             .pDynamicStates    = dynamic_states.data()
         };
 
+        vk::PushConstantRange push_range {
+            .stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+            .offset     = 0,
+            .size       = sizeof(PushConstants)
+        };
+
         vk::PipelineLayoutCreateInfo pipeline_layout_info{
             .setLayoutCount         = 1,
             .pSetLayouts            = &*m_descriptor_set_layout,
-            .pushConstantRangeCount = 0
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges    = &push_range
         };
 
         m_pipeline_layout = vk::raii::PipelineLayout(device.logical(), pipeline_layout_info);

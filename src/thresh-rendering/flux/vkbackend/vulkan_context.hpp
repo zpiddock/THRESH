@@ -11,6 +11,7 @@
 #include "vulkan_instance.hpp"
 #include "vulkan_pipeline.hpp"
 #include "vulkan_swapchain.hpp"
+#include "flux/render_resources.hpp"
 #include "horizon/window.hpp"
 
 namespace flux {
@@ -47,7 +48,7 @@ namespace flux {
             auto create_sync_objects() -> void;
 
             // Rendering functions
-            auto record_command_buffer(uint32_t image_index) -> void;
+            auto record_command_buffer(uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
             auto transition_image_layout(vk::Image         image,
                                          vk::ImageLayout         old_layout,
@@ -72,26 +73,11 @@ namespace flux {
             std::vector<vk::raii::Fence>                  m_inflight_fences;
             uint32_t                                      m_frame_index = 0;
 
-            vk::raii::Buffer                     m_vertex_buffer           = nullptr;
-            vk::raii::DeviceMemory               m_vertex_buffer_memory    = nullptr;
-            vk::raii::Buffer                     m_index_buffer            = nullptr;
-            vk::raii::DeviceMemory               m_index_buffer_memory     = nullptr;
-            std::vector<vk::raii::Buffer>        m_uniform_buffers;
-            std::vector<vk::raii::DeviceMemory>  m_uniform_buffer_memory;
-            std::vector<void*>                   m_uniform_buffers_mapped;
-
-            vk::raii::Image m_image = nullptr;
-            vk::raii::DeviceMemory m_image_memory = nullptr;
-            vk::raii::ImageView m_image_view = nullptr;
-
-            vk::raii::Sampler m_texture_sampler = nullptr;
-
             vk::raii::Image m_depth_image = nullptr;
             vk::raii::DeviceMemory m_depth_image_memory = nullptr;
             vk::raii::ImageView m_depth_image_view = nullptr;
 
             vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
-            std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 
             // Camera Data Buffers
             std::vector<vk::raii::Buffer>        m_camera_buffers;

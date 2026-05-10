@@ -21,6 +21,14 @@ namespace demo {
         .set<CameraController>({})
         .add<ActiveCamera>();
 
+        auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
+        auto box_texture = thresh::Engine::get_instance().graphics()->register_texture("textures/checker.png");
+        auto box_material = thresh::Engine::get_instance().graphics()->register_material(box_texture);
+        auto red_material = thresh::Engine::get_instance().graphics()->register_material(box_texture, {1.0f, 0.0f, 0.0f, 1.0f});
+
+        scene->create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = box_material});
+        scene->create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_material});
+
         thresh::Engine::get_instance().transition_scene(std::move(scene));
     }
 
