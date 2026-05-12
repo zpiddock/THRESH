@@ -10,9 +10,28 @@
 #include "vulkan_swapchain.hpp"
 
 namespace flux {
+
+    struct PipelineContext {
+        // Each slang shader should have all entrypoints in main file
+        // Will be loaded from VFS "/shader/{shader_path}"
+        std::string shader_path;
+        // If string is empty stage will be omitted
+        std::string vertex_entry = "vertexMain";
+        std::string fragment_entry = "fragmentMain";
+        std::string compute_entry = ""; // future use
+        std::vector<vk::DescriptorSetLayoutBinding> bindings;
+        std::vector<vk::PushConstantRange> push_constants;
+        bool use_vertex_input = true;
+        bool depth_test = true;
+        vk::Format colour_format = vk::Format::eUndefined;
+        vk::Format depth_format = vk::Format::eUndefined;
+    };
+
     class ThreshVkPipeline {
 
         public:
+            ThreshVkPipeline(const PipelineContext& context, ThreshVkDevice& device);
+
             ThreshVkPipeline(const std::string& shader_path, ThreshVkDevice& device, ThreshVkSwapchain& swapchain);
 
             auto descriptor_set_layout() -> const vk::raii::DescriptorSetLayout& {
@@ -26,6 +45,8 @@ namespace flux {
             }
 
         private:
+
+            auto create_pipeline(const PipelineContext& context, ThreshVkDevice& device) -> void;
 
             auto create_descriptor_set_layouts(ThreshVkDevice& device) -> void;
 
