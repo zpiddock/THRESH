@@ -36,5 +36,6 @@ target_include_directories(Flux PUBLIC
 )
 
 add_slang_shader_target(opaque_mesh SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/opaque_mesh.slang)
-add_dependencies(Flux opaque_mesh)
+add_slang_shader_target(composite SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/composite.slang)
+add_dependencies(Flux opaque_mesh composite)
 
