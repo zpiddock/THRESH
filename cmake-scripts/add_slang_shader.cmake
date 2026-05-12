@@ -1,7 +1,6 @@
 function(add_slang_shader_target TARGET)
     cmake_parse_arguments("SHADER" "" "" "SOURCES" ${ARGN})
     set(THRESH_SHADERS_DIR ${CMAKE_SOURCE_DIR}/assets/shader)
-    set(THRESH_SHADER_ENTRY_POINTS -entry vertexMain -entry fragmentMain)
 
     find_program(SLANGC_EXECUTABLE
             NAMES slangc
@@ -15,8 +14,17 @@ function(add_slang_shader_target TARGET)
     )
     add_custom_command (
             OUTPUT  ${THRESH_SHADERS_DIR}/${TARGET}.spv
-            COMMAND ${SLANGC_EXECUTABLE} ${SHADER_SOURCES} -target spirv -profile spirv_1_4 -emit-spirv-directly -fvk-use-entrypoint-name ${THRESH_SHADER_ENTRY_POINTS} -o ${TARGET}.spv
+            COMMAND ${SLANGC_EXECUTABLE} ${SHADER_SOURCES}
+                -I ${THRESH_SHADERS_DIR}
+                -I${THRESH_SHADERS_DIR}/include
+                -target spirv
+                -profile spirv_1_5
+                -emit-spirv-directly
+                -fvk-use-entrypoint-name
+                -depfile ${THRESH_SHADERS_DIR}/${TARGET}.spv.d
+                -o ${TARGET}.spv
             WORKING_DIRECTORY ${THRESH_SHADERS_DIR}
+            DEPFILE ${THRESH_SHADERS_DIR}/${TARGET}.spv.d
             DEPENDS ${THRESH_SHADERS_DIR} ${SHADER_SOURCES}
             COMMENT "Compiling Slang Shaders"
             VERBATIM
