@@ -67,8 +67,9 @@ namespace flux {
 
         m_context->m_vk_device.logical().resetFences(fence);
 
-        m_context->m_command_buffers[m_context->m_frame_index].reset();
-        record_command_buffers(image_index, m_draw_commands);
+        auto& cmd = m_context->m_command_buffers[m_context->m_frame_index];
+        cmd.reset();
+        record_command_buffers(cmd, image_index, m_draw_commands);
 
         auto render_semaphore = *m_context->m_render_complete_semaphores[image_index];
         vk::PipelineStageFlags wait_destination_stage_mask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
@@ -111,6 +112,8 @@ namespace flux {
 
         m_context->m_vk_swapchain.recreate(*m_window, m_context->m_vk_instance, m_context->m_vk_device);
         m_context->create_depth_resources();
+        m_context->create_offscreen_resources();
+        m_context->create_composite_descriptor_sets();
     }
 
     auto GraphicsUtils::shutdown() -> void {
@@ -263,7 +266,7 @@ namespace flux {
 
         auto& device = m_context->m_vk_device;
 
-        std::vector layouts(VulkanContext::MAX_FRAMES_IN_FLIGHT, *m_context->m_vk_pipeline.descriptor_set_layout());
+        std::vector layouts(VulkanContext::MAX_FRAMES_IN_FLIGHT, *m_context->get_pipeline("opaque_mesh")->descriptor_set_layout());
 
         vk::DescriptorSetAllocateInfo alloc_info{
             .descriptorPool = m_context->m_descriptor_pool,
@@ -357,21 +360,126 @@ namespace flux {
         return m_draw_commands;
     }
 
-    auto GraphicsUtils::record_command_buffers(uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
+    auto GraphicsUtils::record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
 
         constexpr vk::CommandBufferBeginInfo begin_info{};
+        cmd_buffer.begin(begin_info);
+        record_geometry_commands(cmd_buffer, cmds);
+        record_composite_commands(cmd_buffer, image_index);
+        cmd_buffer.end();
 
-        auto& command_buffer = m_context->m_command_buffers[m_context->m_frame_index];
+        // constexpr vk::CommandBufferBeginInfo begin_info{};
+        //
+        // auto& command_buffer = m_context->m_command_buffers[m_context->m_frame_index];
+        //
+        // command_buffer.begin(begin_info);
+        //
+        // m_context->transition_image_layout(
+        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
+        //     vk::ImageLayout::eUndefined,
+        //     vk::ImageLayout::eColorAttachmentOptimal,
+        //     {},
+        //     vk::AccessFlagBits2::eColorAttachmentWrite,
+        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        //     vk::ImageAspectFlagBits::eColor
+        //     );
+        //
+        // m_context->transition_image_layout(
+        //     m_context->m_depth_image,
+        //     vk::ImageLayout::eUndefined,
+        //     vk::ImageLayout::eDepthAttachmentOptimal,
+        //     vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        // vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        // vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        // vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+        //     vk::ImageAspectFlagBits::eDepth
+        // );
+        //
+        // constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.f);
+        // constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
+        // vk::RenderingAttachmentInfo attachment_info {
+        //     .imageView = m_context->m_vk_swapchain.swapchain_image_views()[image_index],
+        //     .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+        //     .loadOp = vk::AttachmentLoadOp::eClear,
+        //     .storeOp = vk::AttachmentStoreOp::eStore,
+        //     .clearValue = clear_color
+        // };
+        //
+        // vk::RenderingAttachmentInfo depth_attachment_info {
+        //     .imageView = m_context->m_depth_image_view,
+        //     .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+        //     .loadOp = vk::AttachmentLoadOp::eClear,
+        //     .storeOp = vk::AttachmentStoreOp::eDontCare,
+        //     .clearValue = depth_clear_value
+        // };
+        //
+        // vk::RenderingInfo rendering_info {
+        //     .renderArea = {.offset = {0, 0}, .extent = m_context->m_vk_swapchain.swapchain_extent()},
+        //     .layerCount = 1,
+        //     .colorAttachmentCount = 1,
+        //     .pColorAttachments = &attachment_info,
+        //     .pDepthAttachment = &depth_attachment_info
+        // };
+        //
+        // command_buffer.beginRendering(rendering_info);
+        //
+        // command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->graphics_pipeline());
+        // command_buffer.setViewport(0,
+        //     vk::Viewport{0, static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width)
+        //         , -static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), 0, 1});
+        // command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_context->m_vk_swapchain.swapchain_extent()});
+        //
+        // std::uint32_t prev_material = 0;
+        //
+        // for (const auto& cmd : cmds) {
+        //
+        //     const auto* mesh = get_mesh_resource(cmd.mesh_handle);
+        //     const auto* material = get_material_resource(cmd.material_handle);
+        //
+        //     if (cmd.material_handle != prev_material) {
+        //         command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
+        //         prev_material = cmd.material_handle;
+        //     }
+        //
+        //     const PushConstants push_constants { cmd.model, cmd.base_colour };
+        //     command_buffer.pushConstants<PushConstants>(*m_context->get_pipeline("opaque_mesh")->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
+        //
+        //     command_buffer.bindVertexBuffers(0, {*mesh->vertex_buffer}, {0});
+        //     command_buffer.bindIndexBuffer(*mesh->index_buffer, 0, vk::IndexType::eUint32);
+        //     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
+        //     command_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
+        // }
+        //
+        // command_buffer.endRendering();
+        //
+        // m_context->transition_image_layout(
+        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
+        //     vk::ImageLayout::eColorAttachmentOptimal,
+        //     vk::ImageLayout::ePresentSrcKHR,
+        //     vk::AccessFlagBits2::eColorAttachmentWrite,             // srcAccessMask
+        //     {},                                                     // dstAccessMask
+        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,     // srcStage
+        //     vk::PipelineStageFlagBits2::eBottomOfPipe,               // dstStage
+        //     vk::ImageAspectFlagBits::eColor
+        // );
+        // command_buffer.end();
+    }
 
-        command_buffer.begin(begin_info);
+    auto GraphicsUtils::record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer,
+        const std::vector<DrawCommand>& cmds) -> void {
+
+        const auto frame = m_context->m_frame_index;
+        auto* pipeline = m_context->get_pipeline("opaque_mesh");
+        const auto extent = m_context->m_vk_swapchain.swapchain_extent();
 
         m_context->transition_image_layout(
-            m_context->m_vk_swapchain.swapchain_images()[image_index],
+            m_context->m_offscreen_images[frame],
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
             {},
             vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eTopOfPipe,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
             vk::ImageAspectFlagBits::eColor
             );
@@ -381,79 +489,123 @@ namespace flux {
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
             vk::ImageAspectFlagBits::eDepth
-        );
+            );
 
         constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.f);
         constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
-        vk::RenderingAttachmentInfo attachment_info {
-            .imageView = m_context->m_vk_swapchain.swapchain_image_views()[image_index],
+
+        vk::RenderingAttachmentInfo colour_attach {
+            .imageView = m_context->m_offscreen_image_views[frame],
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
             .clearValue = clear_color
         };
-
-        vk::RenderingAttachmentInfo depth_attachment_info {
+        vk::RenderingAttachmentInfo depth_attach {
             .imageView = m_context->m_depth_image_view,
             .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eDontCare,
             .clearValue = depth_clear_value
         };
-
         vk::RenderingInfo rendering_info {
-            .renderArea = {.offset = {0, 0}, .extent = m_context->m_vk_swapchain.swapchain_extent()},
+            .renderArea = {.offset = {0, 0}, .extent = extent},
             .layerCount = 1,
             .colorAttachmentCount = 1,
-            .pColorAttachments = &attachment_info,
-            .pDepthAttachment = &depth_attachment_info
+            .pColorAttachments = &colour_attach,
+            .pDepthAttachment = &depth_attach
         };
 
-        command_buffer.beginRendering(rendering_info);
-
-        command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_context->m_vk_pipeline.graphics_pipeline());
-        command_buffer.setViewport(0,
-            vk::Viewport{0, static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width)
-                , -static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), 0, 1});
-        command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_context->m_vk_swapchain.swapchain_extent()});
+        cmd_buffer.beginRendering(rendering_info);
+        cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
+        cmd_buffer.setViewport(0, vk::Viewport{0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0, 1});
+        cmd_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
 
         std::uint32_t prev_material = 0;
-
         for (const auto& cmd : cmds) {
-
             const auto* mesh = get_mesh_resource(cmd.mesh_handle);
             const auto* material = get_material_resource(cmd.material_handle);
 
             if (cmd.material_handle != prev_material) {
-                command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->m_vk_pipeline.pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
+                cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
                 prev_material = cmd.material_handle;
             }
 
             const PushConstants push_constants { cmd.model, cmd.base_colour };
-            command_buffer.pushConstants<PushConstants>(*m_context->m_vk_pipeline.pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
+            cmd_buffer.pushConstants<PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
 
-            command_buffer.bindVertexBuffers(0, {*mesh->vertex_buffer}, {0});
-            command_buffer.bindIndexBuffer(*mesh->index_buffer, 0, vk::IndexType::eUint32);
-            command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->m_vk_pipeline.pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
-            command_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
+            cmd_buffer.bindVertexBuffers(0, {*mesh->vertex_buffer}, {0});
+            cmd_buffer.bindIndexBuffer(*mesh->index_buffer, 0, vk::IndexType::eUint32);
+            cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
+            cmd_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
         }
+        cmd_buffer.endRendering();
 
-        command_buffer.endRendering();
+        m_context->transition_image_layout(
+            m_context->m_offscreen_images[frame],
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::ImageAspectFlagBits::eColor
+            );
+    }
+
+    auto GraphicsUtils::record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
+
+        const auto frame = m_context->m_frame_index;
+        const auto extent = m_context->m_vk_swapchain.swapchain_extent();
+        const auto& pipeline = m_context->get_pipeline("composite");
+
+        m_context->transition_image_layout(
+            m_context->m_vk_swapchain.swapchain_images()[image_index],
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            {},
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::ImageAspectFlagBits::eColor
+            );
+
+        constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.f, 0.f, 0.f, 1.f);
+        vk::RenderingAttachmentInfo colour_attach {
+            .imageView = m_context->m_vk_swapchain.swapchain_image_views()[image_index],
+            .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .loadOp = vk::AttachmentLoadOp::eClear,
+            .storeOp = vk::AttachmentStoreOp::eStore,
+            .clearValue = clear_color
+        };
+        vk::RenderingInfo rendering_info {
+            .renderArea = {.offset = {0, 0}, .extent = extent},
+            .layerCount = 1,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colour_attach,
+        };
+
+        cmd_buffer.beginRendering(rendering_info);
+        cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
+        cmd_buffer.setViewport(0, vk::Viewport{0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1});
+        cmd_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
+        cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *m_context->m_composite_pass_descriptor_sets[frame], nullptr);
+        cmd_buffer.draw(3, 1, 0, 0);
+        cmd_buffer.endRendering();
 
         m_context->transition_image_layout(
             m_context->m_vk_swapchain.swapchain_images()[image_index],
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::ePresentSrcKHR,
-            vk::AccessFlagBits2::eColorAttachmentWrite,             // srcAccessMask
-            {},                                                     // dstAccessMask
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,     // srcStage
-            vk::PipelineStageFlagBits2::eBottomOfPipe,               // dstStage
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            {},
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eBottomOfPipe,
             vk::ImageAspectFlagBits::eColor
-        );
-        command_buffer.end();
+            );
     }
 } // namespace flux

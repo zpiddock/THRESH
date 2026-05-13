@@ -59,7 +59,11 @@ namespace flux {
             auto get_draw_commands() -> std::vector<DrawCommand>&;
 
         private:
-            auto record_command_buffers(uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
+
+            auto record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
+
+            auto record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
             std::unique_ptr<VulkanContext> m_context;
 

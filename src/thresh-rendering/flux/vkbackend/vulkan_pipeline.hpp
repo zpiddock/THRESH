@@ -23,6 +23,7 @@ namespace flux {
         std::vector<vk::PushConstantRange> push_constants;
         bool use_vertex_input = true;
         bool depth_test = true;
+        vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
         vk::Format colour_format = vk::Format::eUndefined;
         vk::Format depth_format = vk::Format::eUndefined;
     };

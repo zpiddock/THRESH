@@ -68,7 +68,7 @@ namespace flux {
             .depthClampEnable        = vk::False,
             .rasterizerDiscardEnable = vk::False,
             .polygonMode             = vk::PolygonMode::eFill,
-            .cullMode                = vk::CullModeFlagBits::eBack,
+            .cullMode                = context.cull_mode,
             .frontFace               = vk::FrontFace::eCounterClockwise,
             .depthBiasEnable         = vk::False,
             .lineWidth               = 1.0f,
@@ -80,11 +80,11 @@ namespace flux {
         };
 
         vk::PipelineDepthStencilStateCreateInfo depth_stencil_info {
-            .depthTestEnable          = vk::True,
-            .depthWriteEnable         = vk::True,
-            .depthCompareOp           = vk::CompareOp::eLess,
-            .depthBoundsTestEnable    = vk::False,
-            .stencilTestEnable        = vk::False,
+            .depthTestEnable       = context.depth_test? vk::True : vk::False,
+            .depthWriteEnable      = context.depth_test? vk::True : vk::False,
+            .depthCompareOp        = vk::CompareOp::eLess,
+            .depthBoundsTestEnable = vk::False,
+            .stencilTestEnable     = vk::False,
         };
 
         vk::PipelineColorBlendAttachmentState blend_attachment{
@@ -106,10 +106,10 @@ namespace flux {
         };
 
         vk::PipelineLayoutCreateInfo pipeline_layout_info{
-            .setLayoutCount         = static_cast<std::uint32_t>(context.bindings.size()),
-            .pSetLayouts            = &*m_descriptor_set_layout,
+            .setLayoutCount         = context.bindings.empty() ? 0u : 1u,
+            .pSetLayouts            = context.bindings.empty() ? nullptr : &*m_descriptor_set_layout,
             .pushConstantRangeCount = static_cast<std::uint32_t>(context.push_constants.size()),
-            .pPushConstantRanges    = context.push_constants.data()
+            .pPushConstantRanges    = context.push_constants.empty() ? nullptr : context.push_constants.data()
         };
 
         m_pipeline_layout = vk::raii::PipelineLayout(device.logical(), pipeline_layout_info);
@@ -120,12 +120,12 @@ namespace flux {
             {
                 .stageCount          = static_cast<std::uint32_t>(shader_stages.size()),
                 .pStages             = shader_stages.data(),
-                .pVertexInputState   = context.use_vertex_input ? &vertex_input_info : nullptr,
+                .pVertexInputState   = &vertex_input_info,
                 .pInputAssemblyState = &input_assembly_info,
                 .pViewportState      = &viewportState,
                 .pRasterizationState = &rasterization_info,
                 .pMultisampleState   = &multisampling_info,
-                .pDepthStencilState  = &depth_stencil_info,
+                .pDepthStencilState  = context.depth_test ? &depth_stencil_info : nullptr,
                 .pColorBlendState    = &color_blending_info,
                 .pDynamicState       = &dynamic_state_info,
                 .layout              = m_pipeline_layout,
@@ -134,7 +134,7 @@ namespace flux {
             {
                 .colorAttachmentCount    = 1,
                 .pColorAttachmentFormats = &context.colour_format,
-                .depthAttachmentFormat = context.depth_format != vk::Format::eUndefined ? context.depth_format : device.find_depth_format()
+                .depthAttachmentFormat = context.depth_format
             }
             };
 
