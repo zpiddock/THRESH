@@ -33,8 +33,6 @@ namespace flux {
         public:
             ThreshVkPipeline(const PipelineContext& context, ThreshVkDevice& device);
 
-            ThreshVkPipeline(const std::string& shader_path, ThreshVkDevice& device, ThreshVkSwapchain& swapchain);
-
             auto descriptor_set_layout() -> const vk::raii::DescriptorSetLayout& {
                 return m_descriptor_set_layout;
             }
@@ -48,10 +46,6 @@ namespace flux {
         private:
 
             auto create_pipeline(const PipelineContext& context, ThreshVkDevice& device) -> void;
-
-            auto create_descriptor_set_layouts(ThreshVkDevice& device) -> void;
-
-            auto create_graphics_pipelines(const std::string& shader_path, ThreshVkDevice& device, ThreshVkSwapchain& swapchain) -> void;
 
             // Shader Functions - TODO: Create Shader Wrapper Class
             auto load_shader(const std::string& shader_path, ThreshVkDevice& device) -> vk::raii::ShaderModule;

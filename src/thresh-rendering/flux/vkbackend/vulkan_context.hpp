@@ -27,16 +27,6 @@ namespace flux {
 
             auto create_depth_resources() -> void;
 
-            auto create_texture_image() -> void; // Move to assets loading system
-
-            auto create_texture_image_view() -> void;
-
-            auto create_texture_sampler() -> void;
-
-            auto create_vertex_buffer() -> void;
-
-            auto create_index_buffer() -> void;
-
             auto create_uniform_buffers() -> void;
 
             auto create_descriptor_pool() -> void;
@@ -46,9 +36,6 @@ namespace flux {
             auto create_command_buffers() -> void;
 
             auto create_sync_objects() -> void;
-
-            // Rendering functions
-            auto record_command_buffer(uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
             auto transition_image_layout(vk::Image         image,
                                          vk::ImageLayout         old_layout,
@@ -69,7 +56,6 @@ namespace flux {
             auto register_geometry_pipeline() -> void;
 
             auto register_composite_pipeline() -> void;
-
 
             ThreshVkInstance  m_vk_instance;
             ThreshVkDevice    m_vk_device;
