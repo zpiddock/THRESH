@@ -18,6 +18,8 @@ add_library(Flux STATIC
         flux/mesh/mesh_primitive.hpp
         flux/render_resources.hpp
         flux/mesh/mesh_primitive.cpp
+        flux/dear_im_gui_context.cpp
+        flux/dear_im_gui_context.hpp
 )
 
 target_link_libraries(Flux PUBLIC
@@ -25,6 +27,7 @@ target_link_libraries(Flux PUBLIC
         Horizon
         Vulkan::Vulkan
         stb
+        imgui
         PRIVATE
         glm
 )

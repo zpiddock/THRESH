@@ -2,6 +2,7 @@
 #pragma once
 #include <memory>
 
+#include "dear_im_gui_context.hpp"
 #include "graphics_types.hpp"
 #include "render_resources.hpp"
 #include "horizon/window.hpp"
@@ -14,9 +15,9 @@ namespace flux {
     class GraphicsUtils {
         public:
 
-            auto init_vulkan(const VulkanInstanceContext& ctx, const thresh::Window& window) -> void;
+            auto vulkan_init(const VulkanInstanceContext& ctx, const thresh::Window& window) -> void;
 
-            auto init_vulkan(const thresh::Window& window) -> void;
+            auto vulkan_init(const thresh::Window& window) -> void;
 
             auto get_vulkan_context() -> VulkanContext*;
 
@@ -58,12 +59,22 @@ namespace flux {
 
             auto get_draw_commands() -> std::vector<DrawCommand>&;
 
+            auto imgui_init() -> void;
+
+            auto imgui_shutdown() -> void;
+
+            auto imgui_new_frame() -> void;
+
+            auto imgui_process_event(const SDL_Event& event) -> void;
+
         private:
             auto record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
             auto record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
 
             auto record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+
+            auto record_imgui_commands(const vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
             std::unique_ptr<VulkanContext> m_context;
 
@@ -72,6 +83,8 @@ namespace flux {
             bool                   m_framebuffer_resized = false;
             // Non Owning
             const thresh::Window* m_window = nullptr;
+
+            DearImGuiContext m_imgui_context;
 
             // Resource Handles
             std::vector<MeshResource> m_mesh_resources;

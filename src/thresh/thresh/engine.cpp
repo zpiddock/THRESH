@@ -44,7 +44,8 @@ namespace thresh {
         m_window = std::make_unique<Window>(window_context);
 
         m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
-        m_graphics_utils->init_vulkan(*m_window);
+        m_graphics_utils->vulkan_init(*m_window);
+        m_graphics_utils->imgui_init();
 
         m_input_manager = std::make_unique<horizon::InputManager>();
         m_input_manager->init();
@@ -68,6 +69,7 @@ namespace thresh {
             // Poll events
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
+                m_graphics_utils->imgui_process_event(event);
                 switch (event.type) {
                     case SDL_EVENT_QUIT: {
                         m_window->setShouldClose(true);
@@ -105,6 +107,8 @@ namespace thresh {
                 SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
                 continue;
             }
+            m_graphics_utils->imgui_new_frame();
+            m_application->render();
             m_graphics_utils->draw_frame();
 
             // m_application->render();
@@ -143,6 +147,7 @@ namespace thresh {
         m_application->shutdown();
         m_application = nullptr;
         m_input_manager.reset();
+        m_graphics_utils->imgui_shutdown();
         m_graphics_utils.reset();
         substratum::VFS::shutdown();
         m_window.reset();

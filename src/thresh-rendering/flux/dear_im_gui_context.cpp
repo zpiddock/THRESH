@@ -1,0 +1,92 @@
+//
+// Created by Admin on 14/05/2026.
+//
+
+#include "dear_im_gui_context.hpp"
+
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_vulkan.h"
+
+namespace flux {
+    DearImGuiContext::~DearImGuiContext() {
+    }
+
+    auto DearImGuiContext::init(const thresh::Window& window, VulkanContext& vk_context) -> void {
+
+        IMGUI_CHECKVERSION();
+
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+        ImGui::StyleColorsDark();
+
+        // ImGui 1.92 prefers managing its own descriptor pool — it knows exactly which
+        // descriptor types it needs (SAMPLER + SAMPLED_IMAGE for the new texture system,
+        // plus COMBINED_IMAGE_SAMPLER for compat). Passing DescriptorPoolSize > 0 with
+        // DescriptorPool == VK_NULL_HANDLE tells ImGui to allocate internally.
+        // We're not using m_descriptor_pool any more — kept as nullptr for now; remove
+        // the field from the header on next cleanup pass.
+
+        ImGui_ImplSDL3_InitForVulkan(window.getWindow());
+
+        auto format = vk_context.m_vk_swapchain.swapchain_surface_format().format;
+
+        vk::PipelineRenderingCreateInfo create_info = {
+            .sType = vk::StructureType::ePipelineRenderingCreateInfo,
+            .colorAttachmentCount = 1,
+            .pColorAttachmentFormats = &format
+        };
+
+        ImGui_ImplVulkan_PipelineInfo pipeline_info = {
+            .MSAASamples                 = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT,
+            .PipelineRenderingCreateInfo = create_info,
+        };
+
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = *vk_context.m_vk_instance.instance();
+        init_info.PhysicalDevice = *vk_context.m_vk_device.physical();
+        init_info.Device = *vk_context.m_vk_device.logical();
+        init_info.QueueFamily = vk_context.m_vk_device.queue_family_index();
+        init_info.Queue = *vk_context.m_vk_device.graphics_queue();
+        init_info.DescriptorPool = VK_NULL_HANDLE;          // ImGui manages its own pool
+        init_info.DescriptorPoolSize = 64;                  // headroom for ImGui_ImplVulkan_AddTexture calls later
+        init_info.MinImageCount = VulkanContext::MAX_FRAMES_IN_FLIGHT;
+        init_info.ImageCount = vk_context.m_vk_swapchain.swapchain_images().size();
+        init_info.UseDynamicRendering = true;
+        init_info.PipelineInfoMain = pipeline_info;
+        ImGui_ImplVulkan_Init(&init_info);
+    }
+
+    auto DearImGuiContext::shutdown() -> void {
+
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+    }
+
+    auto DearImGuiContext::process_event(const SDL_Event& event) -> void {
+
+        ImGui_ImplSDL3_ProcessEvent(&event);
+    }
+
+    auto DearImGuiContext::new_frame() -> void {
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    auto DearImGuiContext::discard_frame() -> void {
+
+        ImGui::EndFrame();
+    }
+
+    auto DearImGuiContext::record_draw_data(const vk::raii::CommandBuffer& cmd) -> void {
+
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd);
+    }
+} // flux

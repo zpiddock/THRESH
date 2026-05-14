@@ -51,6 +51,10 @@ namespace flux {
                 return m_graphics_queue;
             }
 
+            auto queue_family_index() -> uint32_t {
+                return m_queue_family_index;
+            }
+
         private:
             auto pick_suitable_device(const vk::raii::Instance& instance) -> void;
 

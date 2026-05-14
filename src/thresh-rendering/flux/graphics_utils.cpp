@@ -16,12 +16,12 @@
 #include "substratum/filesystem/vfs.hpp"
 
 namespace flux {
-    auto GraphicsUtils::init_vulkan(const VulkanInstanceContext& ctx, const thresh::Window& window) -> void {
+    auto GraphicsUtils::vulkan_init(const VulkanInstanceContext& ctx, const thresh::Window& window) -> void {
         m_window = &window;
         m_context = std::make_unique<VulkanContext>(ctx, window);
     }
 
-    auto GraphicsUtils::init_vulkan(const thresh::Window& window) -> void {
+    auto GraphicsUtils::vulkan_init(const thresh::Window& window) -> void {
 
         const VulkanInstanceContext ctx = {
             .application_name = "Thresh Application",
@@ -29,7 +29,7 @@ namespace flux {
             .engine_version = "0.0.1",
             .application_version = "0.0.1"
         };
-        init_vulkan(ctx, window);
+        vulkan_init(ctx, window);
     }
 
     auto GraphicsUtils::get_vulkan_context() -> VulkanContext* {
@@ -48,6 +48,7 @@ namespace flux {
         if (m_framebuffer_resized) {
             set_framebuffer_resized(false);
             recreate_swapchain();
+            m_imgui_context.discard_frame();
             return;
         }
 
@@ -57,6 +58,7 @@ namespace flux {
                 UINT64_MAX, present_semaphore, nullptr);
         if (result == vk::Result::eErrorOutOfDateKHR) {
             recreate_swapchain();
+            m_imgui_context.discard_frame();
             return;
         }
         if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
@@ -366,104 +368,20 @@ namespace flux {
         cmd_buffer.begin(begin_info);
         record_geometry_commands(cmd_buffer, cmds);
         record_composite_commands(cmd_buffer, image_index);
-        cmd_buffer.end();
+        record_imgui_commands(cmd_buffer, image_index);
 
-        // constexpr vk::CommandBufferBeginInfo begin_info{};
-        //
-        // auto& command_buffer = m_context->m_command_buffers[m_context->m_frame_index];
-        //
-        // command_buffer.begin(begin_info);
-        //
-        // m_context->transition_image_layout(
-        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
-        //     vk::ImageLayout::eUndefined,
-        //     vk::ImageLayout::eColorAttachmentOptimal,
-        //     {},
-        //     vk::AccessFlagBits2::eColorAttachmentWrite,
-        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        //     vk::ImageAspectFlagBits::eColor
-        //     );
-        //
-        // m_context->transition_image_layout(
-        //     m_context->m_depth_image,
-        //     vk::ImageLayout::eUndefined,
-        //     vk::ImageLayout::eDepthAttachmentOptimal,
-        //     vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        // vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        // vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        // vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-        //     vk::ImageAspectFlagBits::eDepth
-        // );
-        //
-        // constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.f);
-        // constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
-        // vk::RenderingAttachmentInfo attachment_info {
-        //     .imageView = m_context->m_vk_swapchain.swapchain_image_views()[image_index],
-        //     .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
-        //     .loadOp = vk::AttachmentLoadOp::eClear,
-        //     .storeOp = vk::AttachmentStoreOp::eStore,
-        //     .clearValue = clear_color
-        // };
-        //
-        // vk::RenderingAttachmentInfo depth_attachment_info {
-        //     .imageView = m_context->m_depth_image_view,
-        //     .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
-        //     .loadOp = vk::AttachmentLoadOp::eClear,
-        //     .storeOp = vk::AttachmentStoreOp::eDontCare,
-        //     .clearValue = depth_clear_value
-        // };
-        //
-        // vk::RenderingInfo rendering_info {
-        //     .renderArea = {.offset = {0, 0}, .extent = m_context->m_vk_swapchain.swapchain_extent()},
-        //     .layerCount = 1,
-        //     .colorAttachmentCount = 1,
-        //     .pColorAttachments = &attachment_info,
-        //     .pDepthAttachment = &depth_attachment_info
-        // };
-        //
-        // command_buffer.beginRendering(rendering_info);
-        //
-        // command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->graphics_pipeline());
-        // command_buffer.setViewport(0,
-        //     vk::Viewport{0, static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().width)
-        //         , -static_cast<float>(m_context->m_vk_swapchain.swapchain_extent().height), 0, 1});
-        // command_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, m_context->m_vk_swapchain.swapchain_extent()});
-        //
-        // std::uint32_t prev_material = 0;
-        //
-        // for (const auto& cmd : cmds) {
-        //
-        //     const auto* mesh = get_mesh_resource(cmd.mesh_handle);
-        //     const auto* material = get_material_resource(cmd.material_handle);
-        //
-        //     if (cmd.material_handle != prev_material) {
-        //         command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
-        //         prev_material = cmd.material_handle;
-        //     }
-        //
-        //     const PushConstants push_constants { cmd.model, cmd.base_colour };
-        //     command_buffer.pushConstants<PushConstants>(*m_context->get_pipeline("opaque_mesh")->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
-        //
-        //     command_buffer.bindVertexBuffers(0, {*mesh->vertex_buffer}, {0});
-        //     command_buffer.bindIndexBuffer(*mesh->index_buffer, 0, vk::IndexType::eUint32);
-        //     command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *m_context->get_pipeline("opaque_mesh")->pipeline_layout(), 0, *material->descriptor_sets[m_context->m_frame_index], nullptr);
-        //     command_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
-        // }
-        //
-        // command_buffer.endRendering();
-        //
-        // m_context->transition_image_layout(
-        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
-        //     vk::ImageLayout::eColorAttachmentOptimal,
-        //     vk::ImageLayout::ePresentSrcKHR,
-        //     vk::AccessFlagBits2::eColorAttachmentWrite,             // srcAccessMask
-        //     {},                                                     // dstAccessMask
-        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,     // srcStage
-        //     vk::PipelineStageFlagBits2::eBottomOfPipe,               // dstStage
-        //     vk::ImageAspectFlagBits::eColor
-        // );
-        // command_buffer.end();
+        m_context->transition_image_layout(
+            m_context->m_vk_swapchain.swapchain_images()[image_index],
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::ePresentSrcKHR,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            {},
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eBottomOfPipe,
+            vk::ImageAspectFlagBits::eColor
+            );
+
+        cmd_buffer.end();
     }
 
     auto GraphicsUtils::record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer,
@@ -597,15 +515,51 @@ namespace flux {
         cmd_buffer.draw(3, 1, 0, 0);
         cmd_buffer.endRendering();
 
-        m_context->transition_image_layout(
-            m_context->m_vk_swapchain.swapchain_images()[image_index],
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::ePresentSrcKHR,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            {},
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eBottomOfPipe,
-            vk::ImageAspectFlagBits::eColor
-            );
+        // m_context->transition_image_layout(
+        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
+        //     vk::ImageLayout::eColorAttachmentOptimal,
+        //     vk::ImageLayout::ePresentSrcKHR,
+        //     vk::AccessFlagBits2::eColorAttachmentWrite,
+        //     {},
+        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        //     vk::PipelineStageFlagBits2::eBottomOfPipe,
+        //     vk::ImageAspectFlagBits::eColor
+        //     );
+    }
+
+    auto GraphicsUtils::record_imgui_commands(const vk::raii::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
+
+        const auto extent = m_context->m_vk_swapchain.swapchain_extent();
+        vk::RenderingAttachmentInfo colour_attach {
+            .imageView = m_context->m_vk_swapchain.swapchain_image_views()[image_index],
+            .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .loadOp = vk::AttachmentLoadOp::eLoad,
+            .storeOp = vk::AttachmentStoreOp::eStore,
+        };
+        const vk::RenderingInfo rendering_info {
+            .renderArea = {.offset = {0, 0}, .extent = extent},
+            .layerCount = 1,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colour_attach,
+        };
+        cmd_buffer.beginRendering(rendering_info);
+        m_imgui_context.record_draw_data(cmd_buffer);
+        cmd_buffer.endRendering();
+    }
+
+    auto GraphicsUtils::imgui_init() -> void {
+        m_imgui_context.init(*m_window, *m_context);
+    }
+
+    auto GraphicsUtils::imgui_shutdown() -> void {
+        m_imgui_context.shutdown();
+    }
+
+    auto GraphicsUtils::imgui_new_frame() -> void {
+        m_imgui_context.new_frame();
+    }
+
+    auto GraphicsUtils::imgui_process_event(const SDL_Event& event) -> void {
+        m_imgui_context.process_event(event);
     }
 } // namespace flux

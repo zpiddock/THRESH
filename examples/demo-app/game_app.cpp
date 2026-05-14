@@ -4,6 +4,7 @@
 
 #include "game_app.hpp"
 
+#include "imgui.h"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 #include "thresh/scene/ecs_types.hpp"
@@ -41,6 +42,8 @@ namespace demo {
     }
 
     auto GameApp::render() -> void {
+
+        ImGui::ShowDemoWindow();
     }
 
     auto GameApp::shutdown() -> void {

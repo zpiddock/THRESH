@@ -1,8 +1,3 @@
-include(FetchContent)
-
-# Set FetchContent options
-set(FETCHCONTENT_QUIET OFF)
-
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 
@@ -27,44 +22,64 @@ CPMAddPackage("gh:SanderMertens/flecs#master")
 # PhysicsFS 3.2.0 uses cmake_minimum_required(VERSION 2.8.12) which CMake 4.x rejects.
 # Allow it via the compatibility policy variable.
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
-set(PHYSFS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
-set(PHYSFS_BUILD_TEST OFF CACHE BOOL "" FORCE)
-set(PHYSFS_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(PHYSFS_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
-FetchContent_Declare(
-        physfs
+CPMAddPackage(
+        NAME physfs
         GIT_REPOSITORY https://github.com/icculus/physfs.git
         GIT_TAG release-3.2.0
         GIT_SHALLOW TRUE
+        OPTIONS
+            "PHYSFS_BUILD_SHARED OFF"
+            "PHYSFS_BUILD_TEST OFF"
+            "PHYSFS_BUILD_DOCS OFF"
+            "PHYSFS_DISABLE_INSTALL ON"
 )
 
 # stb - Single-file public domain libraries (stb_image.h for texture decoding)
-FetchContent_Declare(
-        stb
+# stb is not a CMake project — fetch sources only and wrap in an INTERFACE target below.
+CPMAddPackage(
+        NAME stb
         GIT_REPOSITORY https://github.com/nothings/stb.git
         GIT_TAG master
         GIT_SHALLOW TRUE
+        DOWNLOAD_ONLY YES
 )
 
-# KTX-Software - KTX2 GPU-compressed texture loading + Basis Universal transcoding
-set(KTX_FEATURE_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
-set(KTX_FEATURE_TESTS OFF CACHE BOOL "" FORCE)
-set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE)
-set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "" FORCE)
-set(KTX_FEATURE_VK_UPLOAD ON CACHE BOOL "" FORCE)
-set(KTX_FEATURE_DOC OFF CACHE BOOL "" FORCE)
-set(KTX_FEATURE_LOADTEST_APPS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(
-        ktx
-        GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
-        GIT_TAG v4.3.2
-        GIT_SHALLOW TRUE
-)
-
-FetchContent_MakeAvailable(physfs stb ktx)
-
-# stb is not a CMake project — create an INTERFACE target for includ path
-if(NOT TARGET stb)
+if(stb_ADDED AND NOT TARGET stb)
     add_library(stb INTERFACE)
     target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 endif()
+
+# KTX-Software - KTX2 GPU-compressed texture loading + Basis Universal transcoding
+CPMAddPackage(
+        NAME ktx
+        GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
+        GIT_TAG v4.3.2
+        GIT_SHALLOW TRUE
+        OPTIONS
+            "KTX_FEATURE_STATIC_LIBRARY ON"
+            "KTX_FEATURE_TESTS OFF"
+            "KTX_FEATURE_TOOLS OFF"
+            "KTX_FEATURE_GL_UPLOAD OFF"
+            "KTX_FEATURE_VK_UPLOAD ON"
+            "KTX_FEATURE_DOC OFF"
+            "KTX_FEATURE_LOADTEST_APPS OFF"
+)
+
+CPMAddPackage("gh:ocornut/imgui@1.92.8#docking")
+
+if(imgui_ADDED)
+    add_library(imgui SHARED
+            ${imgui_SOURCE_DIR}/imgui.cpp
+            ${imgui_SOURCE_DIR}/imgui_demo.cpp
+            ${imgui_SOURCE_DIR}/imgui_draw.cpp
+            ${imgui_SOURCE_DIR}/imgui_tables.cpp
+            ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+    )
+    target_include_directories(imgui PUBLIC
+            ${imgui_SOURCE_DIR}
+            ${imgui_SOURCE_DIR}/backends
+    )
+    target_link_libraries(imgui PUBLIC SDL3::SDL3 Vulkan::Vulkan)
+endif ()
