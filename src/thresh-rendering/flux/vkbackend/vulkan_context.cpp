@@ -218,9 +218,11 @@ namespace flux {
 
         // Check if offscreen sampler has been created or not
         if (!*m_offscreen_sampler) {
+            // Nearest for a 1:1 copy. Switch back to eLinear if offscreen extent ever
+            // diverges from swapchain extent (resolution scaling, fixed-res offscreen, etc).
             constexpr vk::SamplerCreateInfo sampler_info {
-                .magFilter = vk::Filter::eLinear,
-                .minFilter = vk::Filter::eLinear,
+                .magFilter = vk::Filter::eNearest,
+                .minFilter = vk::Filter::eNearest,
                 .mipmapMode = vk::SamplerMipmapMode::eNearest,
                 .addressModeU = vk::SamplerAddressMode::eClampToEdge,
                 .addressModeV = vk::SamplerAddressMode::eClampToEdge,

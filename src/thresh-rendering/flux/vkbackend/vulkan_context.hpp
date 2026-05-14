@@ -60,6 +60,8 @@ namespace flux {
             ThreshVkInstance  m_vk_instance;
             ThreshVkDevice    m_vk_device;
             ThreshVkSwapchain m_vk_swapchain;
+            
+            vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
 
             std::unordered_map<std::string, std::unique_ptr<ThreshVkPipeline>> m_pipelines;
 
@@ -85,8 +87,6 @@ namespace flux {
             std::vector<vk::raii::ImageView> m_offscreen_image_views;
             vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
-
-            vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
 
             // Camera Data Buffers
             std::vector<vk::raii::Buffer>        m_camera_buffers;
