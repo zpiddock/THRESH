@@ -18,6 +18,20 @@ if (WIN32)
     )
 endif ()
 
+# On Linux, embed $ORIGIN as RPATH and copy all shared libs alongside the binary
+if (UNIX AND NOT APPLE)
+    target_link_options(demo PRIVATE "-Wl,-rpath,$ORIGIN")
+    add_custom_command(TARGET demo POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:Thresh>
+            $<TARGET_FILE:flecs>
+            $<TARGET_SONAME_FILE:SDL3::SDL3>
+            $<TARGET_FILE:imgui>
+            $<TARGET_FILE_DIR:demo>
+            COMMENT "Copying shared libraries to output directory"
+    )
+endif ()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
     cmake_path(GET CMAKE_CXX_COMPILER PARENT_PATH _clang_bin)
     if (EXISTS "${_clang_bin}/libc++.dll")

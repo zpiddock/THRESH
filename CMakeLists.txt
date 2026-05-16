@@ -14,6 +14,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Include CMP for Dependency management
 include(cmake-scripts/get_cpm.cmake)
 # Find Vulkan (Khronos Official Vulkan cmake script)

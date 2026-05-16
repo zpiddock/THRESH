@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -82,7 +83,7 @@ namespace substratum {
              * @param virtual_path  Virtual path relative to the search path (e.g. "textures/stone.png")
              * @return File contents, or an empty vector on failure
              */
-            [[nodiscard]] static auto read_file(const std::string& virtual_path) -> std::vector<std::uint8_t>;
+            [[nodiscard]] static auto read_file(const std::string& virtual_path) -> std::vector<uint8_t>;
 
             /**
              * Read an entire file as a UTF-8 string.
