@@ -13,7 +13,8 @@ namespace flux {
         std::string              engine_name               = "THRΞSH";
         std::string              engine_version            = "0.0.1";
         std::string              application_version       = "0.0.1";
-        bool                     enable_validation_layers  = true;
+        bool                     enable_validation_layers  = false;
+        bool                     enable_sync_validation    = false;
         std::vector<const char*> enabled_validation_layers = {
             "VK_LAYER_KHRONOS_validation"
         };

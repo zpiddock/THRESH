@@ -80,13 +80,23 @@ namespace flux {
                                      std::string(*unsupported_extensions_iterator));
         }
 
-        const vk::InstanceCreateInfo instance_info{
+        vk::InstanceCreateInfo instance_info{
             .pApplicationInfo        = &app_info,
             .enabledLayerCount       = static_cast<uint32_t>(layers_required.size()),
             .ppEnabledLayerNames     = layers_required.data(),
             .enabledExtensionCount   = static_cast<uint32_t>(extensions_required.size()),
             .ppEnabledExtensionNames = extensions_required.data()
         };
+
+        std::vector<vk::ValidationFeatureEnableEXT> sync_enables = {
+            vk::ValidationFeatureEnableEXT::eSynchronizationValidation
+        };
+        vk::ValidationFeaturesEXT validation_features{};
+        validation_features.setEnabledValidationFeatures(sync_enables);
+
+        if (ctx.enable_validation_layers && ctx.enable_sync_validation) {
+            instance_info.pNext = &validation_features;
+        }
 
         SUB_INFO("Initialising Vulkan Instance");
         m_instance = vk::raii::Instance(m_context, instance_info);
