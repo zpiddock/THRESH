@@ -12,6 +12,7 @@
 #include "SDL3/SDL.h"
 
 #include "application.hpp"
+#include "asset/assets_loader.h"
 #include "flux/graphics_utils.hpp"
 #include "horizon/input_manager.hpp"
 #include "horizon/window.hpp"
@@ -52,6 +53,8 @@ class Engine {
 
         auto graphics() -> flux::GraphicsUtils*;
 
+        auto assets() -> AssetsLoader&;
+
         auto active_scene() -> Scene*;
 
         auto transition_scene(std::unique_ptr<Scene> new_scene) -> void;
@@ -66,6 +69,7 @@ class Engine {
         std::unique_ptr<Window>                m_window;
         std::unique_ptr<flux::GraphicsUtils>   m_graphics_utils;
         std::unique_ptr<horizon::InputManager> m_input_manager;
+        std::unique_ptr<AssetsLoader>          m_asset_manager;
 
         std::unique_ptr<Scene> m_active_scene;
 };

@@ -136,6 +136,13 @@ namespace thresh {
         return m_graphics_utils.get();
     }
 
+    auto Engine::assets() -> AssetsLoader & {
+        if (!m_asset_manager) {
+            m_asset_manager = std::make_unique<AssetsLoader>(*graphics());
+        }
+        return *m_asset_manager;
+    }
+
     auto Engine::active_scene() -> Scene* {
         return m_active_scene.get();
     }
@@ -147,6 +154,7 @@ namespace thresh {
     auto Engine::shutdown() -> void {
         m_application->shutdown();
         m_application = nullptr;
+        m_asset_manager.reset();
         m_input_manager.reset();
         m_graphics_utils->imgui_shutdown();
         m_graphics_utils.reset();

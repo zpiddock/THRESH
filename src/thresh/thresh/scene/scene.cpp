@@ -94,7 +94,7 @@ namespace thresh {
 
                 graphics->submit_draw_command({
                     .model           = model,
-                    .base_colour     = material->albedo_color,
+                    .base_colour     = material->albedo_tint,
                     .mesh_handle     = mesh.handle,
                     .material_handle = mesh.material_handle,
                 });

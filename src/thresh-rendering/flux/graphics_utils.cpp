@@ -332,7 +332,7 @@ namespace flux {
 
         MaterialResource material;
         material.albedo_texture_handle = texture_handle;
-        material.albedo_color = base_colour;
+        material.albedo_tint = base_colour;
         material.descriptor_sets = create_material_descriptor_sets(*get_texture_resource(texture_handle));
         m_material_resources.emplace_back(std::move(material));
         return m_material_resources.size();
