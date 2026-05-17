@@ -22,13 +22,17 @@ namespace demo {
         .set<CameraController>({})
         .add<ActiveCamera>();
 
-        auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
-        auto box_texture = thresh::Engine::get_instance().graphics()->register_texture("textures/checker.png");
-        auto box_material = thresh::Engine::get_instance().graphics()->register_material(box_texture);
-        auto red_material = thresh::Engine::get_instance().graphics()->register_material(box_texture, {1.0f, 0.0f, 0.0f, 1.0f});
+        auto assets = thresh::Engine::get_instance().assets();
 
-        scene->get_or_create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = box_material});
-        scene->get_or_create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_material});
+        auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
+
+        auto brick_material = assets.load_material("material/brick.mat");
+        auto default_material = assets.load_material("material/default.mat");
+        auto red_checker = assets.load_material("material/red_checker.mat");
+
+        scene->get_or_create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = default_material});
+        scene->get_or_create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_checker});
+        scene->get_or_create_entity("Test Cube 3").set<Transform>({.position = {-2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = brick_material});
 
         thresh::Engine::get_instance().transition_scene(std::move(scene));
     }
@@ -49,8 +53,6 @@ namespace demo {
     }
 
     auto GameApp::render() -> void {
-
-        // ImGui::ShowDemoWindow();
     }
 
     auto GameApp::debug_render() -> void
