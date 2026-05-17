@@ -83,3 +83,7 @@ if(imgui_ADDED)
     )
     target_link_libraries(imgui PUBLIC SDL3::SDL3 Vulkan::Vulkan)
 endif ()
+
+# Glaze
+
+CPMAddPackage("gh:stephenberry/glaze@7.6.0")
