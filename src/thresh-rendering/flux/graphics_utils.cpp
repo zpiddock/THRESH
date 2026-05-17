@@ -27,7 +27,9 @@ namespace flux {
             .application_name = "Thresh Application",
             .engine_name = "THRΞSH",
             .engine_version = "0.0.1",
-            .application_version = "0.0.1"
+            .application_version = "0.0.1",
+            .enable_validation_layers = true,
+            .enable_sync_validation = true,
         };
         vulkan_init(ctx, window);
     }
@@ -485,8 +487,8 @@ namespace flux {
             m_context->m_vk_swapchain.swapchain_images()[image_index],
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
             {},
+            vk::AccessFlagBits2::eColorAttachmentWrite,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
             vk::ImageAspectFlagBits::eColor
@@ -514,17 +516,6 @@ namespace flux {
         cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *m_context->m_composite_pass_descriptor_sets[frame], nullptr);
         cmd_buffer.draw(3, 1, 0, 0);
         cmd_buffer.endRendering();
-
-        // m_context->transition_image_layout(
-        //     m_context->m_vk_swapchain.swapchain_images()[image_index],
-        //     vk::ImageLayout::eColorAttachmentOptimal,
-        //     vk::ImageLayout::ePresentSrcKHR,
-        //     vk::AccessFlagBits2::eColorAttachmentWrite,
-        //     {},
-        //     vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-        //     vk::PipelineStageFlagBits2::eBottomOfPipe,
-        //     vk::ImageAspectFlagBits::eColor
-        //     );
     }
 
     auto GraphicsUtils::record_imgui_commands(const vk::raii::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
