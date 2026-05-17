@@ -364,13 +364,16 @@ namespace flux {
         return m_draw_commands;
     }
 
-    auto GraphicsUtils::record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
+    auto GraphicsUtils::record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, const uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
 
         constexpr vk::CommandBufferBeginInfo begin_info{};
         cmd_buffer.begin(begin_info);
         record_geometry_commands(cmd_buffer, cmds);
         record_composite_commands(cmd_buffer, image_index);
-        record_imgui_commands(cmd_buffer, image_index);
+
+        if (is_imgui_enabled()) {
+            record_imgui_commands(cmd_buffer, image_index);
+        }
 
         m_context->transition_image_layout(
             m_context->m_vk_swapchain.swapchain_images()[image_index],
@@ -546,11 +549,19 @@ namespace flux {
         m_imgui_context.shutdown();
     }
 
-    auto GraphicsUtils::imgui_new_frame() -> void {
-        m_imgui_context.new_frame();
+    auto GraphicsUtils::imgui_new_frame() -> bool {
+        return m_imgui_context.new_frame();
     }
 
     auto GraphicsUtils::imgui_process_event(const SDL_Event& event) -> void {
         m_imgui_context.process_event(event);
+    }
+
+    auto GraphicsUtils::imgui_enabled(const bool enabled) -> void {
+        m_imgui_context.m_enabled = enabled;
+    }
+
+    auto GraphicsUtils::is_imgui_enabled() const -> bool {
+        return m_imgui_context.m_enabled;
     }
 } // namespace flux

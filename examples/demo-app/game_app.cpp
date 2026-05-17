@@ -43,6 +43,11 @@ namespace demo {
 
     auto GameApp::render() -> void {
 
+        // ImGui::ShowDemoWindow();
+    }
+
+    auto GameApp::debug_render() -> void
+    {
         ImGui::ShowDemoWindow();
     }
 

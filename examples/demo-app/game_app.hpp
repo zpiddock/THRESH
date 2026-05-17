@@ -16,6 +16,8 @@ class GameApp : public thresh::Application {
 
         auto render() -> void override;
 
+        auto debug_render() -> void override;
+
         auto shutdown() -> void override;
 
     private:

@@ -72,15 +72,19 @@ namespace flux {
         ImGui_ImplSDL3_ProcessEvent(&event);
     }
 
-    auto DearImGuiContext::new_frame() -> void {
+    auto DearImGuiContext::new_frame() -> bool {
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+        if (m_enabled) {
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
+        }
+        return m_enabled;
     }
 
     auto DearImGuiContext::discard_frame() -> void {
 
+        if (!m_enabled) { return; }
         ImGui::EndFrame();
     }
 

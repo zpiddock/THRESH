@@ -63,9 +63,13 @@ namespace flux {
 
             auto imgui_shutdown() -> void;
 
-            auto imgui_new_frame() -> void;
+            auto imgui_new_frame() -> bool;
 
             auto imgui_process_event(const SDL_Event& event) -> void;
+
+            auto imgui_enabled(bool enabled) -> void;
+
+            auto is_imgui_enabled() const -> bool;
 
         private:
             auto record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;

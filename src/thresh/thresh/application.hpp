@@ -16,6 +16,8 @@ class Application {
 
         virtual auto render() -> void {}
 
+        virtual auto debug_render() -> void {};
+
         virtual auto shutdown() -> void;
 };
 

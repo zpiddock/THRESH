@@ -107,8 +107,9 @@ namespace thresh {
                 SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
                 continue;
             }
-            m_graphics_utils->imgui_new_frame();
-            m_application->render();
+            if (m_graphics_utils->imgui_new_frame()) {
+                m_application->debug_render();
+            }
             m_graphics_utils->draw_frame();
 
             // m_application->render();

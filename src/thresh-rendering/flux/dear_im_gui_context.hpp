@@ -23,7 +23,7 @@ namespace flux {
 
             auto process_event(const SDL_Event& event) -> void;
 
-            auto new_frame() -> void;
+            auto new_frame() -> bool;
 
             // Balances a new_frame() without producing draw data. Use when the frame
             // is being skipped (e.g. swapchain resize, OutOfDate acquire) so the next
@@ -32,8 +32,8 @@ namespace flux {
 
             auto record_draw_data(const vk::raii::CommandBuffer& cmd) -> void;
 
-        private:
+            bool m_enabled = false;
 
-            bool m_initialized = false;
+        private:
     };
 } // flux
