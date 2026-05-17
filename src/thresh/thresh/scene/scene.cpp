@@ -11,6 +11,8 @@
 namespace thresh {
     Scene::Scene() {
 
+        m_world.set<flecs::Rest>({});
+
         init();
     }
 
@@ -21,6 +23,8 @@ namespace thresh {
 
         m_world.system<Transform, CameraController, ActiveCamera>().kind(flecs::OnUpdate).each(
                 [](flecs::iter& it, size_t, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {
+
+                    if (!camera_controller.movement_allowed) { return; }
 
                     const auto input = Engine::get_instance().input();
                     const auto delta_time = it.delta_time();
@@ -132,11 +136,11 @@ namespace thresh {
         return m_world;
     }
 
-    auto Scene::create_entity(const std::string& name) -> flecs::entity {
+    auto Scene::get_or_create_entity(const std::string& name) -> flecs::entity {
         return m_world.entity(name.c_str());
     }
 
-    auto Scene::create_entity() -> flecs::entity {
+    auto Scene::get_or_create_entity() -> flecs::entity {
         return m_world.entity();
     }
 } // thresh

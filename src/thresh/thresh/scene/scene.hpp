@@ -18,9 +18,9 @@ namespace thresh {
 
             auto get_world() -> flecs::world&;
 
-            auto create_entity(const std::string& name) -> flecs::entity;
+            auto get_or_create_entity(const std::string& name) -> flecs::entity;
 
-            auto create_entity() -> flecs::entity;
+            auto get_or_create_entity() -> flecs::entity;
 
             auto compute_active_camera_data(float aspect) -> std::optional<flux::CameraData>;
         private:

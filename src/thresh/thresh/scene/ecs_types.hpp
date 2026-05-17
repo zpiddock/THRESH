@@ -29,6 +29,8 @@ struct CameraController {
 
     float movement_speed = 5.0f;
     float mouse_sensitivity = 0.1f;
+
+    bool movement_allowed = true;
 };
 
 struct Light {
