@@ -44,6 +44,7 @@ endif()
 
 
 add_subdirectory(src/thresh-core)
+add_subdirectory(src/thresh-asset-schema)
 add_subdirectory(src/thresh-windowing)
 add_subdirectory(src/thresh-rendering)
 add_subdirectory(src/thresh)

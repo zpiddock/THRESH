@@ -8,9 +8,16 @@ add_library(Thresh SHARED
         thresh/thresh.cpp
         thresh/thresh.hpp
         thresh/scene/ecs_types.hpp
+        thresh/asset/assets_loader.cpp
+        thresh/asset/assets_loader.h
 )
 
-target_link_libraries(Thresh PUBLIC Substratum Horizon Flux flecs::flecs stb)
+target_link_libraries(Thresh PUBLIC
+        Substratum Horizon Flux Asset_Schema
+        flecs::flecs
+        stb
+        glaze::glaze
+)
 
 target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)
 
