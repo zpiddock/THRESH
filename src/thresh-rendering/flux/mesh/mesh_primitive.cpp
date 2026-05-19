@@ -63,3 +63,62 @@ auto flux::primitives::box(const flux::float3 extents) -> MeshData {
 
     return mesh;
 }
+
+auto flux::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
+    -> MeshData {
+
+    MeshData mesh;
+
+    constexpr auto PI = flux::mathconstants::pi<float>();
+
+    mesh.vertices.reserve((stacks + 1) * (sectors + 1));
+    mesh.indices.reserve(stacks * sectors * 6);
+
+    const float radius = extent * 0.5f;
+
+    const float sector_step = 2.f * PI / static_cast<float>(sectors);
+    const float stack_step  =       PI / static_cast<float>(stacks);
+    const float inv_radius  = 1.f / radius;
+
+    for (std::uint32_t i = 0; i <= stacks; ++i) {
+        const float stack_angle = PI * 0.5f - static_cast<float>(i) * stack_step; // +pi/2 .. -pi/2
+        const float xy = radius * std::cos(stack_angle);
+        const float z  = radius * std::sin(stack_angle);
+
+        for (std::uint32_t j = 0; j <= sectors; ++j) {
+            const float sector_angle = static_cast<float>(j) * sector_step; // 0 .. 2pi
+
+            const flux::float3 position {
+                xy * std::cos(sector_angle),
+                z,
+                xy * std::sin(sector_angle),
+            };
+            const flux::float3 normal {
+                position.x * inv_radius,
+                position.y * inv_radius,
+                position.z * inv_radius,
+            };
+            const flux::float2 uv {
+                static_cast<float>(j) / static_cast<float>(sectors),
+                static_cast<float>(i) / static_cast<float>(stacks),
+            };
+            mesh.vertices.push_back({ position, normal, uv });
+        }
+    }
+
+    for (std::uint32_t i = 0; i < stacks; ++i) {
+        std::uint32_t k1 =  i      * (sectors + 1);
+        std::uint32_t k2 = (i + 1) * (sectors + 1);
+
+        for (std::uint32_t j = 0; j < sectors; ++j, ++k1, ++k2) {
+            if (i != 0) {                       // skip top cap upper-tri
+                mesh.indices.insert(mesh.indices.end(), { k1, k1 + 1, k2 });
+            }
+            if (i != stacks - 1) {              // skip bottom cap lower-tri
+                mesh.indices.insert(mesh.indices.end(), { k1 + 1, k2 + 1, k2 });
+            }
+        }
+    }
+
+    return mesh;
+}

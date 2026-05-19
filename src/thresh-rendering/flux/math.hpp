@@ -48,3 +48,9 @@ namespace flux::math {
     using glm::cos;
     using glm::tan;
 }
+
+namespace flux::mathconstants {
+
+    using glm::pi;
+    using glm::golden_ratio;
+}

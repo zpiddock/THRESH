@@ -34,7 +34,7 @@ namespace flux {
     struct Vertex {
 
         flux::float3 position;
-        flux::float3 colour;
+        flux::float3 normal;
         flux::float2 tex_coord;
 
         static auto get_binding_description() -> vk::VertexInputBindingDescription {
@@ -56,7 +56,7 @@ namespace flux {
                             .location = 1,
                             .binding = 0,
                             .format = vk::Format::eR32G32B32Sfloat, // slang float3, glsl vec3
-                            .offset = offsetof(Vertex, colour)
+                            .offset = offsetof(Vertex, normal)
                         },
                         {
                             .location = 2,
