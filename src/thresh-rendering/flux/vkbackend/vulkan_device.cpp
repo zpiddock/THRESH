@@ -260,6 +260,7 @@ namespace flux {
         if (m_queue_family_index == ~0u) {
             throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
         }
+        SUB_DEBUG("Selected queue family {} (graphics+present)", m_queue_family_index);
 
         vk::StructureChain<
                     vk::PhysicalDeviceFeatures2,
@@ -301,6 +302,7 @@ namespace flux {
 
         m_device         = vk::raii::Device(m_physical_device, device_info);
         m_graphics_queue = vk::raii::Queue(m_device, m_queue_family_index, 0);
+        SUB_INFO("Vulkan logical device created (extensions={})", m_required_device_extensions.size());
     }
 
     auto ThreshVkDevice::is_device_suitable(const vk::PhysicalDevice& device) -> bool {
@@ -344,5 +346,6 @@ namespace flux {
             .queueFamilyIndex = m_queue_family_index
         };
         m_command_pool = vk::raii::CommandPool(m_device, pool_info);
+        SUB_TRACE("Command pool created (queue family {})", m_queue_family_index);
     }
 } // flux

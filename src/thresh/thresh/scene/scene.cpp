@@ -11,15 +11,18 @@
 namespace thresh {
     Scene::Scene() {
 
+        SUB_DEBUG("Scene created");
         m_world.set<flecs::Rest>({});
 
         init();
     }
 
     Scene::~Scene() {
+        SUB_DEBUG("Scene destroyed");
     }
 
     auto Scene::init() -> void {
+        SUB_TRACE("Registering ECS systems");
 
         m_world.system<Transform, CameraController, ActiveCamera>().kind(flecs::OnUpdate).each(
                 [](flecs::iter& it, size_t, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {

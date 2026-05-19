@@ -5,6 +5,7 @@
 #include "vulkan_swapchain.hpp"
 
 #include "horizon/window.hpp"
+#include "substratum/log.hpp"
 
 namespace flux {
     ThreshVkSwapchain::ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) {
@@ -44,6 +45,12 @@ namespace flux {
 
         m_swapchain        = vk::raii::SwapchainKHR(device.logical(), swapchain_info);
         m_swapchain_images = m_swapchain.getImages();
+
+        SUB_INFO("Swapchain created: {}x{}, {} images, format={}, present_mode={}",
+                 m_swapchain_extent.width, m_swapchain_extent.height,
+                 m_swapchain_images.size(),
+                 vk::to_string(m_swapchain_surface_format.format),
+                 vk::to_string(present_mode));
     }
 
     auto ThreshVkSwapchain::create_image_views(ThreshVkDevice& device) -> void {
@@ -107,6 +114,7 @@ namespace flux {
     auto ThreshVkSwapchain::recreate(const thresh::Window& window, ThreshVkInstance& instance,
         ThreshVkDevice& device) -> void {
 
+        SUB_DEBUG("Recreating swapchain");
         device.logical().waitIdle();
 
         cleanup_swapchain();

@@ -23,16 +23,20 @@ namespace thresh {
     }
 
     auto Engine::init(const EngineContext& ctx) -> std::expected<bool, std::string> {
+        SUB_INFO("Engine init: '{}' {}x{}", ctx.title, ctx.width, ctx.height);
+
         if (!substratum::VFS::init(nullptr)) {
             return std::unexpected("VFS could not initialize!");
         }
         const auto assets_path = (std::filesystem::current_path() / "assets").string();
+        SUB_DEBUG("Mounting assets at '{}'", assets_path);
         substratum::VFS::mount(assets_path, "/", true);
 
         if (!m_application) {
             return std::unexpected("Application not set");
         }
 
+        SUB_DEBUG("Initialising SDL (flags=0x{:x})", ctx.init_flags);
         if (!SDL_Init(ctx.init_flags)) {
             SUB_FATAL("SDL could not initialize! SDL_Error: {}", SDL_GetError());
         }
@@ -43,23 +47,29 @@ namespace thresh {
                                                       .flags = ctx.window_flags};
         m_window = std::make_unique<Window>(window_context);
 
+        SUB_DEBUG("Initialising graphics subsystem");
         m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
         m_graphics_utils->vulkan_init(*m_window);
         m_graphics_utils->imgui_init();
 
+        SUB_DEBUG("Initialising input manager");
         m_input_manager = std::make_unique<horizon::InputManager>();
         m_input_manager->init();
 
+        SUB_DEBUG("Application startup");
         m_application->startup();
 
+        SUB_INFO("Engine init complete");
         return true;
     }
 
     auto Engine::run() -> void {
         if (!m_application || !m_window) {
+            SUB_ERROR("Engine::run() called without application or window");
             return;
         }
 
+        SUB_INFO("Entering main loop");
         m_last_frame_time = std::chrono::high_resolution_clock::now();
 
         m_window->set_relative_mouse_mode(true);
@@ -148,10 +158,12 @@ namespace thresh {
     }
 
     auto Engine::transition_scene(std::unique_ptr<Scene> new_scene) -> void {
+        SUB_INFO("Transitioning scene (had_previous={})", m_active_scene != nullptr);
         m_active_scene = std::move(new_scene);
     }
 
     auto Engine::shutdown() -> void {
+        SUB_INFO("Engine shutdown");
         m_application->shutdown();
         m_application = nullptr;
         m_asset_manager.reset();
@@ -160,5 +172,6 @@ namespace thresh {
         m_graphics_utils.reset();
         substratum::VFS::shutdown();
         m_window.reset();
+        SUB_DEBUG("Engine shutdown complete");
     }
 } // thresh

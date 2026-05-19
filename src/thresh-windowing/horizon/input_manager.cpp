@@ -7,11 +7,14 @@
 #include <vector>
 #include <cstring>
 
+#include "substratum/log.hpp"
+
 namespace horizon {
     auto InputManager::init() -> void {
         int keycount = 0;
         m_current_key_state = SDL_GetKeyboardState(&keycount);
         m_last_key_state.assign(keycount, false);
+        SUB_DEBUG("InputManager initialised ({} keys tracked)", keycount);
     }
 
     auto InputManager::is_key_held(const SDL_Scancode scancode) -> bool {

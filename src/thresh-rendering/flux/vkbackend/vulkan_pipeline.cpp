@@ -6,6 +6,7 @@
 
 #include "flux/graphics_types.hpp"
 #include "substratum/filesystem/vfs.hpp"
+#include "substratum/log.hpp"
 
 namespace flux {
     ThreshVkPipeline::ThreshVkPipeline(const PipelineContext& context, ThreshVkDevice& device) {
@@ -13,6 +14,10 @@ namespace flux {
     }
 
     auto ThreshVkPipeline::create_pipeline(const PipelineContext& context, ThreshVkDevice& device) -> void {
+
+        SUB_DEBUG("Creating pipeline (shader='{}', bindings={}, vertex_input={}, depth_test={})",
+                  context.shader_path, context.bindings.size(),
+                  context.use_vertex_input, context.depth_test);
 
         const vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_info{
             .bindingCount = static_cast<uint32_t>(context.bindings.size()),
@@ -133,10 +138,12 @@ namespace flux {
         m_graphics_pipeline = device.logical().createGraphicsPipeline(nullptr,
                                                               pipeline_create_info_chain.get<
                                                                   vk::GraphicsPipelineCreateInfo>());
+        SUB_TRACE("Pipeline '{}' created ({} stages)", context.shader_path, shader_stages.size());
     }
 
     auto ThreshVkPipeline::load_shader(const std::string& shader_path, ThreshVkDevice& device) -> vk::raii::ShaderModule {
 
+        SUB_TRACE("Loading shader module '{}'", shader_path);
         const auto shader_code = substratum::VFS::read_file(shader_path);
 
         vk::ShaderModuleCreateInfo shader_module_info{

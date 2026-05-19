@@ -24,9 +24,23 @@ namespace flux {
         vk::DebugUtilsMessageTypeFlagsEXT             messageType,
         const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void*                                         pUserData) {
-        std::cerr << "Vulkan Validation Type: " << vk::to_string(messageSeverity) << " " << vk::to_string(messageType)
-                << "\n";
-        std::cerr << "Validation Message: " << pCallbackData->pMessage << std::endl;
+        const auto type_str = vk::to_string(messageType);
+        const auto* msg = pCallbackData->pMessage;
+        switch (messageSeverity) {
+            case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:
+                SUB_TRACE("[Vulkan {}] {}", type_str, msg);
+                break;
+            case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:
+                SUB_INFO("[Vulkan {}] {}", type_str, msg);
+                break;
+            case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
+                SUB_WARN("[Vulkan {}] {}", type_str, msg);
+                break;
+            case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
+            default:
+                SUB_ERROR("[Vulkan {}] {}", type_str, msg);
+                break;
+        }
         return vk::False;
     }
 

@@ -4,7 +4,6 @@
 
 #include "vulkan_context.hpp"
 
-#include <iostream>
 #include <set>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -239,6 +238,7 @@ namespace flux {
     auto VulkanContext::register_pipeline(const std::string& name,
         const PipelineContext& context) -> ThreshVkPipeline* {
 
+        SUB_DEBUG("Registering pipeline '{}'", name);
         auto pipeline = std::unique_ptr<ThreshVkPipeline>(new ThreshVkPipeline(context, m_vk_device));
 
         auto* raw = pipeline.get();

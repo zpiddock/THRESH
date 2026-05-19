@@ -114,6 +114,7 @@ namespace flux {
 
     auto GraphicsUtils::recreate_swapchain() -> void {
 
+        SUB_DEBUG("Recreating swapchain (framebuffer resized)");
         m_context->m_vk_swapchain.recreate(*m_window, m_context->m_vk_instance, m_context->m_vk_device);
         m_context->create_depth_resources();
         m_context->create_offscreen_resources();
@@ -122,6 +123,7 @@ namespace flux {
 
     auto GraphicsUtils::shutdown() -> void {
 
+        SUB_INFO("Shutting down graphics");
         m_context->m_vk_device.logical().waitIdle();
     }
 
@@ -317,14 +319,19 @@ namespace flux {
 
         MeshResource mesh_resource = create_mesh_resource(data);
         m_mesh_resources.emplace_back(std::move(mesh_resource));
-        return m_mesh_resources.size();
+        const auto handle = static_cast<std::uint32_t>(m_mesh_resources.size());
+        SUB_TRACE("Registered mesh handle {} ({} vertices, {} indices)",
+                  handle, data.vertices.size(), data.indices.size());
+        return handle;
     }
 
     auto GraphicsUtils::register_texture(const std::string& path) -> std::uint32_t {
 
         TextureResource texture_resource = create_texture_resource(path);
         m_texture_resources.emplace_back(std::move(texture_resource));
-        return m_texture_resources.size();
+        const auto handle = static_cast<std::uint32_t>(m_texture_resources.size());
+        SUB_TRACE("Registered texture handle {} from '{}'", handle, path);
+        return handle;
     }
 
     auto GraphicsUtils::register_material(const std::uint32_t& texture_handle,
@@ -337,7 +344,10 @@ namespace flux {
         material.albedo_tint = base_colour;
         material.descriptor_sets = create_material_descriptor_sets(*get_texture_resource(texture_handle));
         m_material_resources.emplace_back(std::move(material));
-        return m_material_resources.size();
+        const auto handle = static_cast<std::uint32_t>(m_material_resources.size());
+        SUB_TRACE("Registered material handle {} (type='{}', albedo_tex={})",
+                  handle, material_type, texture_handle);
+        return handle;
     }
 
     auto GraphicsUtils::submit_draw_command(const DrawCommand& draw_command) -> void {
