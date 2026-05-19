@@ -47,7 +47,10 @@ namespace flux {
 
             auto register_texture(const std::string& path) -> std::uint32_t;
 
-            auto register_material(const std::uint32_t& texture_handle, flux::float4 base_colour = {1.f, 1.f, 1.f, 1.f}) -> std::uint32_t;
+            auto register_material(const std::uint32_t& texture_handle,
+                flux::float4 base_colour = {1.f, 1.f, 1.f, 1.f},
+                const std::string& material_type = "opaque")
+        -> std::uint32_t;
 
             auto submit_draw_command(const DrawCommand& draw_command) -> void;
 

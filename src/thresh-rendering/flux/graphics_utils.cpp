@@ -328,9 +328,11 @@ namespace flux {
     }
 
     auto GraphicsUtils::register_material(const std::uint32_t& texture_handle,
-        const flux::float4 base_colour) -> std::uint32_t {
+    const flux::float4 base_colour,
+            const std::string& material_type) -> std::uint32_t {
 
         MaterialResource material;
+        material.material_type = material_type;
         material.albedo_texture_handle = texture_handle;
         material.albedo_tint = base_colour;
         material.descriptor_sets = create_material_descriptor_sets(*get_texture_resource(texture_handle));

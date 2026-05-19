@@ -49,7 +49,8 @@ namespace thresh {
         auto albedo_tint = asset->albedo_tint;
         auto material_handle = m_graphics.register_material(
             albedo_handle,
-            flux::float4{albedo_tint[0], albedo_tint[1], albedo_tint[2], 1.f});
+            flux::float4{albedo_tint[0], albedo_tint[1], albedo_tint[2], 1.f},
+            asset->material_type);
         m_material_cache.insert(std::make_pair(path, material_handle));
         return material_handle;
     }

@@ -25,6 +25,7 @@ namespace demo {
         auto assets = thresh::Engine::get_instance().assets();
 
         auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
+        auto sphere_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::sphere());
 
         auto brick_material = assets.load_material("material/brick.mat");
         auto default_material = assets.load_material("material/default.mat");
@@ -33,6 +34,7 @@ namespace demo {
         scene->get_or_create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = default_material});
         scene->get_or_create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_checker});
         scene->get_or_create_entity("Test Cube 3").set<Transform>({.position = {-2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = brick_material});
+        scene->get_or_create_entity("Test Sphere 1").set<Transform>({.position = {-2.0f, 2.0f, 0.0f}}).set<Mesh>({.handle = sphere_mesh, .material_handle = brick_material});
 
         thresh::Engine::get_instance().transition_scene(std::move(scene));
     }

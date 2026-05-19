@@ -9,6 +9,7 @@
 namespace thresh::asset {
     struct MaterialAsset {
 
+        std::string          material_type = "opaque";
         std::string          albedo_path;
         std::array<float, 3> albedo_tint     = {1.0f, 1.0f, 1.0f};
         std::string          normal_path;
