@@ -12,7 +12,7 @@
 #include "SDL3/SDL.h"
 
 #include "application.hpp"
-#include "asset/assets_loader.h"
+#include "asset/assets_loader.hpp"
 #include "flux/graphics_utils.hpp"
 #include "horizon/input_manager.hpp"
 #include "horizon/window.hpp"

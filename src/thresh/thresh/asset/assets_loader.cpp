@@ -2,9 +2,9 @@
 // Created by shad0w on 17/05/2026.
 //
 
-#include "assets_loader.h"
+#include "assets_loader.hpp"
 
-#include "../../../thresh-asset-schema/asset/material_asset.h"
+#include "thresh/asset/material_asset.h"
 #include "substratum/log.hpp"
 
 #include <glaze/glaze.hpp>
@@ -13,7 +13,7 @@
 
 namespace thresh {
 
-    AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
+AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
 
     auto AssetsLoader::load_texture(const std::string &path) -> uint32_t {
 

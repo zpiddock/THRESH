@@ -1,4 +1,4 @@
-add_library(Thresh SHARED
+add_library(Thresh STATIC
         thresh/engine.cpp
         thresh/engine.hpp
         thresh/application.cpp
@@ -9,7 +9,7 @@ add_library(Thresh SHARED
         thresh/thresh.hpp
         thresh/scene/ecs_types.hpp
         thresh/asset/assets_loader.cpp
-        thresh/asset/assets_loader.h
+        thresh/asset/assets_loader.hpp
 )
 
 target_link_libraries(Thresh PUBLIC
