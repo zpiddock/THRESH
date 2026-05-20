@@ -10,6 +10,8 @@ add_library(Thresh STATIC
         thresh/scene/ecs_types.hpp
         thresh/asset/assets_loader.cpp
         thresh/asset/assets_loader.hpp
+        thresh/scene/scene_serializer.cpp
+        thresh/scene/scene_serializer.hpp
 )
 
 target_link_libraries(Thresh PUBLIC

@@ -5,6 +5,7 @@
 #include "scene.hpp"
 
 #include "ecs_types.hpp"
+#include "scene_serializer.hpp"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 
@@ -23,6 +24,10 @@ namespace thresh {
 
     auto Scene::init() -> void {
         SUB_TRACE("Registering ECS systems");
+
+        SceneSerializer::register_components(m_world);
+
+        m_scene_root = m_world.entity("SceneRoot").add<SceneRoot>();
 
         m_world.system<Transform, CameraController, ActiveCamera>().kind(flecs::OnUpdate).each(
                 [](flecs::iter& it, size_t, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {
@@ -140,10 +145,21 @@ namespace thresh {
     }
 
     auto Scene::get_or_create_entity(const std::string& name) -> flecs::entity {
-        return m_world.entity(name.c_str());
+        auto prev = m_world.set_scope(m_scene_root);
+        auto entity = m_world.entity(name.c_str());
+        m_world.set_scope(prev);
+        return entity;
     }
 
     auto Scene::get_or_create_entity() -> flecs::entity {
-        return m_world.entity();
+        auto prev = m_world.set_scope(m_scene_root);
+        auto entity = m_world.entity();
+        m_world.set_scope(prev);
+        return entity;
     }
-} // thresh
+
+    auto Scene::root() -> flecs::entity {
+
+        return m_scene_root;
+    }
+    } // thresh

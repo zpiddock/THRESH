@@ -23,7 +23,13 @@ namespace thresh {
             auto get_or_create_entity() -> flecs::entity;
 
             auto compute_active_camera_data(float aspect) -> std::optional<flux::CameraData>;
+
+            auto root() -> flecs::entity;
+
+
         private:
             flecs::world m_world;
+
+            flecs::entity m_scene_root;
     };
 } // thresh

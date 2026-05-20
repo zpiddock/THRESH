@@ -6,6 +6,8 @@
 #include "flux/math.hpp"
 #include "thresh/thresh.hpp"
 
+struct SceneRoot{};
+
 struct Transform {
 
     flux::float3 position = {};
@@ -44,7 +46,13 @@ struct Mesh {
     std::uint32_t material_handle;
 };
 
-struct MeshPath {
+struct MeshSource {
+    // Relative VFS path, or primitive uri ( "primitive://box" )
+    std::string path;
+};
+
+struct MaterialSource {
+    // Relative VFS path to a .mat
     std::string path;
 };
 
