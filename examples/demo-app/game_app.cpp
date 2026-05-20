@@ -8,6 +8,7 @@
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 #include "thresh/scene/ecs_types.hpp"
+#include "thresh/scene/scene_serializer.hpp"
 
 namespace demo {
 
@@ -51,6 +52,12 @@ namespace demo {
             auto scene = thresh::Engine::get_instance().active_scene();
             auto player = scene->get_or_create_entity("Player");
             player.get_mut<CameraController>().movement_allowed = imgui_enabled;
+            thresh::Engine::get_instance().window()->set_relative_mouse_mode(imgui_enabled);
+        }
+        if (input->key_just_released(SDL_SCANCODE_F5)) {
+            if (auto* scene = thresh::Engine::get_instance().active_scene()) {
+                thresh::SceneSerializer::save_scene(*scene, "scene.thresh");
+            }
         }
     }
 
