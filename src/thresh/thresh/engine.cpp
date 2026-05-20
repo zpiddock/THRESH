@@ -25,7 +25,7 @@ namespace thresh {
     auto Engine::init(const EngineContext& ctx) -> std::expected<bool, std::string> {
         SUB_INFO("Engine init: '{}' {}x{}", ctx.title, ctx.width, ctx.height);
 
-        if (!substratum::VFS::init(nullptr)) {
+        if (!substratum::VFS::init(nullptr, SDL_GetBasePath())) {
             return std::unexpected("VFS could not initialize!");
         }
         const auto assets_path = (std::filesystem::current_path() / "assets").string();

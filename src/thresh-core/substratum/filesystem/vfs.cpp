@@ -13,7 +13,7 @@
 namespace substratum {
  bool VFS::s_initialized = false;
 
-    auto VFS::init(const char *argv0) -> bool {
+    auto VFS::init(const char *argv0, const std::optional<std::string>& write_dir) -> bool {
         if (s_initialized) {
             SUB_WARN("VFS::init() called but already initialized");
             return true;
@@ -33,6 +33,12 @@ namespace substratum {
                  static_cast<int>(linked.major),
                  static_cast<int>(linked.minor),
                  static_cast<int>(linked.patch));
+
+        if (write_dir != std::nullopt) {
+
+            PHYSFS_setWriteDir(write_dir->c_str());
+            SUB_INFO("VFS WriteDir to '{}'", write_dir->c_str());
+        }
 
         return true;
     }
@@ -179,4 +185,29 @@ namespace substratum {
         }
         return {dir};
     }
-}
+
+    auto VFS::write_file_string(const std::string &virtual_path,
+                                const std::string &contents) -> bool {
+
+        if (!s_initialized) {
+            SUB_ERROR("VFS::write_file_string() called before init()");
+            return false;
+        }
+
+        auto* handle = PHYSFS_openWrite(virtual_path.c_str());
+        if (!handle) {
+            SUB_ERROR("VFS open failed for '{}': {}", virtual_path, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode()));
+            return false;
+        }
+
+        const auto written = PHYSFS_writeBytes(handle, contents.data(), contents.size());
+
+        PHYSFS_close(handle);
+        if (written != contents.size()) {
+
+            SUB_ERROR("VFS::write_file_string() failed for '{}': {} / {}", virtual_path, written, contents.size());
+            return false;
+        }
+        return true;
+    }
+} // namespace substratum

@@ -4,6 +4,7 @@
 
 #pragma once
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,9 +40,10 @@ namespace substratum {
              * Initialize PhysicsFS.
              * @param argv0 The argv[0] from main(), or nullptr. Used by PhysicsFS
              *              to locate the application directory on some platforms.
+             * @param write_dir Optional write directory for PhysicsFS to write to.
              * @return true on success
              */
-            static auto init(const char* argv0) -> bool;
+            static auto init(const char* argv0, const std::optional<std::string>& write_dir) -> bool;
 
             /**
              * Shut down PhysicsFS. Closes all open files, blanks the search path.
@@ -112,6 +114,8 @@ namespace substratum {
              * @return Real directory path, or empty string on failure
              */
             [[nodiscard]] static auto get_real_dir(const std::string& virtual_path) -> std::string;
+
+            static auto write_file_string(const std::string& virtual_path, const std::string& contents) -> bool;
 
         private:
             static bool s_initialized;
