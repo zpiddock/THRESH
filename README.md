@@ -30,3 +30,7 @@ Read [`examples/demo-app/`](examples/demo-app/). It's a small game-side `App` li
 ## Status
 
 Pre-alpha. Things break, things move, nothing about the API is stable. If you're poking at this and something seems wrong, it probably is — check the roadmap or open an issue.
+
+## License
+
+THRESH is [MPL 2.0](LICENSE) — build closed-source games on top freely, but modifications to engine source files stay open. The name and logo are reserved separately, see [TRADEMARK.md](TRADEMARK.md). Third-party library licenses are tracked in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
