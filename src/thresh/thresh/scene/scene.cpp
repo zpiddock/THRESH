@@ -13,7 +13,8 @@ namespace thresh {
     Scene::Scene() {
 
         SUB_DEBUG("Scene created");
-        m_world.set<flecs::Rest>({});
+        // m_world.import<flecs::stats>();
+        // m_world.set<flecs::Rest>({});
 
         init();
     }
@@ -172,7 +173,6 @@ namespace thresh {
             data.view = flux::math::inverse(transform.transform);
             data.projection = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
 
-            data.projection[1][1] *= -1; // Y Flip
             result = data;
         });
 

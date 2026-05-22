@@ -145,7 +145,6 @@ namespace flux {
 
         if (m_camera_data != std::nullopt) {
 
-            m_camera_data.value().projection[1][1] *= -1; // Invert Y due to glm being designed for OpenGL
             memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(CameraData));
         }
 
