@@ -13,7 +13,7 @@
 namespace substratum {
  bool VFS::s_initialized = false;
 
-    auto VFS::init(const char *argv0, const std::optional<std::string>& write_dir) -> bool {
+    auto VFS::init(const char *argv0) -> bool {
         if (s_initialized) {
             SUB_WARN("VFS::init() called but already initialized");
             return true;
@@ -33,12 +33,6 @@ namespace substratum {
                  static_cast<int>(linked.major),
                  static_cast<int>(linked.minor),
                  static_cast<int>(linked.patch));
-
-        if (write_dir != std::nullopt) {
-
-            PHYSFS_setWriteDir(write_dir->c_str());
-            SUB_INFO("VFS WriteDir to '{}'", write_dir->c_str());
-        }
 
         return true;
     }
@@ -210,4 +204,13 @@ namespace substratum {
         }
         return true;
     }
-} // namespace substratum
+
+    auto VFS::set_write_dir(const std::string &path) -> void {
+
+        if (!s_initialized) {
+            SUB_ERROR("VFS::set_write_dir() called before init()");
+        }
+        PHYSFS_setWriteDir(path.c_str());
+        SUB_DEBUG("VFS set write dir '{}'", path);
+    }
+    } // namespace substratum

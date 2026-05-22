@@ -57,6 +57,8 @@ class Engine {
 
         auto active_scene() -> Scene*;
 
+        auto load_scene(const std::string& path) -> std::unique_ptr<Scene>;
+
         auto transition_scene(std::unique_ptr<Scene> new_scene) -> void;
 
         auto shutdown() -> void;

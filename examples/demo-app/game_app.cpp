@@ -5,6 +5,7 @@
 #include "game_app.hpp"
 
 #include "imgui.h"
+#include "substratum/filesystem/vfs.hpp"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 #include "thresh/scene/ecs_types.hpp"
@@ -15,27 +16,55 @@ namespace demo {
     auto GameApp::startup() -> void {
 
         SUB_INFO("Starting Demo Game");
-        auto scene = std::make_unique<thresh::Scene>();
+        const auto assets_path = (std::filesystem::current_path() / "test_assets").string();
+        substratum::VFS::mount(assets_path, "/test");
+        SUB_INFO(assets_path);
+        substratum::VFS::set_write_dir(assets_path);
 
-        auto player = scene->get_or_create_entity("Player")
-        .set<Transform>({.position = {0.0f, 1.0f, 5.0f}})
-        .set<Camera>({})
-        .set<CameraController>({})
-        .add<ActiveCamera>();
+        auto scene = thresh::Engine::get_instance().load_scene("/test/scenes/scene.thresh");
 
-        auto assets = thresh::Engine::get_instance().assets();
+        // auto scene = std::make_unique<thresh::Scene>();
+        //
+        // auto player = scene->get_or_create_entity("Player")
+        // .set<Transform>({.position = {0.0f, 1.0f, 5.0f}})
+        // .set<Camera>({})
+        // .set<CameraController>({})
+        // .add<ActiveCamera>();
+        //
+        // auto& assets = thresh::Engine::get_instance().assets();
+        //
+        // auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
+        // auto sphere_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::sphere());
+        //
+        // auto brick_material = assets.load_material("material/brick.mat");
+        // auto default_material = assets.load_material("material/default.mat");
+        // auto red_checker = assets.load_material("material/red_checker.mat");
+        //
+        // auto make_entity = [&](
+        //     const std::string& name,
+        //     const Transform& transform,
+        //     const std::string& mesh_src,
+        //     const std::string& material_src,
+        //     uint32_t mesh_handle,
+        //     uint32_t material_handle
+        //     ) {
+        //
+        //     return scene->get_or_create_entity(name)
+        //     .set<Transform>(transform)
+        //     .set<MeshSource>({.path = mesh_src})
+        //     .set<MaterialSource>({.path = material_src})
+        //     .set<Mesh>({mesh_handle, material_handle});
+        // };
+        //
+        // make_entity("Test Cube", {.position = {0.0f, 0.0f, 0.0f}}, "primitive://box", "material/default.mat", box_mesh, default_material);
+        // make_entity("Test Cube 2", {.position = {2.0f, 0.0f, 0.0f}}, "primitive://box", "material/red_checker.mat", box_mesh, red_checker);
+        // make_entity("Test Cube 3", {.position = {-2.0f, 0.0f, 0.0f}}, "primitive://box", "material/brick.mat", box_mesh, brick_material);
+        // make_entity("Test Sphere 1", {.position = {-2.0f, 2.0f, 0.0f}}, "primitive://sphere", "material/brick.mat", sphere_mesh, brick_material);
 
-        auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
-        auto sphere_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::sphere());
-
-        auto brick_material = assets.load_material("material/brick.mat");
-        auto default_material = assets.load_material("material/default.mat");
-        auto red_checker = assets.load_material("material/red_checker.mat");
-
-        scene->get_or_create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = default_material});
-        scene->get_or_create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_checker});
-        scene->get_or_create_entity("Test Cube 3").set<Transform>({.position = {-2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = brick_material});
-        scene->get_or_create_entity("Test Sphere 1").set<Transform>({.position = {-2.0f, 2.0f, 0.0f}}).set<Mesh>({.handle = sphere_mesh, .material_handle = brick_material});
+        // scene->get_or_create_entity("Test Cube").set<Transform>({.position = {0.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = default_material});
+        // scene->get_or_create_entity("Test Cube 2").set<Transform>({.position = {2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = red_checker});
+        // scene->get_or_create_entity("Test Cube 3").set<Transform>({.position = {-2.0f, 0.0f, 0.0f}}).set<Mesh>({.handle = box_mesh, .material_handle = brick_material});
+        // scene->get_or_create_entity("Test Sphere 1").set<Transform>({.position = {-2.0f, 2.0f, 0.0f}}).set<Mesh>({.handle = sphere_mesh, .material_handle = brick_material});
 
         thresh::Engine::get_instance().transition_scene(std::move(scene));
     }
@@ -56,7 +85,7 @@ namespace demo {
         }
         if (input->key_just_released(SDL_SCANCODE_F5)) {
             if (auto* scene = thresh::Engine::get_instance().active_scene()) {
-                thresh::SceneSerializer::save_scene(*scene, "scene.thresh");
+                thresh::SceneSerializer::save_scene(*scene, "/scenes/scene.thresh");
             }
         }
     }

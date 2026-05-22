@@ -8,8 +8,9 @@
 
 #include "engine.hpp"
 #include "flux/graphics_utils.hpp"
-#include "substratum/log.hpp"
+#include "scene/scene_serializer.hpp"
 #include "substratum/filesystem/vfs.hpp"
+#include "substratum/log.hpp"
 
 namespace thresh {
     auto Engine::create(Application* application) -> Engine& {
@@ -25,7 +26,7 @@ namespace thresh {
     auto Engine::init(const EngineContext& ctx) -> std::expected<bool, std::string> {
         SUB_INFO("Engine init: '{}' {}x{}", ctx.title, ctx.width, ctx.height);
 
-        if (!substratum::VFS::init(nullptr, SDL_GetBasePath())) {
+        if (!substratum::VFS::init(nullptr)) {
             return std::unexpected("VFS could not initialize!");
         }
         const auto assets_path = (std::filesystem::current_path() / "assets").string();
@@ -155,6 +156,11 @@ namespace thresh {
 
     auto Engine::active_scene() -> Scene* {
         return m_active_scene.get();
+    }
+
+    auto Engine::load_scene(const std::string &path) -> std::unique_ptr<Scene> {
+
+        return SceneSerializer::load_scene(assets(), path);
     }
 
     auto Engine::transition_scene(std::unique_ptr<Scene> new_scene) -> void {

@@ -462,6 +462,7 @@ namespace flux {
 
         std::uint32_t prev_material = 0;
         for (const auto& cmd : cmds) {
+            // SUB_TRACE("{}:{}", cmd.mesh_handle, cmd.material_handle);
             const auto* mesh = get_mesh_resource(cmd.mesh_handle);
             const auto* material = get_material_resource(cmd.material_handle);
 

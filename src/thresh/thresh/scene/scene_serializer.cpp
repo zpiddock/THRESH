@@ -17,7 +17,7 @@ namespace thresh {
           world.component<std::string>().opaque(flecs::String)
           .serialize([] (const flecs::serializer* s, const std::string* data) {
               const char* str = data->c_str();
-              return s->value(flecs::String, str);
+              return s->value(flecs::String, &str);
           })
           .assign_string([] (std::string* data, const char* value) {
               *data = value ? value : "";
@@ -47,16 +47,14 @@ namespace thresh {
                 .member<float>("intensity");
 
             world.component<MeshSource>()
-                .member<std::string>("source");
+                .member<std::string>("path");
 
             world.component<MaterialSource>()
                 .member<std::string>("path");
 
             // Mesh is runtime-derived. Registered so flecs to_json/from_json handles
             // it cleanly; values are overwritten on load by the resolution pass.
-            world.component<Mesh>()
-                .member<std::uint32_t>("handle")
-                .member<std::uint32_t>("material_handle");
+            world.component<Mesh>();
 
             // ActiveCamera is a pure tag — registering the component is enough.
             world.component<ActiveCamera>();
@@ -96,7 +94,7 @@ namespace thresh {
 
             SUB_TRACE("{}", json);
 
-            substratum::VFS::write_file_string("scene.json", pretty_json);
+            substratum::VFS::write_file_string(vfs_path, pretty_json);
 
             return true;
         }
@@ -104,8 +102,32 @@ namespace thresh {
         auto SceneSerializer::load_scene(AssetsLoader &loader,
                                  const std::string &vfs_path)
                                   -> std::unique_ptr<Scene> {
+            auto scene = std::make_unique<Scene>();
 
-            return nullptr;
+            auto& world = scene->get_world();
+
+            const auto scene_json = substratum::VFS::read_file_string(vfs_path);
+            if (scene_json.empty()) {
+                SUB_ERROR("SceneSerializer::load_scene: file '{}' is empty or missing", vfs_path);
+                return nullptr;
+            }
+
+            const auto* tail = world.from_json(scene_json.c_str());
+            if (!tail) {
+                SUB_ERROR("SceneSerializer::load_scene: failed to parse JSON file '{}'", vfs_path);
+                return nullptr;
+            }
+
+            world.each([&](flecs::entity e, const MeshSource& mesh, const MaterialSource& material) {
+                const auto mesh_handle = loader.resolve_mesh(mesh.path);
+                const auto material_handle = loader.load_material(material.path);
+                e.set<Mesh>({mesh_handle, material_handle});
+                SUB_TRACE("Resolved mesh for '{}': mesh='{}'({}), mat='{}'({})",
+                    e.name().c_str(), mesh.path, mesh_handle, material_handle, material.path);
+            });
+
+            SUB_INFO("Loaded scene from '{}'", vfs_path);
+            return scene;
         }
 
         auto SceneSerializer::register_math_components(flecs::world &world)
