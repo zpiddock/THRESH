@@ -13,8 +13,8 @@ namespace thresh {
     Scene::Scene() {
 
         SUB_DEBUG("Scene created");
-        // m_world.import<flecs::stats>();
-        // m_world.set<flecs::Rest>({});
+        m_world.import<flecs::stats>();
+        m_world.set<flecs::Rest>({});
 
         init();
     }
@@ -204,6 +204,58 @@ namespace thresh {
 
     auto Scene::pick_entity(int mouse_x, int mouse_y, int viewport_w, int viewport_h) -> std::optional<PickHit> {
 
+        if (viewport_w <= 0 || viewport_h <= 0) {
+            return std::nullopt;
+        }
 
+        const float aspect = static_cast<float>(viewport_w) / static_cast<float>(viewport_h);
+
+        std::optional<flux::float4x4> view_opt, proj_opt;
+        std::optional<flux::float3> camera_pos_opt;
+
+        m_world.query_builder<const WorldTransform, const Camera>()
+        .with<ActiveCamera>()
+        .each([&](flecs::entity e, const WorldTransform& transform, const Camera& camera) {
+            if (view_opt) return;
+            view_opt = flux::math::inverse(transform.transform);
+            auto proj = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            proj_opt = proj;
+            // Optional Y flip here if needed
+            camera_pos_opt = flux::float3{transform.transform[3]};
+        });
+
+        if (!view_opt || !proj_opt || !camera_pos_opt) {
+            return std::nullopt;
+        }
+
+        // NDC from pixel. Window coords: y-down. NDC: y-up after Vulkan Y-flip,
+        // BUT since we already baked the Y-flip into `proj_opt`, we undo it here:
+        // pixel y=0 (top) -> ndc y=+1, pixel y=h (bottom) -> ndc y=-1.
+        const float ndc_x = (2.0f * static_cast<float>(mouse_x) / static_cast<float>(viewport_w)) - 1.0f;
+        const float ndc_y = 1.0f - (2.0f * static_cast<float>(mouse_y) / static_cast<float>(viewport_h));
+
+        const auto inv_vp = flux::math::inverse(*proj_opt * *view_opt);
+        auto unproject = [&](float ndc_z) {
+            const flux::float4 p = inv_vp * flux::float4{ndc_x, ndc_y, ndc_z, 1.0f};
+            return flux::float3{p} / p.w;
+        };
+        const flux::float3 world_near = unproject(0.0f);  // Vulkan NDC z in [0,1]
+        const flux::float3 world_far  = unproject(1.0f);
+        const flux::float3 ray_dir    = flux::math::normalize(world_far - world_near);
+        const flux::float3 ray_origin = *camera_pos_opt;
+
+        // Test against every entity with a WorldAABB. For each, also need the entity itself.
+        std::optional<PickHit> best;
+        m_world.query_builder<const WorldAABB>()
+        .with<Mesh>()
+        .build().each(
+            [&](flecs::entity e, const WorldAABB& wa) {
+                const auto hit = flux::ray_aabb_intersect(ray_origin, ray_dir, wa.aabb);
+                if (!hit) return;
+                if (!best || *hit < best->flags) {
+                    best = PickHit{e, *hit};
+                }
+            });
+        return best;
     }
 } // thresh

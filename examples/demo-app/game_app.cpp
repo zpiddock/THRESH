@@ -23,6 +23,20 @@ namespace demo {
 
         auto scene = thresh::Engine::get_instance().load_scene("/test/scenes/scene.thresh");
 
+        if (scene) {
+
+            auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
+            auto default_material = thresh::Engine::get_instance().assets().load_material("material/default.mat");
+
+            // Manually creates a child of "Test Cube" with propagated world transform, 2 units above world transform of parent
+            auto child = scene->get_or_create_entity("ChildBox")
+                .child_of(scene->get_or_create_entity("Test Cube"))
+                .set<Transform>({.position = {0,2,0}, .scale = flux::float3{0.5f}})
+                .set<MeshSource>({.path = "primitive://box"})
+                .set<MaterialSource>({.path = "material/default.mat"})
+                .set<Mesh>({box_mesh, default_material});
+        }
+
         // auto scene = std::make_unique<thresh::Scene>();
         //
         // auto player = scene->get_or_create_entity("Player")
@@ -70,13 +84,13 @@ namespace demo {
     }
 
     auto GameApp::update(float /*delta_time*/) -> void {
+        auto imgui_enabled = thresh::Engine::get_instance().graphics()->is_imgui_enabled();
 
         auto* input = thresh::Engine::get_instance().input();
         if (input->key_just_released(SDL_SCANCODE_ESCAPE)) {
             thresh::Engine::get_instance().window()->setShouldClose(true);
         }
         if (input->key_just_pressed(SDL_SCANCODE_F1)) {
-            auto imgui_enabled = thresh::Engine::get_instance().graphics()->is_imgui_enabled();
             thresh::Engine::get_instance().graphics()->imgui_enabled(!imgui_enabled);
             auto scene = thresh::Engine::get_instance().active_scene();
             auto player = scene->get_or_create_entity("Player");
@@ -86,6 +100,21 @@ namespace demo {
         if (input->key_just_released(SDL_SCANCODE_F5)) {
             if (auto* scene = thresh::Engine::get_instance().active_scene()) {
                 thresh::SceneSerializer::save_scene(*scene, "/scenes/scene.thresh");
+            }
+        }
+
+        if (imgui_enabled && !ImGui::GetIO().WantCaptureMouse && input->mouse_button_just_pressed(SDL_BUTTON_LEFT)) {
+            auto* scene = thresh::Engine::get_instance().active_scene();
+            auto* window = thresh::Engine::get_instance().window();
+            if (scene && window) {
+                const auto [mx, my] = input->get_mouse_state();
+                int w = 0, h = 0;
+                window->get_frame_buffer_size(w, h);
+                if (auto hit = scene->pick_entity(static_cast<int>(mx), static_cast<int>(my), w, h)) {
+                    SUB_INFO("Picked '{}' at t={}", hit->entity.name().c_str(), hit->flags);
+                } else {
+                    SUB_INFO("Picked: <nothing>");
+                }
             }
         }
     }

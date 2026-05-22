@@ -11,13 +11,13 @@ Rough plan of what's next. Order inside each bucket is loose; sub-notes are remi
 
 Leaning towards the tag approach since it survives once an editor exists too, but worth thinking about. Either way the bar is: nothing runtime-only ends up on disk.
 
-**Transform hierarchy — local vs world.** `Transform` exists but it's effectively flat: no parent propagation, no world matrix computed anywhere. Need to do a proper world-transform pass driven by flecs `ChildOf` (the serializer already uses it for scoping). Question to settle: is the world matrix a separate component updated per frame, or computed on the fly when flux needs it? Leaning separate component. This blocks lighting (direction in world space), GLTF (nested nodes), and physics later.
+**Transform hierarchy — local vs world.** ✅ Done. `WorldTransform` is propagated from `Transform` via flecs `ChildOf` in a PostUpdate pass, with `WorldAABB` per-entity (plus aggregated up the tree) and a ray-vs-AABB `Scene::pick_entity` for ImGui picking. Outstanding: entities parented to the camera aren't fully handled — child entities get carried along by the propagation, but anything that wants to live in camera-local space (HUD billboards, first-person view-model) still needs separate view-space rendering work. Revisit alongside that.
 
 **ImGui debug rendering.** ImGui is wired up already, just no debug-draw primitives. Want: lines, AABBs, and a basic scene inspector panel (entity tree + component fields) on top of `DearImGuiContext`. A buffered line-list flushed in its own tiny pipeline is probably enough for v1.
 
 ## Next
 
-**Arbitrary pipeline API.** `VulkanContext::register_pipeline` exists but only gets called from inside flux with hardcoded `.spv` paths (opaque_mesh, composite). Want thresh to register pipelines from data — shader paths, vertex layout, descriptor/push-constant layout — without flux growing any file I/O (rule still stands: flux gets resolved POD only). Open question: do I want a `default_bindings.slang` include carrying the common scene/camera/light set, so user shaders don't have to redeclare it? Probably yes.
+**Arbitrary pipeline API.** `VulkanContext::register_pipeline` exists but only gets called from inside flux with hardcoded `.spv` paths (opaque_mesh, composite). Want thresh to register pipelines from data — shader paths, vertex layout, descriptor/push-constant layout — without flux growing any file I/O (rule still stands: flux gets resolved POD only). Open question: do I want a `default_bindings.slang` include carrying the common scene/camera/light set, so user shaders don't have to redeclare it? Probably yes. Also fold in a `VkPipelineCache` here — single cache owned by `VulkanContext`, loaded from disk at startup and written back on shutdown, passed into every `vkCreateGraphicsPipelines` call. Cheap to add while the pipeline-creation site is being touched anyway, and the win compounds as we start dispatching shader variants by `material_type`.
 
 **Basic lighting.** `Light { colour, intensity }` already exists and serializes, it's just orphaned — no shader reads it. One directional + an ambient term in a per-frame uniform, wire `opaque_mesh.slang` to actually use it. Direction comes from the entity's world Transform, so this lands after the hierarchy task.
 
@@ -28,5 +28,7 @@ Leaning towards the tag approach since it survives once an editor exists too, bu
 ## Later
 
 **Jolt Physics.** Nothing exists yet — no Jolt in CMake, no RigidBody/Collider components, no step. Vendor Jolt, add the components, step physics before transform propagation each frame, write results back to Transform. Open: how are colliders authored? Fields on the component vs a separate asset. Lean towards components for primitive shapes and an asset for meshes.
+
+**Reverse-Z depth buffer.** Picking exposed the precision ceiling — `inverse(projection * view)` gets ill-conditioned as `far/near` grows, and the regular `[0,1]` depth distribution wastes most of its precision near the camera. Switch to reverse-Z (1.0 at near, 0.0 at far) with a float depth format and an infinite-far projection. Touchpoints: depth clear value, depth compare op (`GREATER_OR_EQUAL`), projection matrix builder in `Camera`/`compute_active_camera_data`, and the `[1][1] *= -1` Y-flip path. Picking math is unaffected — ray direction is invariant under the choice of far plane.
 
 **Wren scripting (low priority).** No scripting hooks at all today. Eventually want Wren wired in with a small binding surface (entity/component get-set, input, time) and scenes referencing script assets. Deliberately deferred — if the renderer and physics layouts are still moving, the bindings will get reworked twice. Revisit once the rest of this list is mostly done.

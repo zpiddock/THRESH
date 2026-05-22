@@ -14,10 +14,10 @@
                   "z": 3.8136196136
                },
                "rotation": {
-                  "x": 0.0158991572,
-                  "y": 0.3452486098,
-                  "z": -0.0058497502,
-                  "w": 0.9383583069
+                  "x": -0.1163782626,
+                  "y": 0.1158652231,
+                  "z": 0.0136710936,
+                  "w": 0.9863287807
                },
                "scale": {
                   "x": 1,
@@ -31,12 +31,13 @@
                "far_plane": 100
             },
             "CameraController": {
-               "yaw": 0.7051129341,
-               "pitch": 0.033883933,
+               "yaw": 0.2338705659,
+               "pitch": -0.2348966449,
                "movement_speed": 5,
                "mouse_sensitivity": 0.1000000015,
                "movement_allowed": true
-            }
+            },
+            "WorldTransform": null
          }
       },
       {
@@ -62,12 +63,14 @@
                }
             },
             "MeshSource": {
-               "path": "primitive://random"
+               "path": "primitive://box"
             },
             "MaterialSource": {
                "path": "material/default.mat"
             },
-            "Mesh": null
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null
          }
       },
       {
@@ -98,7 +101,9 @@
             "MaterialSource": {
                "path": "material/red_checker.mat"
             },
-            "Mesh": null
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null
          }
       },
       {
@@ -129,7 +134,9 @@
             "MaterialSource": {
                "path": "material/brick.mat"
             },
-            "Mesh": null
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null
          }
       },
       {
@@ -160,7 +167,9 @@
             "MaterialSource": {
                "path": "material/brick.mat"
             },
-            "Mesh": null
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null
          }
       }
    ]
