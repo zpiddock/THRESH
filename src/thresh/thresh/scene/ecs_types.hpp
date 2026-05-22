@@ -59,3 +59,11 @@ struct MaterialSource {
 struct Material {
     std::vector<uint32_t> texture_handles;
 };
+
+struct WorldTransform {
+    flux::float4x4 transform{1.f};
+};
+
+struct WorldAABB {
+    flux::AABB aabb;
+};

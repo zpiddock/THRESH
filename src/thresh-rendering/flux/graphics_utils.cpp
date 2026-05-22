@@ -159,6 +159,9 @@ namespace flux {
     auto GraphicsUtils::create_mesh_resource(const MeshData& mesh_data) -> MeshResource {
 
         MeshResource result;
+        for (const auto& vertex : mesh_data.vertices) {
+            result.local_aabb.expand(vertex.position);
+        }
         auto& device = m_context->m_vk_device;
 
         vk::DeviceSize buffer_size = sizeof(Vertex) * mesh_data.vertices.size();

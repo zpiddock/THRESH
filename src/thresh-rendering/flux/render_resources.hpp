@@ -15,6 +15,7 @@ namespace flux {
         vk::raii::DeviceMemory vertex_buffer_memory{nullptr};
         vk::raii::DeviceMemory index_buffer_memory{nullptr};
         uint32_t index_count{0};
+        flux::AABB local_aabb{};
     };
 
     struct TextureResource {
