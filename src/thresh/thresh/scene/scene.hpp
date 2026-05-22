@@ -7,6 +7,12 @@
 #include "thresh/thresh.hpp"
 
 namespace thresh {
+
+    struct PickHit {
+        flecs::entity entity;
+        float flags{};
+    };
+
     class Scene {
 
         public:
@@ -26,6 +32,7 @@ namespace thresh {
 
             auto root() -> flecs::entity;
 
+            auto pick_entity(int mouse_x, int mouse_y, int viewport_w, int viewport_h) -> std::optional<PickHit>;
 
         private:
             flecs::world m_world;

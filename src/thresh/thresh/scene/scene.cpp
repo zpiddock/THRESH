@@ -83,8 +83,8 @@ namespace thresh {
                 }
         );
 
-        m_world.system<const Transform, const Mesh>().kind(flecs::OnUpdate).each(
-            [](flecs::iter& it, size_t, const Transform& transform, const Mesh& mesh) {
+        m_world.system<const WorldTransform, const Mesh>("MeshRender").kind(flecs::OnStore).each(
+            [](flecs::iter& it, size_t, const WorldTransform& transform, const Mesh& mesh) {
 
                 auto* graphics = Engine::get_instance().graphics();
 
@@ -94,20 +94,59 @@ namespace thresh {
                     return;
                 }
 
-                constexpr auto identity = flux::float4x4{1.f};
-                const auto model = flux::math::translate(identity, transform.position)
-                                                * flux::math::mat4_cast(transform.rotation)
-                                                * flux::math::scale(identity, transform.scale);
-
-
                 graphics->submit_draw_command({
-                    .model           = model,
+                    .model           = transform.transform,
                     .base_colour     = material->albedo_tint,
                     .mesh_handle     = mesh.handle,
                     .material_handle = mesh.material_handle,
                 });
             }
         );
+
+        m_world.system("PropogateWorldTransform").kind(flecs::PostUpdate)
+        .run([this](flecs::iter& it) {
+            auto walk  = [] (this auto& self, flecs::entity e, const flux::float4x4& parent_world) -> void {
+                flux::float4x4 world = parent_world;
+                if (const auto* t = e.try_get<Transform>()) {
+
+                    world = parent_world * flux::math::compose_local(*t);
+                    e.set<WorldTransform>({world});
+                }
+                e.children([&](flecs::entity child) {
+                    self(child, world);
+                });
+            };
+
+            walk(m_scene_root, flux::float4x4{1.f});
+        });
+
+        m_world.system("ComputeWorldAABB").kind(flecs::PostUpdate)
+        .run([this](flecs::iter& it) {
+
+            auto* gfx = Engine::get_instance().graphics();
+            auto fold = [&](this auto& self, flecs::entity e) -> flux::AABB {
+                flux::AABB aabb{};
+                if (const auto* mesh = e.try_get<Mesh>()) {
+                    if (const auto* mesh_handle = gfx->get_mesh_resource(mesh->handle)) {
+                        if (const auto* world_transform = e.try_get<WorldTransform>()) {
+                            aabb.expand(flux::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
+                        }
+                    }
+                }
+                e.children([&](flecs::entity child) {
+                    aabb.expand(self(child));
+                });
+
+                if (aabb.valid()) {
+                    e.set<WorldAABB>({aabb});
+                } else if (e.has<WorldAABB>()) {
+                    e.remove<WorldAABB>();
+                }
+                return aabb;
+            };
+
+            fold(m_scene_root);
+        });
     }
 
     auto Scene::update(const float delta_time) -> void {
@@ -121,16 +160,16 @@ namespace thresh {
 
         std::optional<flux::CameraData> result;
 
-        const auto camera_query = m_world.query_builder<Transform, Camera>().with<ActiveCamera>().build();
+        const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
-        camera_query.each([&](flecs::entity entity, const Transform& transform, const Camera& camera) {
+        camera_query.each([&](flecs::entity entity, const WorldTransform& transform, const Camera& camera) {
 
             if (result) return; // First result wins
 
             flux::CameraData data{};
             constexpr auto identity = flux::float4x4{1.f};
 
-            data.view = flux::math::inverse(flux::math::translate(identity, transform.position) * flux::math::mat4_cast(transform.rotation));
+            data.view = flux::math::inverse(transform.transform);
             data.projection = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
 
             data.projection[1][1] *= -1; // Y Flip
@@ -162,4 +201,9 @@ namespace thresh {
 
         return m_scene_root;
     }
-    } // thresh
+
+    auto Scene::pick_entity(int mouse_x, int mouse_y, int viewport_w, int viewport_h) -> std::optional<PickHit> {
+
+
+    }
+} // thresh

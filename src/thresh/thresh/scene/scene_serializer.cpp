@@ -61,6 +61,10 @@ namespace thresh {
 
             world.component<SceneRoot>();
 
+            world.component<WorldTransform>();
+
+            world.component<WorldAABB>();
+
         }
 
         auto SceneSerializer::save_scene(Scene &scene, const std::string &vfs_path)

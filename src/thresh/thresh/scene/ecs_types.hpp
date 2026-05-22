@@ -67,3 +67,13 @@ struct WorldTransform {
 struct WorldAABB {
     flux::AABB aabb;
 };
+
+namespace flux::math {
+
+    inline auto compose_local(const Transform& transform) -> flux::float4x4 {
+        constexpr auto IDENTITY = flux::float4x4{1.f};
+        return flux::math::translate(IDENTITY, transform.position)
+            * flux::math::mat4_cast(transform.rotation)
+            * flux::math::scale(IDENTITY, transform.scale);
+    }
+}
