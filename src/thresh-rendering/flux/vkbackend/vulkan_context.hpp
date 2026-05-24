@@ -22,9 +22,6 @@ namespace flux {
 
             ~VulkanContext();
 
-        private:
-
-
             auto create_depth_resources() -> void;
 
             auto create_uniform_buffers() -> void;

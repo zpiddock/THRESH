@@ -100,6 +100,11 @@ namespace thresh {
             const auto delta_time   = std::chrono::duration<float>(current_time - m_last_frame_time).count();
             m_last_frame_time = current_time;
 
+            // Reset debug lines if they exist
+            if (auto* dlr = m_graphics_utils->debug_line_renderer()) {
+                dlr->clear();
+            }
+
             // Application update
             m_application->update(delta_time);
 

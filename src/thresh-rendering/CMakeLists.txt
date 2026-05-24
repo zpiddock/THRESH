@@ -20,6 +20,8 @@ add_library(Flux STATIC
         flux/mesh/mesh_primitive.cpp
         flux/dear_im_gui_context.cpp
         flux/dear_im_gui_context.hpp
+        flux/debug_line_renderer.cpp
+        flux/debug_line_renderer.hpp
 )
 
 target_link_libraries(Flux PUBLIC
@@ -40,5 +42,6 @@ target_include_directories(Flux PUBLIC
 
 add_slang_shader_target(opaque_mesh SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/opaque_mesh.slang)
 add_slang_shader_target(composite SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/composite.slang)
-add_dependencies(Flux opaque_mesh composite)
+add_slang_shader_target(debug_lines SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/debug_line.slang)
+add_dependencies(Flux opaque_mesh composite debug_lines)
 

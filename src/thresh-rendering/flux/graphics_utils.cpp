@@ -383,6 +383,24 @@ namespace flux {
         constexpr vk::CommandBufferBeginInfo begin_info{};
         cmd_buffer.begin(begin_info);
         record_geometry_commands(cmd_buffer, cmds);
+
+        if (m_debug_line_renderer && m_camera_data) {
+
+            const auto view_projection = m_camera_data->projection * m_camera_data->view;
+            m_debug_line_renderer->record_frame(cmd_buffer, view_projection, m_context->m_offscreen_image_views[m_context->m_frame_index], m_context->m_depth_image_view, m_context->m_vk_swapchain.swapchain_extent());
+        }
+
+        m_context->transition_image_layout(
+            m_context->m_offscreen_images[m_context->m_frame_index],
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::ImageAspectFlagBits::eColor
+            );
+
         record_composite_commands(cmd_buffer, image_index);
 
         if (is_imgui_enabled()) {
@@ -482,17 +500,6 @@ namespace flux {
             cmd_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
         }
         cmd_buffer.endRendering();
-
-        m_context->transition_image_layout(
-            m_context->m_offscreen_images[frame],
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eFragmentShader,
-            vk::ImageAspectFlagBits::eColor
-            );
     }
 
     auto GraphicsUtils::record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
@@ -578,5 +585,19 @@ namespace flux {
 
     auto GraphicsUtils::is_imgui_enabled() const -> bool {
         return m_imgui_context.m_enabled;
+    }
+
+    auto GraphicsUtils::enable_debug_line_renderer() -> void {
+        if (m_debug_line_renderer) {
+            return; // Already enabled
+        }
+        m_debug_line_renderer = std::make_unique<DebugLineRenderer>(*m_context);
+    }
+
+    auto GraphicsUtils::debug_line_renderer() -> DebugLineRenderer* {
+        if (!m_debug_line_renderer) {
+            return nullptr;
+        }
+        return m_debug_line_renderer.get();
     }
 } // namespace flux

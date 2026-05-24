@@ -18,14 +18,20 @@ namespace flux {
         // If string is empty stage will be omitted
         std::string vertex_entry = "vertexMain";
         std::string fragment_entry = "fragmentMain";
-        std::string compute_entry = ""; // future use
+        std::string compute_entry; // future use
         std::vector<vk::DescriptorSetLayoutBinding> bindings;
         std::vector<vk::PushConstantRange> push_constants;
         bool use_vertex_input = true;
         bool depth_test = true;
+        bool depth_write = true;
         vk::CullModeFlags cull_mode = vk::CullModeFlagBits::eBack;
         vk::Format colour_format = vk::Format::eUndefined;
         vk::Format depth_format = vk::Format::eUndefined;
+        vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
+
+        // If empty, ThreshVkPipeline falls back to the hardcoded flux::Vertex layout (existing behaviour).
+        std::vector<vk::VertexInputBindingDescription>   vertex_bindings;
+        std::vector<vk::VertexInputAttributeDescription> vertex_attributes;
     };
 
     class ThreshVkPipeline {

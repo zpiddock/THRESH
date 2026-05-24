@@ -47,17 +47,28 @@ namespace flux {
 
         vk::PipelineVertexInputStateCreateInfo vertex_input_info{};
         if (context.use_vertex_input) {
-            const auto binding_description = Vertex::get_binding_description();
-            const auto attribute_descriptions = Vertex::get_attribute_descriptions();
 
-            vertex_input_info.vertexBindingDescriptionCount = 1;
-            vertex_input_info.pVertexBindingDescriptions    = &binding_description;
-            vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
-            vertex_input_info.pVertexAttributeDescriptions   = attribute_descriptions.data();
+            auto default_bindings = Vertex::get_binding_description();
+            auto default_attributes = Vertex::get_attribute_descriptions();
+
+            if (!context.vertex_bindings.empty()) {
+
+                // Caller-supplied layout (e.g. debug line renderer).
+                vertex_input_info.vertexBindingDescriptionCount   = static_cast<uint32_t>(context.vertex_bindings.size());
+                vertex_input_info.pVertexBindingDescriptions      = context.vertex_bindings.data();
+                vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(context.vertex_attributes.size());
+                vertex_input_info.pVertexAttributeDescriptions    = context.vertex_attributes.data();
+            } else {
+
+                vertex_input_info.vertexBindingDescriptionCount = 1;
+                vertex_input_info.pVertexBindingDescriptions    = &default_bindings;
+                vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(default_attributes.size());
+                vertex_input_info.pVertexAttributeDescriptions   = default_attributes.data();
+            }
         }
 
         vk::PipelineInputAssemblyStateCreateInfo input_assembly_info{
-            .topology = vk::PrimitiveTopology::eTriangleList,
+            .topology = context.topology,
         };
         vk::PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
 
@@ -78,7 +89,7 @@ namespace flux {
 
         vk::PipelineDepthStencilStateCreateInfo depth_stencil_info {
             .depthTestEnable       = context.depth_test? vk::True : vk::False,
-            .depthWriteEnable      = context.depth_test? vk::True : vk::False,
+            .depthWriteEnable      = context.depth_write? vk::True : vk::False,
             .depthCompareOp        = vk::CompareOp::eLess,
             .depthBoundsTestEnable = vk::False,
             .stencilTestEnable     = vk::False,

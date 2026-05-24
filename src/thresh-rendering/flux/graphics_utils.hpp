@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "dear_im_gui_context.hpp"
+#include "debug_line_renderer.hpp"
 #include "graphics_types.hpp"
 #include "render_resources.hpp"
 #include "horizon/window.hpp"
@@ -72,7 +73,11 @@ namespace flux {
 
             auto imgui_enabled(bool enabled) -> void;
 
-            auto is_imgui_enabled() const -> bool;
+            [[nodiscard]] auto is_imgui_enabled() const -> bool;
+
+            auto enable_debug_line_renderer() -> void;
+
+            auto debug_line_renderer() -> DebugLineRenderer*;
 
         private:
             auto record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
@@ -99,6 +104,8 @@ namespace flux {
             std::vector<MaterialResource> m_material_resources;
 
             std::vector<DrawCommand> m_draw_commands;
+
+            std::unique_ptr<DebugLineRenderer> m_debug_line_renderer;
     };
 
 } // namespace flux
