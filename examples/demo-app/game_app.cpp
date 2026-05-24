@@ -21,6 +21,8 @@ namespace demo {
         SUB_INFO(assets_path);
         substratum::VFS::set_write_dir(assets_path);
 
+        thresh::Engine::get_instance().graphics()->enable_debug_line_renderer();
+
         auto scene = thresh::Engine::get_instance().load_scene("/test/scenes/scene.thresh");
 
         if (scene) {
@@ -116,6 +118,12 @@ namespace demo {
                     SUB_INFO("Picked: <nothing>");
                 }
             }
+        }
+
+        if (auto* dlr = thresh::Engine::get_instance().graphics()->debug_line_renderer()) {
+            dlr->submit_line({0,0,0}, {1,0,0}, {1,0,0}); // red X
+            dlr->submit_line({0,0,0}, {0,1,0}, {0,1,0}); // green Y
+            dlr->submit_line({0,0,0}, {0,0,1}, {0,0,1}); // blue Z
         }
     }
 
