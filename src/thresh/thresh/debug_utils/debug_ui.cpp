@@ -5,10 +5,31 @@
 #include "debug_ui.hpp"
 
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "thresh/engine.hpp"
 #include "thresh/scene/ecs_types.hpp"
 
 namespace {
+
+    auto write_to_local(flecs::entity entity, const flux::float4x4& new_world) -> void {
+
+        flux::float4x4 parent_world{1.f};
+        if (auto parent = entity.parent(); parent.is_valid()) {
+            if (const auto* t = parent.try_get<WorldTransform>()) {
+                parent_world = t->transform;
+            }
+        }
+
+        const flux::float4x4 local = flux::math::inverse(parent_world) * new_world;
+
+        flux::float3 scale, skew, translation;
+        flux::float4 perspective;
+        flux::quat rotation;
+
+        flux::math::decompose(local, scale, rotation, translation, skew, perspective);
+
+        entity.set<Transform>({.position = translation, .rotation = rotation, .scale = scale});
+    }
 
     auto draw_transforms(flecs::entity entity) -> void {
         if (!entity.has<Transform>()) {
@@ -85,8 +106,23 @@ namespace thresh {
 
     auto DebugUI::draw(Scene& scene) -> void {
 
+        ImGuizmo::BeginFrame();
+
+        if (!ImGui::GetIO().WantTextInput) {
+            if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+                m_gizmo_operation = ImGuizmo::OPERATION::TRANSLATE;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_E)) {
+                m_gizmo_operation = ImGuizmo::OPERATION::ROTATE;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+                m_gizmo_operation = ImGuizmo::OPERATION::SCALE;
+            }
+        }
+
         draw_tree(scene);
         draw_inspector(scene);
+        draw_gizmos(scene);
         if (show_aabbs) {
             submit_aabbs(scene);
         }
@@ -117,6 +153,34 @@ namespace thresh {
             ImGui::Text("Nothing selected");
         }
         ImGui::End();
+    }
+
+    auto DebugUI::draw_gizmos(Scene& scene) -> void {
+
+        if (!m_selected_entity.is_alive() || !m_selected_entity.has<WorldTransform>()) {
+            return;
+        }
+        const ImGuiIO& io = ImGui::GetIO();
+        if (io.DisplaySize.x == 0.f || io.DisplaySize.y == 0.f) {
+            return;
+        }
+        const float aspect = io.DisplaySize.x / io.DisplaySize.y;
+
+        auto cam = scene.compute_active_camera_data(aspect);
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+        flux::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
+
+        ImGuizmo::Manipulate(
+            flux::math::value_ptr(cam->view),
+            flux::math::value_ptr(cam->projection),
+            m_gizmo_operation,
+            m_gizmo_mode,
+            flux::math::value_ptr(world));
+
+        write_to_local(m_selected_entity, world);
     }
 
     auto DebugUI::submit_aabbs(Scene& scene) -> void {

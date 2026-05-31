@@ -106,7 +106,7 @@ namespace demo {
             }
         }
 
-        if (imgui_enabled && !ImGui::GetIO().WantCaptureMouse && input->mouse_button_just_pressed(SDL_BUTTON_LEFT)) {
+        if (imgui_enabled && !ImGui::GetIO().WantCaptureMouse && input->mouse_button_just_pressed(SDL_BUTTON_LEFT) && (!ImGuizmo::IsOver() || ImGuizmo::IsUsing())) {
             auto* scene = thresh::Engine::get_instance().active_scene();
             auto* window = thresh::Engine::get_instance().window();
             if (scene && window) {
