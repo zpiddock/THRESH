@@ -66,6 +66,7 @@ CPMAddPackage(
 )
 
 CPMAddPackage("gh:ocornut/imgui@1.92.8#docking")
+CPMAddPackage("gh:cedricguillemet/imguizmo#1.10")
 
 if(imgui_ADDED)
     add_library(imgui SHARED
@@ -76,14 +77,15 @@ if(imgui_ADDED)
             ${imgui_SOURCE_DIR}/imgui_widgets.cpp
             ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
             ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+            ${ImGuizmo_SOURCE_DIR}/src/ImGuizmo.cpp
     )
     target_include_directories(imgui PUBLIC
             ${imgui_SOURCE_DIR}
             ${imgui_SOURCE_DIR}/backends
+            ${ImGuizmo_SOURCE_DIR}/src
     )
     target_link_libraries(imgui PUBLIC SDL3::SDL3 Vulkan::Vulkan)
 endif ()
 
 # Glaze
-
 CPMAddPackage("gh:stephenberry/glaze@7.6.0")

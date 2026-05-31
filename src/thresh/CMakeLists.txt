@@ -12,6 +12,8 @@ add_library(Thresh STATIC
         thresh/asset/assets_loader.hpp
         thresh/scene/scene_serializer.cpp
         thresh/scene/scene_serializer.hpp
+        thresh/debug_utils/debug_ui.cpp
+        thresh/debug_utils/debug_ui.hpp
 )
 
 target_link_libraries(Thresh PUBLIC
