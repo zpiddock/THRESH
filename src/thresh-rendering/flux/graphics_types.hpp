@@ -20,9 +20,9 @@ namespace flux {
         alignas(16) flux::float4 base_colour;
     };
 
-    struct CameraData {
-        alignas(16) flux::float4x4 view;
-        alignas(16) flux::float4x4 projection;
+    struct SceneData {
+        alignas(16) flux::float4x4 cam_view_model;
+        alignas(16) flux::float4x4 cam_proj_matrix;
     };
 
     struct TextureData {

@@ -174,8 +174,8 @@ namespace thresh {
         flux::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
 
         ImGuizmo::Manipulate(
-            flux::math::value_ptr(cam->view),
-            flux::math::value_ptr(cam->projection),
+            flux::math::value_ptr(cam->cam_view_model),
+            flux::math::value_ptr(cam->cam_proj_matrix),
             m_gizmo_operation,
             m_gizmo_mode,
             flux::math::value_ptr(world));

@@ -157,9 +157,9 @@ namespace thresh {
         }
     }
 
-    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::CameraData> {
+    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::SceneData> {
 
-        std::optional<flux::CameraData> result;
+        std::optional<flux::SceneData> result;
 
         const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
@@ -167,11 +167,11 @@ namespace thresh {
 
             if (result) return; // First result wins
 
-            flux::CameraData data{};
+            flux::SceneData data{};
             constexpr auto identity = flux::float4x4{1.f};
 
-            data.view = flux::math::inverse(transform.transform);
-            data.projection = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            data.cam_view_model = flux::math::inverse(transform.transform);
+            data.cam_proj_matrix = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
 
             result = data;
         });

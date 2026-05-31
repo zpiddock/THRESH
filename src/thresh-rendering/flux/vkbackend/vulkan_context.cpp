@@ -63,7 +63,7 @@ namespace flux {
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-            vk::DeviceSize camera_buffer_size = sizeof(CameraData);
+            vk::DeviceSize camera_buffer_size = sizeof(SceneData);
             auto [camera_buffer, camera_memory] =
                 m_vk_device.create_buffer(camera_buffer_size,
                     vk::BufferUsageFlagBits::eUniformBuffer,
