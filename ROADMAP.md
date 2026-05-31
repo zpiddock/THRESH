@@ -13,7 +13,7 @@ Leaning towards the tag approach since it survives once an editor exists too, bu
 
 **Transform hierarchy — local vs world.** ✅ Done. `WorldTransform` is propagated from `Transform` via flecs `ChildOf` in a PostUpdate pass, with `WorldAABB` per-entity (plus aggregated up the tree) and a ray-vs-AABB `Scene::pick_entity` for ImGui picking. Outstanding: entities parented to the camera aren't fully handled — child entities get carried along by the propagation, but anything that wants to live in camera-local space (HUD billboards, first-person view-model) still needs separate view-space rendering work. Revisit alongside that.
 
-**ImGui debug rendering.** ImGui is wired up already, just no debug-draw primitives. Want: lines, AABBs, and a basic scene inspector panel (entity tree + component fields) on top of `DearImGuiContext`. A buffered line-list flushed in its own tiny pipeline is probably enough for v1.
+**ImGui debug rendering.** ✅ Done. Engine ships `flux::DebugLineRenderer` (runtime opt-in via `enable_debug_line_renderer()`) — a buffered line-list flushed in its own tiny `debug_line` pipeline, with `submit_line`/`submit_aabb` helpers. Application-side `DebugUI` drives the inspector: entity tree, live-editable component fields, AABB visualisation, picking→selection, and ImGuizmo transform gizmos (translate/rotate/scale, world-space, writing back through the local `Transform`). Outstanding: the `THRESH_BUILD_DEBUG_UI` compile-time gate was never added, so all of this currently ships in release builds too — still want to strip it from non-debug builds so a release can't be flipped into a cheat/inspect surface. Gizmo refinements (multi-select, snapping, local/world toggle) also deferred.
 
 ## Next
 
