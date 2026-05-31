@@ -5,6 +5,7 @@
 #pragma once
 
 #include "thresh/application.hpp"
+#include "thresh/debug_utils/debug_ui.hpp"
 
 namespace demo {
 
@@ -21,6 +22,8 @@ class GameApp : public thresh::Application {
         auto shutdown() -> void override;
 
     private:
+
+        std::unique_ptr<thresh::DebugUI> m_debug_ui;
 };
 
 } // demo

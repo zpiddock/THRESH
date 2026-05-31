@@ -34,9 +34,9 @@ namespace thresh {
 
             auto pick_entity(int mouse_x, int mouse_y, int viewport_w, int viewport_h) -> std::optional<PickHit>;
 
+            flecs::entity m_scene_root;
+
         private:
             flecs::world m_world;
-
-            flecs::entity m_scene_root;
     };
 } // thresh

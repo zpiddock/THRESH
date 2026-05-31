@@ -22,6 +22,7 @@ namespace demo {
         substratum::VFS::set_write_dir(assets_path);
 
         thresh::Engine::get_instance().graphics()->enable_debug_line_renderer();
+        m_debug_ui = std::make_unique<thresh::DebugUI>();
 
         auto scene = thresh::Engine::get_instance().load_scene("/test/scenes/scene.thresh");
 
@@ -113,26 +114,26 @@ namespace demo {
                 int w = 0, h = 0;
                 window->get_frame_buffer_size(w, h);
                 if (auto hit = scene->pick_entity(static_cast<int>(mx), static_cast<int>(my), w, h)) {
-                    SUB_INFO("Picked '{}' at t={}", hit->entity.name().c_str(), hit->flags);
+                    if (m_debug_ui) {
+                        m_debug_ui->set_selected_entity(hit->entity);
+                    }
                 } else {
-                    SUB_INFO("Picked: <nothing>");
+                    if (m_debug_ui) {
+                        m_debug_ui->set_selected_entity({});
+                    }
                 }
             }
-        }
-
-        if (auto* dlr = thresh::Engine::get_instance().graphics()->debug_line_renderer(); dlr && imgui_enabled) {
-            dlr->submit_line({0,0,0}, {1,0,0}, {1,0,0}); // red X
-            dlr->submit_line({0,0,0}, {0,1,0}, {0,1,0}); // green Y
-            dlr->submit_line({0,0,0}, {0,0,1}, {0,0,1}); // blue Z
         }
     }
 
     auto GameApp::render() -> void {
     }
 
-    auto GameApp::debug_render() -> void
-    {
-        ImGui::ShowDemoWindow();
+    auto GameApp::debug_render() -> void {
+
+        if (auto* scene = thresh::Engine::get_instance().active_scene()) {
+            m_debug_ui->draw(*scene);
+        }
     }
 
     auto GameApp::shutdown() -> void {

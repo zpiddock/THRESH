@@ -8,6 +8,7 @@
 // #define GLM_FORCE_LEFT_HANDED
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace flux::math {
 
@@ -33,6 +34,7 @@ namespace flux::math {
     using glm::tan;
     using glm::transpose;
     using glm::abs;
+    using glm::value_ptr;
 }
 
 namespace flux::mathconstants {
