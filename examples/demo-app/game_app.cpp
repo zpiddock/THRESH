@@ -120,7 +120,7 @@ namespace demo {
             }
         }
 
-        if (auto* dlr = thresh::Engine::get_instance().graphics()->debug_line_renderer()) {
+        if (auto* dlr = thresh::Engine::get_instance().graphics()->debug_line_renderer(); dlr && imgui_enabled) {
             dlr->submit_line({0,0,0}, {1,0,0}, {1,0,0}); // red X
             dlr->submit_line({0,0,0}, {0,1,0}, {0,1,0}); // green Y
             dlr->submit_line({0,0,0}, {0,0,1}, {0,0,1}); // blue Z
