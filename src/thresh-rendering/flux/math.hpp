@@ -6,9 +6,11 @@
 //
 // #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 // #define GLM_FORCE_LEFT_HANDED
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace flux::math {
 
@@ -35,6 +37,7 @@ namespace flux::math {
     using glm::transpose;
     using glm::abs;
     using glm::value_ptr;
+    using glm::decompose;
 }
 
 namespace flux::mathconstants {
