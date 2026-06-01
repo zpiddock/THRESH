@@ -131,7 +131,7 @@ namespace flux {
         m_framebuffer_resized = resized;
     }
 
-    auto GraphicsUtils::set_camera_data(const SceneData& camera_data) -> void {
+    auto GraphicsUtils::set_camera_data(const CameraData& camera_data) -> void {
         m_camera_data = camera_data;
     }
 
@@ -145,7 +145,7 @@ namespace flux {
 
         if (m_camera_data != std::nullopt) {
 
-            memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(SceneData));
+            memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(CameraData));
         }
 
     }
@@ -289,7 +289,7 @@ namespace flux {
             const vk::DescriptorBufferInfo camera_info{
                 .buffer = m_context->m_camera_buffers[i],
                 .offset = 0,
-                .range = sizeof(SceneData)
+                .range = sizeof(CameraData)
             };
             const vk::DescriptorImageInfo texture_info{
                 .sampler = texture.sampler,
@@ -386,7 +386,7 @@ namespace flux {
 
         if (m_debug_line_renderer && m_camera_data) {
 
-            const auto view_projection = m_camera_data->cam_proj_matrix * m_camera_data->cam_view_model;
+            const auto view_projection = m_camera_data->projection * m_camera_data->view;
             m_debug_line_renderer->record_frame(cmd_buffer, view_projection, m_context->m_offscreen_image_views[m_context->m_frame_index], m_context->m_depth_image_view, m_context->m_vk_swapchain.swapchain_extent());
         }
 
