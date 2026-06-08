@@ -61,6 +61,18 @@ namespace {
         ImGui::DragFloat("Far Plane", &camera.far_plane, 0.1f, 0.1f, 10000.f);
     }
 
+    auto draw_ambient_light(flecs::entity entity) -> void {
+        if (!entity.has<AmbientLight>()) {
+            return;
+        }
+        if (!ImGui::CollapsingHeader("Ambient Light")) {
+            return;
+        }
+        auto& light = entity.get_mut<AmbientLight>();
+        ImGui::ColorEdit3("Colour", flux::math::value_ptr(light.colour));
+        ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.f, 10.f);
+    }
+
     auto draw_light(flecs::entity entity) -> void {
         if (!entity.has<Light>()) {
             return;
@@ -152,6 +164,10 @@ namespace thresh {
         } else {
             ImGui::Text("Nothing selected");
         }
+        ImGui::End();
+
+        ImGui::Begin("Scene Settings");
+            draw_ambient_light(scene.m_scene_root);
         ImGui::End();
     }
 

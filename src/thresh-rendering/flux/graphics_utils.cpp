@@ -135,6 +135,10 @@ namespace flux {
         m_camera_data = camera_data;
     }
 
+    auto GraphicsUtils::set_light_data(const LightData& light_data) -> void {
+        m_light_data = light_data;
+    }
+
     auto GraphicsUtils::update_uniform_buffers(uint32_t frame_index) -> void {
 
         // Testing Purposes only, all updates to be done in update loop, not draw loop
@@ -147,7 +151,9 @@ namespace flux {
 
             memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(CameraData));
         }
-
+        if (m_light_data != std::nullopt) {
+            memcpy(m_context->m_light_buffers_mapped[frame_index], &m_light_data.value(), sizeof(LightData));
+        }
     }
 
     auto GraphicsUtils::get_aspect_ratio() -> float {
@@ -296,6 +302,11 @@ namespace flux {
                 .imageView = texture.image_view,
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
             };
+            const vk::DescriptorBufferInfo light_info{
+                .buffer = m_context->m_light_buffers[i],
+                .offset = 0,
+                .range = sizeof(LightData)
+            };
             std::array descriptor_writes {
                 vk::WriteDescriptorSet {
                     .dstSet = sets[i],
@@ -310,6 +321,13 @@ namespace flux {
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                     .pImageInfo = &texture_info
+                },
+                vk::WriteDescriptorSet {
+                    .dstSet = sets[i],
+                    .dstBinding = 2,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eUniformBuffer,
+                    .pBufferInfo = &light_info
                 }
             };
             device.logical().updateDescriptorSets(descriptor_writes, {});

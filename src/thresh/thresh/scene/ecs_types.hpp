@@ -35,6 +35,11 @@ struct CameraController {
     bool movement_allowed = true;
 };
 
+struct AmbientLight {
+    flux::float3 colour = flux::float3(1.f);
+    float intensity = 0.1f;
+};
+
 struct Light {
 
     flux::float3 colour = flux::float3(1.f);

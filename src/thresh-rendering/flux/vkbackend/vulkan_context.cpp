@@ -61,6 +61,10 @@ namespace flux {
         m_camera_buffer_memory.clear();
         m_camera_buffers_mapped.clear();
 
+        m_light_buffers.clear();
+        m_light_buffer_memory.clear();
+        m_light_buffers_mapped.clear();
+
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
             vk::DeviceSize camera_buffer_size = sizeof(CameraData);
@@ -72,6 +76,16 @@ namespace flux {
             m_camera_buffers.emplace_back(std::move(camera_buffer));
             m_camera_buffer_memory.emplace_back(std::move(camera_memory));
             m_camera_buffers_mapped.emplace_back(m_camera_buffer_memory[i].mapMemory(0, camera_buffer_size));
+
+            vk::DeviceSize light_buffer_size = sizeof(LightData);
+            auto [light_buffer, light_memory] =
+                m_vk_device.create_buffer(light_buffer_size,
+                    vk::BufferUsageFlagBits::eUniformBuffer,
+                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
+                    );
+            m_light_buffers.emplace_back(std::move(light_buffer));
+            m_light_buffer_memory.emplace_back(std::move(light_memory));
+            m_light_buffers_mapped.emplace_back(m_light_buffer_memory[i].mapMemory(0, light_buffer_size));
         }
     }
 
@@ -79,7 +93,7 @@ namespace flux {
 
         std::array pool_size {
 
-            vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, MAX_FRAMES_IN_FLIGHT },
+            vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, 64 * MAX_FRAMES_IN_FLIGHT * 2 },
             vk::DescriptorPoolSize { vk::DescriptorType::eCombinedImageSampler, 64 * MAX_FRAMES_IN_FLIGHT },
         };
 
@@ -275,6 +289,12 @@ namespace flux {
                         .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
                         .descriptorCount = 1,
                         .stageFlags      = vk::ShaderStageFlagBits::eFragment
+                    },
+                    {
+                        .binding = 2,
+                        .descriptorType  = vk::DescriptorType::eUniformBuffer,
+                        .descriptorCount = 1,
+                        .stageFlags      = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
                     }
                 },
             .push_constants = {

@@ -34,6 +34,8 @@ namespace flux {
 
             auto set_camera_data(const CameraData& camera_data) -> void;
 
+            auto set_light_data(const LightData& light_data) -> void;
+
             auto get_aspect_ratio() -> float;
 
             auto create_mesh_resource(const MeshData& mesh_data) -> MeshResource;
@@ -91,6 +93,7 @@ namespace flux {
             std::unique_ptr<VulkanContext> m_context;
 
             std::optional<CameraData> m_camera_data;
+            std::optional<LightData> m_light_data;
 
             bool                   m_framebuffer_resized = false;
             // Non Owning

@@ -9,20 +9,27 @@
 
 namespace flux {
 
-    struct UniformBufferObject {
-        alignas(16) flux::float4x4 model;
-        alignas(16) flux::float4x4 view;
-        alignas(16) flux::float4x4 projection;
+    inline constexpr auto MAX_POINT_LIGHTS = 4;
+
+    struct alignas(16) PushConstants {
+        flux::float4x4 model;
+        flux::float4 base_colour;
     };
 
-    struct PushConstants {
-        alignas(16) flux::float4x4 model;
-        alignas(16) flux::float4 base_colour;
+    struct alignas(16) CameraData {
+        flux::float4x4 view;
+        flux::float4x4 projection;
     };
 
-    struct CameraData {
-        alignas(16) flux::float4x4 view;
-        alignas(16) flux::float4x4 projection;
+    struct alignas(16) GPUPointLight {
+        flux::float4 position;
+        flux::float4 colour;
+    };
+
+    struct LightData {
+        alignas(16) flux::float4 ambient_light; // rgb = colour, a = intensity
+        std::array<GPUPointLight, MAX_POINT_LIGHTS> point_lights;
+        alignas(16) int active_point_lights;
     };
 
     struct TextureData {

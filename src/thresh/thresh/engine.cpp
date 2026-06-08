@@ -113,6 +113,9 @@ namespace thresh {
                 if (auto cam = m_active_scene->compute_active_camera_data(m_graphics_utils->get_aspect_ratio())) {
                     m_graphics_utils->set_camera_data(*cam);
                 }
+                if (auto lights = m_active_scene->compute_active_light_data()) {
+                    m_graphics_utils->set_light_data(*lights);
+                }
             }
 
             // Rendering

@@ -29,6 +29,7 @@ namespace thresh {
         SceneSerializer::register_components(m_world);
 
         m_scene_root = m_world.entity("SceneRoot").add<SceneRoot>();
+        m_scene_root.set<AmbientLight>({});
 
         m_world.system<Transform, CameraController, ActiveCamera>().kind(flecs::OnUpdate).each(
                 [](flecs::iter& it, size_t, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {
@@ -159,7 +160,7 @@ namespace thresh {
 
     auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::CameraData> {
 
-        std::optional<flux::CameraData> result;
+        std::optional<flux::CameraData> result = std::nullopt;
 
         const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
@@ -175,6 +176,35 @@ namespace thresh {
 
             result = data;
         });
+
+        return result;
+    }
+
+    auto Scene::compute_active_light_data() -> std::optional<flux::LightData> {
+        auto result = flux::LightData{};
+
+        bool ambient_light_found = false;
+        m_world.query_builder<const AmbientLight>().build().each([&](flecs::entity entity, const AmbientLight& light) {
+            if (ambient_light_found) {
+                SUB_WARN("Multiple ambient lights found, ignoring all but the first");
+                return;
+            }
+            result.ambient_light = flux::float4(light.colour, light.intensity);
+            ambient_light_found = true;
+        });
+
+        int light_count = 0;
+        m_world.query_builder<const WorldTransform, const Light>().build()
+        .each([&](flecs::entity entity, const WorldTransform& transform, const Light& light) {
+            if (light_count >= flux::MAX_POINT_LIGHTS) {
+                SUB_WARN("Too many point lights, ignoring all unregistered lights");
+                return;
+            }
+            result.point_lights[light_count].position = transform.transform[3];
+            result.point_lights[light_count].colour = flux::float4(light.colour, light.intensity);
+            light_count++;
+        });
+        result.active_point_lights = light_count;
 
         return result;
     }

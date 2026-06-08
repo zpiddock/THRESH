@@ -30,6 +30,8 @@ namespace thresh {
 
             auto compute_active_camera_data(float aspect) -> std::optional<flux::CameraData>;
 
+            auto compute_active_light_data() -> std::optional<flux::LightData>;
+
             auto root() -> flecs::entity;
 
             auto pick_entity(int mouse_x, int mouse_y, int viewport_w, int viewport_h) -> std::optional<PickHit>;

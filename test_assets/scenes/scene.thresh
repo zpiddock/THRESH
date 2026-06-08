@@ -1,6 +1,30 @@
 {
    "results": [
       {
+         "name": "SceneRoot",
+         "tags": [
+            "SceneRoot"
+         ],
+         "components": {
+            "flecs.core.Component": {
+               "size": 0,
+               "alignment": 0
+            },
+            "AmbientLight": {
+               "colour": {
+                  "x": 0.8039215803,
+                  "y": 0.3625528514,
+                  "z": 0.3625528514
+               },
+               "intensity": 0.6999999881
+            },
+            "WorldAABB": null,
+            "(flecs.core.Identifier,flecs.core.Symbol)": {
+               "value": "SceneRoot"
+            }
+         }
+      },
+      {
          "parent": "SceneRoot",
          "name": "Player",
          "tags": [
@@ -9,15 +33,15 @@
          "components": {
             "Transform": {
                "position": {
-                  "x": 3.3802595139,
+                  "x": 2.7239356041,
                   "y": 1,
-                  "z": 3.8136196136
+                  "z": 4.2285404205
                },
                "rotation": {
-                  "x": -0.1163782626,
-                  "y": 0.1158652231,
-                  "z": 0.0136710936,
-                  "w": 0.9863287807
+                  "x": -0.0231728926,
+                  "y": 0.2705214918,
+                  "z": 0.0065135923,
+                  "w": 0.9624129534
                },
                "scale": {
                   "x": 1,
@@ -31,8 +55,8 @@
                "far_plane": 100
             },
             "CameraController": {
-               "yaw": 0.2338705659,
-               "pitch": -0.2348966449,
+               "yaw": 0.5480322242,
+               "pitch": -0.0481465161,
                "movement_speed": 5,
                "mouse_sensitivity": 0.1000000015,
                "movement_allowed": true

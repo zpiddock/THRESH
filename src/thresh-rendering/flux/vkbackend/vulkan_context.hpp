@@ -90,6 +90,10 @@ namespace flux {
             std::vector<vk::raii::DeviceMemory>  m_camera_buffer_memory;
             std::vector<void*>                   m_camera_buffers_mapped;
 
+            std::vector<vk::raii::Buffer>        m_light_buffers;
+            std::vector<vk::raii::DeviceMemory>  m_light_buffer_memory;
+            std::vector<void*>                   m_light_buffers_mapped;
+
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
 
