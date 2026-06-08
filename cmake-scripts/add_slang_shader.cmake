@@ -16,7 +16,6 @@ function(add_slang_shader_target TARGET)
             OUTPUT  ${THRESH_SHADERS_DIR}/${TARGET}.spv
             COMMAND ${SLANGC_EXECUTABLE} ${SHADER_SOURCES}
                 -I ${THRESH_SHADERS_DIR}
-                -I${THRESH_SHADERS_DIR}/include
                 -target spirv
                 -profile spirv_1_5
                 -emit-spirv-directly
