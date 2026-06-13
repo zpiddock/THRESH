@@ -9,8 +9,6 @@ add_library(Flux STATIC
         flux/vkbackend/vulkan_context.cpp
         flux/vkbackend/vulkan_context.hpp
         flux/graphics_types.hpp
-        flux/vkbackend/texture.cpp
-        flux/vkbackend/texture.hpp
         flux/vkbackend/vulkan_device.cpp
         flux/vkbackend/vulkan_device.hpp
         flux/vkbackend/vulkan_swapchain.cpp
