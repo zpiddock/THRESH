@@ -16,6 +16,15 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Uniform descriptor stride, shared by the shader cook step and the runtime.
+# Slang's default (-spirv-*-heap-stride 0) uses per-TYPE descriptor sizes, which makes the
+# same slot index map to different byte offsets for images vs buffers, potentially causing an index-vs-offset size bug.
+# A uniform stride wastes a few bytes per slot and removes the class.
+# 64 covers every descriptor size on current desktop hardware;
+# ThreshVkDevice asserts it against the real device properties at startup.
+set(THRESH_RESOURCE_HEAP_STRIDE 64 CACHE STRING "byte stride of one resource-heap slot")
+set(THRESH_SAMPLER_HEAP_STRIDE  64 CACHE STRING "byte stride of one sampler-heap slot")
+
 # Include CMP for Dependency management
 include(cmake-scripts/get_cpm.cmake)
 # Find Vulkan (Khronos Official Vulkan cmake script)

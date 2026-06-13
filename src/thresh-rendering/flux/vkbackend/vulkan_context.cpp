@@ -4,6 +4,7 @@
 
 #include "vulkan_context.hpp"
 
+#include <memory>
 #include <set>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -253,7 +254,7 @@ namespace flux {
         const PipelineContext& context) -> ThreshVkPipeline* {
 
         SUB_DEBUG("Registering pipeline '{}'", name);
-        auto pipeline = std::unique_ptr<ThreshVkPipeline>(new ThreshVkPipeline(context, m_vk_device));
+        auto pipeline = std::make_unique<ThreshVkPipeline>(context, m_vk_device);
 
         auto* raw = pipeline.get();
         auto [it, inserted] = m_pipelines.emplace(name, std::move(pipeline));
@@ -266,7 +267,7 @@ namespace flux {
 
     auto VulkanContext::get_pipeline(const std::string& name) -> ThreshVkPipeline* {
 
-        auto it = m_pipelines.find(name);
+        const auto it = m_pipelines.find(name);
         if (it == m_pipelines.end()) {
             SUB_FATAL("Pipeline with name {} not found.", name);
         }

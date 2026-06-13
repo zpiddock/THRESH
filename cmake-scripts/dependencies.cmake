@@ -1,6 +1,13 @@
 # Find Vulkan SDK
 find_package(Vulkan REQUIRED)
 
+# Descriptor heap codegen + validation are version sensitive while the extension is young.
+# Bump this pin deliberately
+set(THRESH_PINNED_VULKAN_SDK "1.4.350")
+if(NOT Vulkan_VERSION MATCHES "^${THRESH_PINNED_VULKAN_SDK}")
+    message(FATAL_ERROR "THRESH pins Vulkan SDK ${THRESH_PINNED_VULKAN_SDK}.x, found ${Vulkan_VERSION}")
+endif()
+
 # SDL3 - Windowing & Controller Support
 # SDL3 must be shared — static SDL3 embedded in a DLL violates Windows DLL init rules
 CPMAddPackage(

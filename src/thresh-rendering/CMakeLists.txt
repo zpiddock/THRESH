@@ -1,3 +1,5 @@
+set(THRESH_SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets/shader/src)
+
 add_library(Flux STATIC
         flux/graphics_utils.hpp
         flux/graphics_utils.cpp
@@ -35,13 +37,19 @@ target_link_libraries(Flux PUBLIC
 )
 target_compile_definitions(Flux PUBLIC
         VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+        THRESH_RESOURCE_HEAP_STRIDE=${THRESH_RESOURCE_HEAP_STRIDE}
+        THRESH_SAMPLER_HEAP_STRIDE=${THRESH_SAMPLER_HEAP_STRIDE}
 )
 target_include_directories(Flux PUBLIC
         ${CMAKE_SOURCE_DIR}/src/thresh-rendering
 )
 
-add_slang_shader_target(opaque_mesh SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/opaque_mesh.slang)
-add_slang_shader_target(composite SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/composite.slang)
-add_slang_shader_target(debug_lines SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/debug_line.slang)
-add_dependencies(Flux opaque_mesh composite debug_lines)
+# Spike test the descriptor heap in pinned Vulkan SDK / Slang Compiler Version
+add_slang_shader_target(spike_heap SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/spike/spike_heap.slang)
+add_slang_shader_target(spike_material SOURCES ${CMAKE_SOURCE_DIR}/assets/shader/spike/spike_material.slang)
+
+add_slang_shader_target(opaque_mesh SOURCES ${THRESH_SHADER_SOURCE_DIR}/opaque_mesh.slang)
+add_slang_shader_target(composite SOURCES ${THRESH_SHADER_SOURCE_DIR}/composite.slang)
+add_slang_shader_target(debug_lines SOURCES ${THRESH_SHADER_SOURCE_DIR}/debug_line.slang)
+add_dependencies(Flux spike_heap spike_material opaque_mesh composite debug_lines)
 
