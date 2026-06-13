@@ -10,8 +10,10 @@ namespace flux {
     ThreshVkDevice::ThreshVkDevice(const vk::raii::Instance& instance, const vk::SurfaceKHR& surface) {
 
         pick_suitable_device(instance);
+        query_heap_properties();
         create_logical_device(surface);
         create_command_pool();
+        validate_heap_strides();
     }
 
     auto ThreshVkDevice::transition_image_layout(const vk::raii::Image& image, vk::ImageLayout old_layout,
@@ -265,23 +267,40 @@ namespace flux {
         vk::StructureChain<
                     vk::PhysicalDeviceFeatures2,
                     vk::PhysicalDeviceVulkan11Features,
+                    vk::PhysicalDeviceVulkan12Features,
                     vk::PhysicalDeviceVulkan13Features,
-                    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+                    vk::PhysicalDeviceVulkan14Features,
+                    vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
+                    vk::PhysicalDeviceDescriptorHeapFeaturesEXT,
+                    vk::PhysicalDeviceShaderUntypedPointersFeaturesKHR>
                 features{
-                    {
+                    { // PhysicalDeviceFeatures2
                         .features = {
                             .samplerAnisotropy = true,
                         }
                     },
-                    {
+                    { // Vulkan 1.1 Features
                         .shaderDrawParameters = true,
                     },
-                    {
+                    { // Vulkan 1.2 Features
+                        .scalarBlockLayout = true,
+                        .bufferDeviceAddress = true,
+                    },
+                    { // Vulkan 1.3 Features
                         .synchronization2 = true,
                         .dynamicRendering = true
                     },
-                    {
+                    { // Vulkan 1.4 Features
+                        .maintenance5 = true
+                    },
+                    { // PhysicalDeviceExtendedDynamicStateFeaturesEXT
                         .extendedDynamicState = true
+                    },
+                    { // PhysicalDeviceDescriptorHeapFeaturesEXT
+                        .descriptorHeap = true
+                    },
+                    { // PhysicalDeviceShaderUntypedPointersFeaturesKHR
+                        .shaderUntypedPointers = true
                     }
                 };
 
@@ -307,35 +326,54 @@ namespace flux {
 
     auto ThreshVkDevice::is_device_suitable(const vk::PhysicalDevice& device) -> bool {
         const auto device_properties = device.getProperties();
-
-        auto support_VK1_4 = device_properties.apiVersion >= vk::ApiVersion14;
+        const auto support_VK1_4 = device_properties.apiVersion >= vk::ApiVersion14;
 
         auto queue_families   = device.getQueueFamilyProperties();
         auto support_graphics = std::ranges::any_of(queue_families, [](const auto& family) {
             return !!(family.queueFlags & vk::QueueFlagBits::eGraphics);
         });
 
-        // Check if all required physicalDevice extensions are available
-        auto availableDeviceExtensions     = device.enumerateDeviceExtensionProperties();
+        auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();
         bool supportsAllRequiredExtensions =
                 std::ranges::all_of(m_required_device_extensions,
                                     [&availableDeviceExtensions](auto const& requiredDeviceExtension) {
                                         return std::ranges::any_of(availableDeviceExtensions,
-                                                                   [requiredDeviceExtension](
-                                                               auto const& availableDeviceExtension) {
-                                                                       return strcmp(availableDeviceExtension.
-                                                                           extensionName,
-                                                                           requiredDeviceExtension) == 0;
+                                                                   [requiredDeviceExtension](auto const& available) {
+                                                                       return strcmp(available.extensionName,
+                                                                                     requiredDeviceExtension) == 0;
                                                                    });
                                     });
 
-        // Check if the physicalDevice supports the required features (dynamic rendering and extended dynamic state)
-        auto features =
-                device
-                .getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features,
-                              vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-        bool supportsRequiredFeatures = features.get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
-                features.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+        auto features = device.getFeatures2<
+                vk::PhysicalDeviceFeatures2,
+                vk::PhysicalDeviceVulkan11Features,
+                vk::PhysicalDeviceVulkan12Features,
+                vk::PhysicalDeviceVulkan13Features,
+                vk::PhysicalDeviceVulkan14Features,
+                vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT,
+                vk::PhysicalDeviceDescriptorHeapFeaturesEXT,
+                vk::PhysicalDeviceShaderUntypedPointersFeaturesKHR>();
+
+        const auto& f10 = features.get<vk::PhysicalDeviceFeatures2>().features;
+        const auto& f11 = features.get<vk::PhysicalDeviceVulkan11Features>();
+        const auto& f12 = features.get<vk::PhysicalDeviceVulkan12Features>();
+        const auto& f13 = features.get<vk::PhysicalDeviceVulkan13Features>();
+        const auto& f14 = features.get<vk::PhysicalDeviceVulkan14Features>();
+        const auto& fds = features.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+        const auto& fheap = features.get<vk::PhysicalDeviceDescriptorHeapFeaturesEXT>();
+        const auto& fptr  = features.get<vk::PhysicalDeviceShaderUntypedPointersFeaturesKHR>();
+
+        bool supportsRequiredFeatures =
+                f10.samplerAnisotropy &&
+                f11.shaderDrawParameters &&
+                f12.scalarBlockLayout &&
+                f12.bufferDeviceAddress &&
+                f13.synchronization2 &&
+                f13.dynamicRendering &&
+                f14.maintenance5 &&
+                fds.extendedDynamicState &&
+                fheap.descriptorHeap &&
+                fptr.shaderUntypedPointers;
 
         return support_VK1_4 && support_graphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
     }
@@ -347,5 +385,54 @@ namespace flux {
         };
         m_command_pool = vk::raii::CommandPool(m_device, pool_info);
         SUB_TRACE("Command pool created (queue family {})", m_queue_family_index);
+    }
+
+    auto ThreshVkDevice::query_heap_properties() -> void {
+
+        auto chain = m_physical_device.getProperties2<
+            vk::PhysicalDeviceProperties2,
+            vk::PhysicalDeviceDescriptorHeapPropertiesEXT>();
+
+        m_heap_properties = chain.get<vk::PhysicalDeviceDescriptorHeapPropertiesEXT>();
+        // Copied out of `chain`, which dies at end of scope — its pNext now dangles. We only
+        // ever read scalar fields off m_heap_properties, so null it to kill the stale pointer.
+        m_heap_properties.pNext = nullptr;
+
+        SUB_INFO("Descriptor heap: descSize img={}B buf={}B smp={} | align img={} buf={} smp={} | "
+                 "maxHeap res={}B smp={}B | minReserved res={} smp={} | maxPushData={}B",
+                 m_heap_properties.imageDescriptorSize,
+                 m_heap_properties.bufferDescriptorSize,
+                 m_heap_properties.samplerDescriptorSize,
+                 m_heap_properties.imageDescriptorAlignment,
+                 m_heap_properties.bufferDescriptorAlignment,
+                 m_heap_properties.samplerDescriptorAlignment,
+                 m_heap_properties.maxResourceHeapSize,
+                 m_heap_properties.maxSamplerHeapSize,
+                 m_heap_properties.minResourceHeapReservedRange,
+                 m_heap_properties.minSamplerHeapReservedRange,
+                 m_heap_properties.maxPushDataSize);
+    }
+
+    auto ThreshVkDevice::validate_heap_strides() -> void {
+
+        const auto& p = m_heap_properties;
+        // THE contract between the offline cook (-spirv-*-heap-stride) and this device.
+        // If any of these fire: raise THRESH_*_HEAP_STRIDE in CMake and re-cook. One number.
+        constexpr vk::DeviceSize rstride = THRESH_RESOURCE_HEAP_STRIDE;
+        constexpr vk::DeviceSize sstride = THRESH_SAMPLER_HEAP_STRIDE;
+
+        if (rstride < p.imageDescriptorSize  || rstride < p.bufferDescriptorSize ||
+            rstride % p.imageDescriptorAlignment != 0 || rstride % p.bufferDescriptorAlignment != 0) {
+            SUB_FATAL("Resource heap stride {} incompatible with device (img {}/{} buf {}/{})",
+                      rstride, p.imageDescriptorSize, p.imageDescriptorAlignment,
+                      p.bufferDescriptorSize, p.bufferDescriptorAlignment);
+            }
+        if (sstride < p.samplerDescriptorSize || sstride % p.samplerDescriptorAlignment != 0) {
+            SUB_FATAL("Sampler heap stride {} incompatible with device (smp {}/{})",
+                      sstride, p.samplerDescriptorSize, p.samplerDescriptorAlignment);
+        }
+        SUB_INFO("Descriptor heap: img={}B buf={}B smp={}B, maxPushData={}B, minReserved r={} s={}",
+                 p.imageDescriptorSize, p.bufferDescriptorSize, p.samplerDescriptorSize,
+                 p.maxPushDataSize, p.minResourceHeapReservedRange, p.minSamplerHeapReservedRange);
     }
 } // flux

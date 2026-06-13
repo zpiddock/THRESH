@@ -55,12 +55,20 @@ namespace flux {
                 return m_queue_family_index;
             }
 
+            [[nodiscard]] auto heap_properties() const -> const vk::PhysicalDeviceDescriptorHeapPropertiesEXT& {
+                return m_heap_properties;
+            }
+
         private:
             auto pick_suitable_device(const vk::raii::Instance& instance) -> void;
 
             auto create_logical_device(const vk::SurfaceKHR& surface) -> void;
 
             auto is_device_suitable(const vk::PhysicalDevice& device) -> bool;
+
+            auto query_heap_properties() -> void;
+
+            auto validate_heap_strides() -> void;
 
             auto create_command_pool() -> void;
 
@@ -70,8 +78,12 @@ namespace flux {
             vk::raii::Queue          m_graphics_queue     = nullptr;
             vk::raii::CommandPool    m_command_pool       = nullptr;
 
+            vk::PhysicalDeviceDescriptorHeapPropertiesEXT m_heap_properties{};
+
             std::vector<const char*> m_required_device_extensions = {
-                vk::KHRSwapchainExtensionName
+                vk::KHRSwapchainExtensionName,
+                vk::KHRShaderUntypedPointersExtensionName, // Slang shaders with descriptor heaps emits untyped pointers
+                vk::EXTDescriptorHeapExtensionName
             };
     };
 } // flux
