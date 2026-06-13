@@ -22,6 +22,10 @@ add_library(Flux STATIC
         flux/dear_im_gui_context.hpp
         flux/debug_line_renderer.cpp
         flux/debug_line_renderer.hpp
+        flux/vkbackend/buffer.cpp
+        flux/vkbackend/buffer.hpp
+        flux/vkbackend/image.cpp
+        flux/vkbackend/image.hpp
 )
 
 target_link_libraries(Flux PUBLIC
