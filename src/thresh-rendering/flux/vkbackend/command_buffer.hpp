@@ -9,7 +9,7 @@
 namespace flux {
     class Buffer;
     class Image;
-    class ImageState;
+    struct ImageState;
 
     class CommandBuffer {
 

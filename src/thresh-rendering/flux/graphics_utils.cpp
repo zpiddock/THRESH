@@ -365,16 +365,12 @@ namespace flux {
             m_debug_line_renderer->record_frame(cmd_buffer, view_projection, m_context->m_offscreen_images[m_context->m_frame_index].view(), m_context->m_depth_image.view(), m_context->m_vk_swapchain.swapchain_extent());
         }
 
-        m_context->transition_image_layout(
-            m_context->m_offscreen_images[m_context->m_frame_index].handle(),
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eFragmentShader,
-            vk::ImageAspectFlagBits::eColor
-            );
+        cmd_buffer.transition(m_context->m_offscreen_images[m_context->m_frame_index],
+            {
+                vk::ImageLayout::eShaderReadOnlyOptimal,
+                vk::PipelineStageFlagBits2::eFragmentShader,
+                vk::AccessFlagBits2::eShaderRead
+            });
 
         record_composite_commands(cmd_buffer, image_index);
 
@@ -382,16 +378,19 @@ namespace flux {
             record_imgui_commands(cmd_buffer, image_index);
         }
 
-        m_context->transition_image_layout(
+        cmd_buffer.transition_raw(
             m_context->m_vk_swapchain.swapchain_images()[image_index],
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::ePresentSrcKHR,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            {},
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eBottomOfPipe,
-            vk::ImageAspectFlagBits::eColor
-            );
+            vk::ImageAspectFlagBits::eColor,
+            {
+                .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                .stage  = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                .access = vk::AccessFlagBits2::eColorAttachmentWrite
+            },
+            {
+                .layout = vk::ImageLayout::ePresentSrcKHR,
+                .stage  = vk::PipelineStageFlagBits2::eBottomOfPipe,
+                .access = {}
+            });
 
         cmd_buffer.end();
     }
@@ -403,27 +402,18 @@ namespace flux {
         auto* pipeline = m_context->get_pipeline("opaque_mesh");
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
 
-        m_context->transition_image_layout(
-            m_context->m_offscreen_images[frame].handle(),
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            {},
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::PipelineStageFlagBits2::eTopOfPipe,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::ImageAspectFlagBits::eColor
-            );
+        // Transition offscreen image to colour attachment
+        cmd_buffer.transition(m_context->m_offscreen_images[frame], {
+            .layout = vk::ImageLayout::eColorAttachmentOptimal,
+            .stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            .access = vk::AccessFlagBits2::eColorAttachmentWrite
+        });
 
-        m_context->transition_image_layout(
-            m_context->m_depth_image.handle(),
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eDepthAttachmentOptimal,
-            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-            vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
-            vk::ImageAspectFlagBits::eDepth
-            );
+        cmd_buffer.transition(m_context->m_depth_image, {
+            .layout = vk::ImageLayout::eDepthAttachmentOptimal,
+            .stage = vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+            .access = vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+        });
 
         constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.f);
         constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
@@ -483,16 +473,19 @@ namespace flux {
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
         const auto& pipeline = m_context->get_pipeline("composite");
 
-        m_context->transition_image_layout(
+        cmd_buffer.transition_raw(
             m_context->m_vk_swapchain.swapchain_images()[image_index],
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            {},
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::ImageAspectFlagBits::eColor
-            );
+            vk::ImageAspectFlagBits::eColor,
+            {
+                .layout = vk::ImageLayout::eUndefined,
+                .stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                .access = {}
+            },
+            {
+                .layout = vk::ImageLayout::eColorAttachmentOptimal,
+                .stage = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                .access = vk::AccessFlagBits2::eColorAttachmentWrite
+            });
 
         constexpr vk::ClearValue clear_color = vk::ClearColorValue(0.f, 0.f, 0.f, 1.f);
         vk::RenderingAttachmentInfo colour_attach {

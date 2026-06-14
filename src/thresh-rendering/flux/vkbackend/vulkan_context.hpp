@@ -35,14 +35,6 @@ namespace flux {
 
             auto create_sync_objects() -> void;
 
-            auto transition_image_layout(vk::Image         image,
-                                         vk::ImageLayout         old_layout,
-                                         vk::ImageLayout         new_layout,
-                                         vk::AccessFlags2        src_access_mask,
-                                         vk::AccessFlags2        dst_access_mask,
-                                         vk::PipelineStageFlags2 src_stage_mask,
-                                         vk::PipelineStageFlags2 dst_stage_mask, vk::ImageAspectFlags aspect_flags) -> void;
-
             auto pick_offsreen_format() -> vk::Format;
 
             auto create_offscreen_resources() -> void;
