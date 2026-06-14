@@ -41,7 +41,7 @@ namespace flux {
 
     auto GraphicsUtils::draw_frame() -> void {
 
-        const auto fence = *m_context->m_inflight_fences[m_context->m_frame_index];
+        const auto fence = *m_context->m_frames[m_context->m_frame_index].in_flight_fence;
         auto fence_result = m_context->m_vk_device.logical().waitForFences(fence, vk::True, UINT64_MAX);
         if (fence_result != vk::Result::eSuccess) {
             SUB_FATAL("Failed to wait for fence!");
@@ -54,7 +54,7 @@ namespace flux {
             return;
         }
 
-        auto present_semaphore = *m_context->m_present_complete_semaphores[m_context->m_frame_index];
+        auto present_semaphore = *m_context->m_frames[m_context->m_frame_index].present_complete;
         auto [result, image_index] =
             m_context->m_vk_swapchain.swapchain().acquireNextImage(
                 UINT64_MAX, present_semaphore, nullptr);
@@ -71,7 +71,7 @@ namespace flux {
 
         m_context->m_vk_device.logical().resetFences(fence);
 
-        auto& cmd = m_context->m_command_buffers[m_context->m_frame_index];
+        auto& cmd = m_context->m_frames[m_context->m_frame_index].command_buffer;
         cmd.reset();
         record_command_buffers(cmd, image_index, m_draw_commands);
 
@@ -82,7 +82,7 @@ namespace flux {
             .pWaitSemaphores = &present_semaphore,
             .pWaitDstStageMask = &wait_destination_stage_mask,
             .commandBufferCount = 1,
-            .pCommandBuffers = &*m_context->m_command_buffers[m_context->m_frame_index].raw(),
+            .pCommandBuffers = &*cmd.raw(),
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = &render_semaphore
         };
@@ -131,28 +131,24 @@ namespace flux {
         m_framebuffer_resized = resized;
     }
 
-    auto GraphicsUtils::set_camera_data(const CameraData& camera_data) -> void {
+    auto GraphicsUtils::set_camera_data(const gpu::CameraData& camera_data) -> void {
         m_camera_data = camera_data;
     }
 
-    auto GraphicsUtils::set_light_data(const LightData& light_data) -> void {
+    auto GraphicsUtils::set_light_data(const gpu::LightData& light_data) -> void {
         m_light_data = light_data;
     }
 
-    auto GraphicsUtils::update_uniform_buffers(uint32_t frame_index) -> void {
+    auto GraphicsUtils::update_uniform_buffers(const uint32_t frame_index) -> void {
 
-        // Testing Purposes only, all updates to be done in update loop, not draw loop
-        // static auto startTime = std::chrono::high_resolution_clock::now();
-        //
-        // auto currentTime = std::chrono::high_resolution_clock::now();
-        // float time = std::chrono::duration<float>(currentTime - startTime).count();
+        auto& frame = m_context->m_frames[frame_index];
 
         if (m_camera_data != std::nullopt) {
 
-            memcpy(m_context->m_camera_buffers[frame_index].mapped().data(), &m_camera_data.value(), sizeof(CameraData));
+            frame.uniforms.write(*m_camera_data, FrameContext::CAMERA_OFFSET);
         }
         if (m_light_data != std::nullopt) {
-            memcpy(m_context->m_light_buffers[frame_index].mapped().data(), &m_light_data.value(), sizeof(LightData));
+            frame.uniforms.write(*m_light_data, FrameContext::LIGHT_DATA_OFFSET);
         }
     }
 
@@ -249,42 +245,18 @@ namespace flux {
 
         for (uint32_t i = 0; i < VulkanContext::MAX_FRAMES_IN_FLIGHT; i++) {
 
-            const vk::DescriptorBufferInfo camera_info{
-                .buffer = m_context->m_camera_buffers[i].handle(),
-                .offset = 0,
-                .range = sizeof(CameraData)
-            };
             const vk::DescriptorImageInfo texture_info{
                 .sampler = texture.sampler,
                 .imageView = texture.image.view(),
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-            };
-            const vk::DescriptorBufferInfo light_info{
-                .buffer = m_context->m_light_buffers[i].handle(),
-                .offset = 0,
-                .range = sizeof(LightData)
             };
             std::array descriptor_writes {
                 vk::WriteDescriptorSet {
                     .dstSet = sets[i],
                     .dstBinding = 0,
                     .descriptorCount = 1,
-                    .descriptorType = vk::DescriptorType::eUniformBuffer,
-                    .pBufferInfo = &camera_info
-                },
-                vk::WriteDescriptorSet {
-                    .dstSet = sets[i],
-                    .dstBinding = 1,
-                    .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                     .pImageInfo = &texture_info
-                },
-                vk::WriteDescriptorSet {
-                    .dstSet = sets[i],
-                    .dstBinding = 2,
-                    .descriptorCount = 1,
-                    .descriptorType = vk::DescriptorType::eUniformBuffer,
-                    .pBufferInfo = &light_info
                 }
             };
             device.logical().updateDescriptorSets(descriptor_writes, {});
@@ -399,6 +371,7 @@ namespace flux {
         const std::vector<DrawCommand>& cmds) -> void {
 
         const auto frame = m_context->m_frame_index;
+        const auto frame_data = &m_context->m_frames[frame];
         auto* pipeline = m_context->get_pipeline("opaque_mesh");
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
 
@@ -456,8 +429,13 @@ namespace flux {
                 prev_material = cmd.material_handle;
             }
 
-            const PushConstants push_constants { cmd.model, cmd.base_colour };
-            cmd_buffer.raw().pushConstants<PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
+            const gpu::PushConstants push_constants {
+                cmd.model,
+                cmd.base_colour,
+                frame_data->camera_address,
+                frame_data->light_data_address,
+            };
+            cmd_buffer.raw().pushConstants<gpu::PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
 
             cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
             cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);

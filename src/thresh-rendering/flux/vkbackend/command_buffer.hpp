@@ -15,6 +15,7 @@ namespace flux {
 
         public:
 
+            CommandBuffer() = default;
             explicit CommandBuffer(vk::raii::CommandBuffer&& command_buffer) : m_command_buffer(std::move(command_buffer)){}
 
             CommandBuffer(const CommandBuffer&)                        = delete;
@@ -45,6 +46,6 @@ namespace flux {
         private:
             auto emit_barrier(vk::Image image, vk::ImageAspectFlags aspect, const ImageState& src, const ImageState& dst);
 
-            vk::raii::CommandBuffer m_command_buffer;
+            vk::raii::CommandBuffer m_command_buffer = nullptr;
     };
 } // flux

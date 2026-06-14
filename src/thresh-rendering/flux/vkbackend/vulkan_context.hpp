@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 
+#include "frame_context.hpp"
 #include "image.hpp"
 #include "vulkan/vulkan_raii.hpp"
 #include "vk_structs.hpp"
@@ -47,6 +48,9 @@ namespace flux {
 
             auto register_composite_pipeline() -> void;
 
+            // const bits
+            constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
+
             ThreshVkInstance  m_vk_instance;
             ThreshVkDevice    m_vk_device;
             ThreshVkSwapchain m_vk_swapchain;
@@ -58,12 +62,10 @@ namespace flux {
             std::vector<vk::raii::DescriptorSet> m_composite_pass_descriptor_sets;
             // ThreshVkPipeline  m_vk_pipeline;
 
-            std::vector<flux::CommandBuffer>          m_command_buffers;
+            std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> m_frames;
 
-
-            std::vector<vk::raii::Semaphore>              m_present_complete_semaphores;
             std::vector<vk::raii::Semaphore>              m_render_complete_semaphores;
-            std::vector<vk::raii::Fence>                  m_inflight_fences;
+
             uint32_t                                      m_frame_index = 0;
 
             // Depth Images
@@ -73,15 +75,6 @@ namespace flux {
             std::vector<flux::Image> m_offscreen_images;
             vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
-
-            // Heap Data Buffers
-
-            std::vector<flux::Buffer> m_camera_buffers;
-
-            std::vector<flux::Buffer> m_light_buffers;
-
-            // const bits
-            constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
 
             friend class GraphicsUtils;
             friend class DearImGuiContext;

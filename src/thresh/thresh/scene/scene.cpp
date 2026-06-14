@@ -158,9 +158,9 @@ namespace thresh {
         }
     }
 
-    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::CameraData> {
+    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::gpu::CameraData> {
 
-        std::optional<flux::CameraData> result = std::nullopt;
+        std::optional<flux::gpu::CameraData> result = std::nullopt;
 
         const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
@@ -168,7 +168,7 @@ namespace thresh {
 
             if (result) return; // First result wins
 
-            flux::CameraData data{};
+            flux::gpu::CameraData data{};
             constexpr auto identity = flux::float4x4{1.f};
 
             data.view = flux::math::inverse(transform.transform);
@@ -180,8 +180,8 @@ namespace thresh {
         return result;
     }
 
-    auto Scene::compute_active_light_data() -> std::optional<flux::LightData> {
-        auto result = flux::LightData{};
+    auto Scene::compute_active_light_data() -> std::optional<flux::gpu::LightData> {
+        auto result = flux::gpu::LightData{};
 
         bool ambient_light_found = false;
         m_world.query_builder<const AmbientLight>().build().each([&](flecs::entity entity, const AmbientLight& light) {
@@ -189,22 +189,22 @@ namespace thresh {
                 SUB_WARN("Multiple ambient lights found, ignoring all but the first");
                 return;
             }
-            result.ambient_light = flux::float4(light.colour, light.intensity);
+            result.ambient = flux::float4(light.colour, light.intensity);
             ambient_light_found = true;
         });
 
         int light_count = 0;
         m_world.query_builder<const WorldTransform, const Light>().build()
         .each([&](flecs::entity entity, const WorldTransform& transform, const Light& light) {
-            if (light_count >= flux::MAX_POINT_LIGHTS) {
+            if (light_count >= flux::gpu::MAX_POINT_LIGHTS) {
                 SUB_WARN("Too many point lights, ignoring all unregistered lights");
                 return;
             }
-            result.point_lights[light_count].position = transform.transform[3];
-            result.point_lights[light_count].colour = flux::float4(light.colour, light.intensity);
+            result.lights[light_count].position = transform.transform[3];
+            result.lights[light_count].colour = flux::float4(light.colour, light.intensity);
             light_count++;
         });
-        result.active_point_lights = light_count;
+        result.num_lights = light_count;
 
         return result;
     }

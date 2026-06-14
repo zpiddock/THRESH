@@ -28,9 +28,9 @@ namespace thresh {
 
             auto get_or_create_entity() -> flecs::entity;
 
-            auto compute_active_camera_data(float aspect) -> std::optional<flux::CameraData>;
+            auto compute_active_camera_data(float aspect) -> std::optional<flux::gpu::CameraData>;
 
-            auto compute_active_light_data() -> std::optional<flux::LightData>;
+            auto compute_active_light_data() -> std::optional<flux::gpu::LightData>;
 
             auto root() -> flecs::entity;
 

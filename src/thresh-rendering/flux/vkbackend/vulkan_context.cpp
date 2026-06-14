@@ -53,42 +53,14 @@ namespace flux {
     }
 
     auto VulkanContext::create_command_buffers() -> void {
-        vk::CommandBufferAllocateInfo alloc_info{
-            .commandPool        = m_vk_device.command_pool(),
-            .level              = vk::CommandBufferLevel::ePrimary,
-            .commandBufferCount = MAX_FRAMES_IN_FLIGHT
-        };
 
-        for (auto& cmd : m_vk_device.logical().allocateCommandBuffers(alloc_info)) {
-            m_command_buffers.emplace_back(std::move(cmd));
-        }
     }
 
     auto VulkanContext::create_uniform_buffers() -> void {
 
-        m_camera_buffers.clear();
-
-        m_light_buffers.clear();
-
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-            auto camera_buffer = flux::Buffer(m_vk_device, {
-                .size = sizeof(CameraData),
-                .usage = vk::BufferUsageFlagBits::eUniformBuffer,
-                .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                .persistent_map = true,
-                .debug_name = "Camera Buffer"
-            });
-            m_camera_buffers.emplace_back(std::move(camera_buffer));
-
-            auto light_buffer = flux::Buffer(m_vk_device, {
-                .size = sizeof(LightData),
-                .usage = vk::BufferUsageFlagBits::eUniformBuffer,
-                .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                .persistent_map = true,
-                .debug_name = "Light Buffer"
-            });
-            m_light_buffers.emplace_back(std::move(light_buffer));
+            m_frames[i] = FrameContext::create(m_vk_device);
         }
     }
 
@@ -147,15 +119,10 @@ namespace flux {
 
     auto VulkanContext::create_sync_objects() -> void {
 
-        assert(m_present_complete_semaphores.empty() && m_render_complete_semaphores.empty() && m_inflight_fences.empty());
+        assert(m_render_complete_semaphores.empty());
 
         for (size_t i = 0; i < m_vk_swapchain.swapchain_images().size(); i++) {
             m_render_complete_semaphores.emplace_back(m_vk_device.logical(), vk::SemaphoreCreateInfo{});
-        }
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            m_present_complete_semaphores.emplace_back(m_vk_device.logical(), vk::SemaphoreCreateInfo{});
-            m_inflight_fences.emplace_back(m_vk_device.logical(), vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});
         }
     }
 
@@ -247,28 +214,16 @@ namespace flux {
             .bindings = {
                     {
                         .binding = 0,
-                        .descriptorType  = vk::DescriptorType::eUniformBuffer,
-                        .descriptorCount = 1,
-                        .stageFlags      = vk::ShaderStageFlagBits::eVertex
-                    },
-                    {
-                        .binding = 1,
                         .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
                         .descriptorCount = 1,
                         .stageFlags      = vk::ShaderStageFlagBits::eFragment
-                    },
-                    {
-                        .binding = 2,
-                        .descriptorType  = vk::DescriptorType::eUniformBuffer,
-                        .descriptorCount = 1,
-                        .stageFlags      = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment
                     }
                 },
             .push_constants = {
                     {
                         vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
                         0,
-                        sizeof(PushConstants)
+                        sizeof(gpu::PushConstants)
                     }
                 },
             .use_vertex_input = true,

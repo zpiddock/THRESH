@@ -32,9 +32,9 @@ namespace flux {
 
             auto update_uniform_buffers(uint32_t frame_index) -> void;
 
-            auto set_camera_data(const CameraData& camera_data) -> void;
+            auto set_camera_data(const gpu::CameraData& camera_data) -> void;
 
-            auto set_light_data(const LightData& light_data) -> void;
+            auto set_light_data(const gpu::LightData& light_data) -> void;
 
             auto get_aspect_ratio() -> float;
 
@@ -92,8 +92,8 @@ namespace flux {
 
             std::unique_ptr<VulkanContext> m_context;
 
-            std::optional<CameraData> m_camera_data;
-            std::optional<LightData> m_light_data;
+            std::optional<gpu::CameraData> m_camera_data;
+            std::optional<gpu::LightData>  m_light_data;
 
             bool                   m_framebuffer_resized = false;
             // Non Owning
