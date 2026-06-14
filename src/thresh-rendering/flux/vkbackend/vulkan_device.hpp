@@ -7,6 +7,7 @@
 
 namespace flux {
     class Buffer;
+    class Image;
 
     class ThreshVkDevice {
 
@@ -20,6 +21,9 @@ namespace flux {
             auto create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>;
 
             auto upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage, const char* debug_name = nullptr) -> flux::Buffer;
+
+            auto upload_image(std::span<const std::byte> pixels, vk::Extent2D extent, vk::Format format,
+                              const char*                name) -> Image;
 
             auto begin_single_time_commands() -> vk::raii::CommandBuffer;
 

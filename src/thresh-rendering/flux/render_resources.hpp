@@ -18,9 +18,7 @@ namespace flux {
     };
 
     struct TextureResource {
-        vk::raii::Image image{nullptr};
-        vk::raii::DeviceMemory image_memory{nullptr};
-        vk::raii::ImageView image_view{nullptr};
+        flux::Image image{};
         vk::raii::Sampler sampler{nullptr};
     };
 

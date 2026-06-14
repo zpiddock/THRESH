@@ -205,25 +205,11 @@ namespace flux {
 
         auto& device = m_context->m_vk_device;
 
-        vk::DeviceSize image_size = texture_data.width * texture_data.height * STBI_rgb_alpha;
-
-        auto [buffer, buffer_memory] = device.create_buffer(
-            image_size,
-            vk::BufferUsageFlagBits::eTransferSrc,
-            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-            );
-
-        void* data_staging = buffer_memory.mapMemory(0, image_size);
-        memcpy(data_staging, texture_data.pixel_data.data(), image_size);
-        buffer_memory.unmapMemory();
-
-        // Don't free STB memory, thats up to the caller
-
-        auto [texture, texture_memory] = device.create_image(texture_data.width, texture_data.height, vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-        device.transition_image_layout(texture, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
-        device.copy_buffer_to_image(buffer, texture, texture_data.width, texture_data.height);
-        device.transition_image_layout(texture, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, vk::ImageAspectFlagBits::eColor);
+        auto image = device.upload_image(std::as_bytes(texture_data.pixel_data),
+        vk::Extent2D{ static_cast<uint32_t>(texture_data.width),
+                      static_cast<uint32_t>(texture_data.height) },
+        vk::Format::eR8G8B8A8Srgb,
+        nullptr);
 
         vk::PhysicalDeviceProperties props = device.physical().getProperties();
         vk::SamplerCreateInfo sampler_info{
@@ -239,13 +225,10 @@ namespace flux {
             .compareOp = vk::CompareOp::eAlways,
         };
 
-        vk::raii::ImageView iv = device.create_image_view(texture, vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
         vk::raii::Sampler sampler = device.logical().createSampler(sampler_info);
 
         return TextureResource{
-            .image        = std::move(texture),
-            .image_memory = std::move(texture_memory),
-            .image_view   = std::move(iv),
+            .image        = std::move(image),
             .sampler      = std::move(sampler)
         };
     }
@@ -273,7 +256,7 @@ namespace flux {
             };
             const vk::DescriptorImageInfo texture_info{
                 .sampler = texture.sampler,
-                .imageView = texture.image_view,
+                .imageView = texture.image.view(),
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
             };
             const vk::DescriptorBufferInfo light_info{

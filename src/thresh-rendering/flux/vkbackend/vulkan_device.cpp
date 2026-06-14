@@ -5,6 +5,7 @@
 #include "vulkan_device.hpp"
 
 #include "buffer.hpp"
+#include "image.hpp"
 #include "substratum/log.hpp"
 
 namespace flux {
@@ -126,6 +127,70 @@ namespace flux {
 
         return result;
     }
+
+    auto ThreshVkDevice::upload_image(std::span<const std::byte> pixels, vk::Extent2D extent,
+                                  vk::Format format, const char* name) -> Image {
+        Buffer staging(*this, {
+            .size           = pixels.size(),
+            .usage          = vk::BufferUsageFlagBits::eTransferSrc,
+            .memory         = vk::MemoryPropertyFlagBits::eHostVisible
+                            | vk::MemoryPropertyFlagBits::eHostCoherent,
+            .persistent_map = true,
+        });
+        std::memcpy(staging.mapped().data(), pixels.data(), pixels.size());
+
+        Image image(*this, {
+            .extent     = extent,
+            .format     = format,
+            .usage      = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+            .aspect     = vk::ImageAspectFlagBits::eColor,
+            .debug_name = name,
+        });
+
+        auto cmd = begin_single_time_commands();
+
+        // sync2 barrier (device has synchronization2). Previews CommandBuffer::transition (Phase 3).
+        auto transition = [&cmd](vk::Image img, vk::ImageLayout from, vk::ImageLayout to,
+                                 vk::PipelineStageFlags2 src_stage, vk::AccessFlags2 src_access,
+                                 vk::PipelineStageFlags2 dst_stage, vk::AccessFlags2 dst_access) {
+            const vk::ImageMemoryBarrier2 barrier{
+                .srcStageMask        = src_stage, .srcAccessMask = src_access,
+                .dstStageMask        = dst_stage, .dstAccessMask = dst_access,
+                .oldLayout           = from,      .newLayout     = to,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image               = img,
+                .subresourceRange    = { .aspectMask = vk::ImageAspectFlagBits::eColor,
+                                         .baseMipLevel = 0, .levelCount = 1,
+                                         .baseArrayLayer = 0, .layerCount = 1 },
+            };
+            cmd.pipelineBarrier2(vk::DependencyInfo{ .imageMemoryBarrierCount = 1,
+                                                     .pImageMemoryBarriers = &barrier });
+        };
+
+        transition(image.handle(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+                   vk::PipelineStageFlagBits2::eTopOfPipe, {},
+                   vk::PipelineStageFlagBits2::eCopy,       vk::AccessFlagBits2::eTransferWrite);
+
+        cmd.copyBufferToImage(staging.handle(), image.handle(), vk::ImageLayout::eTransferDstOptimal,
+            vk::BufferImageCopy{
+                .imageSubresource = { .aspectMask = vk::ImageAspectFlagBits::eColor, .mipLevel = 0,
+                                      .baseArrayLayer = 0, .layerCount = 1 },
+                .imageExtent      = { extent.width, extent.height, 1 },
+            });
+
+        transition(image.handle(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+                   vk::PipelineStageFlagBits2::eCopy,           vk::AccessFlagBits2::eTransferWrite,
+                   vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
+
+        end_single_time_commands(cmd);
+
+        // Seed the tracked state so Phase 3's barrier logic starts from the right layout.
+        image.set_state({ .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                          .stage  = vk::PipelineStageFlagBits2::eFragmentShader,
+                          .access = vk::AccessFlagBits2::eShaderRead });
+        return image;
+}
 
     auto ThreshVkDevice::begin_single_time_commands() -> vk::raii::CommandBuffer {
 
