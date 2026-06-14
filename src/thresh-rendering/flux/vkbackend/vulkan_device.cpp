@@ -18,53 +18,6 @@ namespace flux {
         validate_heap_strides();
     }
 
-    auto ThreshVkDevice::transition_image_layout(const vk::raii::Image& image, vk::ImageLayout old_layout,
-        vk::ImageLayout new_layout, vk::ImageAspectFlags aspect_flags) -> void {
-
-        const auto command_buffer = begin_single_time_commands();
-
-        vk::ImageMemoryBarrier barrier{
-            .oldLayout = old_layout,
-            .newLayout = new_layout,
-            .image = image,
-            .subresourceRange = {
-                .aspectMask = aspect_flags,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
-        };
-
-        vk::PipelineStageFlags source_stage;
-        vk::PipelineStageFlags destination_stage;
-
-        if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal)
-        {
-            barrier.srcAccessMask = {};
-            barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-            source_stage      = vk::PipelineStageFlagBits::eTopOfPipe;
-            destination_stage = vk::PipelineStageFlagBits::eTransfer;
-        }
-        else if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal)
-        {
-            barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-
-            source_stage      = vk::PipelineStageFlagBits::eTransfer;
-            destination_stage = vk::PipelineStageFlagBits::eFragmentShader;
-        }
-        else
-        {
-            SUB_FATAL("unsupported layout transition!");
-        }
-
-        command_buffer.pipelineBarrier(source_stage, destination_stage, {}, {}, nullptr, barrier);
-
-        end_single_time_commands(command_buffer);
-    }
-
     auto ThreshVkDevice::find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t {
 
         vk::PhysicalDeviceMemoryProperties memory_properties = m_physical_device.getMemoryProperties();
@@ -121,8 +74,8 @@ namespace flux {
             .debug_name = debug_name
         });
 
-        const auto cmd = begin_single_time_commands();
-        cmd.copyBuffer(staging_buffer.handle(), result.handle(), vk::BufferCopy{.size = data.size()});
+        auto cmd = begin_single_time_commands();
+        cmd.copy_buffer(staging_buffer, result, data.size());
         end_single_time_commands(cmd);
 
         return result;
@@ -149,106 +102,42 @@ namespace flux {
 
         auto cmd = begin_single_time_commands();
 
-        // sync2 barrier (device has synchronization2). Previews CommandBuffer::transition (Phase 3).
-        auto transition = [&cmd](vk::Image img, vk::ImageLayout from, vk::ImageLayout to,
-                                 vk::PipelineStageFlags2 src_stage, vk::AccessFlags2 src_access,
-                                 vk::PipelineStageFlags2 dst_stage, vk::AccessFlags2 dst_access) {
-            const vk::ImageMemoryBarrier2 barrier{
-                .srcStageMask        = src_stage, .srcAccessMask = src_access,
-                .dstStageMask        = dst_stage, .dstAccessMask = dst_access,
-                .oldLayout           = from,      .newLayout     = to,
-                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                .image               = img,
-                .subresourceRange    = { .aspectMask = vk::ImageAspectFlagBits::eColor,
-                                         .baseMipLevel = 0, .levelCount = 1,
-                                         .baseArrayLayer = 0, .layerCount = 1 },
-            };
-            cmd.pipelineBarrier2(vk::DependencyInfo{ .imageMemoryBarrierCount = 1,
-                                                     .pImageMemoryBarriers = &barrier });
-        };
-
-        transition(image.handle(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
-                   vk::PipelineStageFlagBits2::eTopOfPipe, {},
-                   vk::PipelineStageFlagBits2::eCopy,       vk::AccessFlagBits2::eTransferWrite);
-
-        cmd.copyBufferToImage(staging.handle(), image.handle(), vk::ImageLayout::eTransferDstOptimal,
-            vk::BufferImageCopy{
-                .imageSubresource = { .aspectMask = vk::ImageAspectFlagBits::eColor, .mipLevel = 0,
-                                      .baseArrayLayer = 0, .layerCount = 1 },
-                .imageExtent      = { extent.width, extent.height, 1 },
-            });
-
-        transition(image.handle(), vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
-                   vk::PipelineStageFlagBits2::eCopy,           vk::AccessFlagBits2::eTransferWrite,
-                   vk::PipelineStageFlagBits2::eFragmentShader, vk::AccessFlagBits2::eShaderRead);
-
+        cmd.transition(image, { .layout = vk::ImageLayout::eTransferDstOptimal,
+                        .stage  = vk::PipelineStageFlagBits2::eCopy,
+                        .access = vk::AccessFlagBits2::eTransferWrite });
+        cmd.copy_buffer_to_image(staging, image);
+        cmd.transition(image, { .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                                .stage  = vk::PipelineStageFlagBits2::eFragmentShader,
+                                .access = vk::AccessFlagBits2::eShaderRead });
         end_single_time_commands(cmd);
-
-        // Seed the tracked state so Phase 3's barrier logic starts from the right layout.
-        image.set_state({ .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                          .stage  = vk::PipelineStageFlagBits2::eFragmentShader,
-                          .access = vk::AccessFlagBits2::eShaderRead });
         return image;
 }
 
-    auto ThreshVkDevice::begin_single_time_commands() -> vk::raii::CommandBuffer {
+    auto ThreshVkDevice::begin_single_time_commands() -> flux::CommandBuffer {
 
-        vk::CommandBufferAllocateInfo alloc_info{
+        const vk::CommandBufferAllocateInfo alloc_info{
             .commandPool = m_command_pool,
             .level       = vk::CommandBufferLevel::ePrimary,
             .commandBufferCount = 1
         };
-        vk::raii::CommandBuffer command_buffer = std::move(m_device.allocateCommandBuffers(alloc_info).front());
 
-        command_buffer.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+        CommandBuffer cmd{std::move(m_device.allocateCommandBuffers(alloc_info).front())};
 
-        return command_buffer;
+        cmd.begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+        return cmd;
     }
 
-    auto ThreshVkDevice::end_single_time_commands(const vk::raii::CommandBuffer& command_buffer) -> void {
+    auto ThreshVkDevice::end_single_time_commands(flux::CommandBuffer& command_buffer) -> void {
 
         command_buffer.end();
 
         m_graphics_queue.submit(vk::SubmitInfo{
         .commandBufferCount = 1,
-        .pCommandBuffers    = &*command_buffer},
+        .pCommandBuffers    = &*command_buffer.raw()},
         nullptr);
 
         m_graphics_queue.waitIdle();
-    }
-
-    auto ThreshVkDevice::copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer,
-        vk::DeviceSize size) -> void {
-
-        const auto command_buffer = begin_single_time_commands();
-
-        command_buffer.copyBuffer(*src_buffer, *dst_buffer, vk::BufferCopy(0, 0, size));
-
-        end_single_time_commands(command_buffer);
-    }
-
-    auto ThreshVkDevice::copy_buffer_to_image(const vk::raii::Buffer& buffer, vk::raii::Image& image, uint32_t width,
-        uint32_t height) -> void {
-
-        const auto command_buffer = begin_single_time_commands();
-
-        vk::BufferImageCopy region {
-            .bufferOffset = 0,
-            .bufferRowLength = 0,
-            .bufferImageHeight = 0,
-            .imageSubresource = vk::ImageSubresourceLayers{
-                .aspectMask = vk::ImageAspectFlagBits::eColor,
-                .mipLevel = 0,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            },
-            .imageOffset = {0, 0, 0},
-            .imageExtent = {width, height, 1}
-        };
-        command_buffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, {region});
-
-        end_single_time_commands(command_buffer);
     }
 
     auto ThreshVkDevice::create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode,

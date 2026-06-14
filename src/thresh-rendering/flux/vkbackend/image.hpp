@@ -33,16 +33,18 @@ namespace flux {
             Image() = default;
             Image(ThreshVkDevice& device, const Desc& desc);
 
-            Image(const Image&)                    = delete;
-            auto operator=(const Image&) -> Image& = delete;
-            Image(Image&&)                         = default;
-            auto operator=(Image&&) -> Image&      = default;
+            Image(const Image&)                             = delete;
+            auto operator=(const Image&) -> Image&          = delete;
+            Image(Image&&) noexcept                         = default;
+            auto operator=(Image&&) noexcept -> Image&      = default;
 
             [[nodiscard]] auto handle() const -> vk::Image    { return *m_image; }
             [[nodiscard]] auto format() const -> vk::Format   { return m_desc.format; }
             [[nodiscard]] auto extent() const -> vk::Extent2D { return m_desc.extent; }
+            [[nodiscard]] auto aspect() const -> vk::ImageAspectFlags { return m_desc.aspect; }
 
             [[nodiscard]] auto view() const -> vk::ImageView  { return *m_view; }
+
 
             [[nodiscard]] auto view_create_info() const -> vk::ImageViewCreateInfo {
                 return {

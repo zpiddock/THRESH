@@ -24,10 +24,10 @@ namespace flux {
             Buffer() = default;
             Buffer(ThreshVkDevice& device, const Desc& desc);
 
-            Buffer(const Buffer&)                     = delete;
-            auto operator=(const Buffer&) -> Buffer&  = delete;
-            Buffer(Buffer&&)                          = default;
-            auto operator=(Buffer&&) -> Buffer&       = default;
+            Buffer(const Buffer&)                              = delete;
+            auto operator=(const Buffer&) -> Buffer&           = delete;
+            Buffer(Buffer&&) noexcept                          = default;
+            auto operator=(Buffer&&) noexcept -> Buffer&       = default;
 
             [[nodiscard]] auto handle() const -> vk::Buffer { return *m_buffer; }
             [[nodiscard]] auto size() const -> vk::DeviceSize { return m_size; }

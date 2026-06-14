@@ -5,6 +5,8 @@
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
 
+#include "command_buffer.hpp"
+
 namespace flux {
     class Buffer;
     class Image;
@@ -13,8 +15,6 @@ namespace flux {
 
         public:
             ThreshVkDevice(const vk::raii::Instance& instance, const vk::SurfaceKHR& surface);
-
-            auto transition_image_layout(const vk::raii::Image& image, vk::ImageLayout old_layout, vk::ImageLayout new_layout, vk::ImageAspectFlags aspect_flags) -> void;
 
             auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
 
@@ -25,13 +25,9 @@ namespace flux {
             auto upload_image(std::span<const std::byte> pixels, vk::Extent2D extent, vk::Format format,
                               const char*                name) -> Image;
 
-            auto begin_single_time_commands() -> vk::raii::CommandBuffer;
+            auto begin_single_time_commands() -> flux::CommandBuffer;
 
-            auto end_single_time_commands(const vk::raii::CommandBuffer& command_buffer) -> void;
-
-            auto copy_buffer(const vk::raii::Buffer& src_buffer, vk::raii::Buffer& dst_buffer, vk::DeviceSize size) -> void;
-
-            auto copy_buffer_to_image(const vk::raii::Buffer& buffer, vk::raii::Image& image, uint32_t width, uint32_t height) -> void;
+            auto end_single_time_commands(flux::CommandBuffer& command_buffer) -> void;
 
             auto create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode, vk::ImageUsageFlags usage_flags, vk::MemoryPropertyFlags memory_props) -> std::pair<vk::raii::Image, vk::raii::DeviceMemory>;
 

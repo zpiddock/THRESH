@@ -26,6 +26,8 @@ add_library(Flux STATIC
         flux/vkbackend/buffer.hpp
         flux/vkbackend/image.cpp
         flux/vkbackend/image.hpp
+        flux/vkbackend/command_buffer.cpp
+        flux/vkbackend/command_buffer.hpp
 )
 
 target_link_libraries(Flux PUBLIC
