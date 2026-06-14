@@ -38,9 +38,14 @@ namespace flux {
         constexpr auto buffer_size = sizeof(DebugLineVertex) * MAX_VERTICES;
         auto& device = ctx.m_vk_device;
         for (int i = 0; i < VulkanContext::MAX_FRAMES_IN_FLIGHT; ++i) {
-            std::tie(m_vertex_buffers[i], m_vertex_buffer_memory[i]) = device.create_buffer(buffer_size, vk::BufferUsageFlagBits::eVertexBuffer,
-                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-            m_mapped_memory[i] = m_vertex_buffer_memory[i].mapMemory(0, buffer_size);
+            m_vertex_buffers[i] = Buffer(device, {
+                .size           = buffer_size,
+                .usage          = vk::BufferUsageFlagBits::eVertexBuffer,
+                .memory         = vk::MemoryPropertyFlagBits::eHostVisible
+                                | vk::MemoryPropertyFlagBits::eHostCoherent,
+                .persistent_map = true,
+                .debug_name     = "debug_line_vertices",
+            });
         }
         m_pending.reserve(MAX_VERTICES);
     }
@@ -84,7 +89,7 @@ namespace flux {
         }
 
         const auto frame = m_context.m_frame_index;
-        std::memcpy(m_mapped_memory[frame], m_pending.data(), m_pending.size() * sizeof(DebugLineVertex));
+        std::memcpy(m_vertex_buffers[frame].mapped().data(), m_pending.data(), m_pending.size() * sizeof(DebugLineVertex));
 
         vk::RenderingAttachmentInfo colour_info{
 
@@ -121,7 +126,7 @@ namespace flux {
 
         DebugLinePushConstants push_constants{view_proj};
         cmd.pushConstants<DebugLinePushConstants>(*m_pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex, 0, push_constants);
-        cmd.bindVertexBuffers(0, {m_vertex_buffers[frame]}, {0});
+        cmd.bindVertexBuffers(0, {m_vertex_buffers[frame].handle()}, {0});
         cmd.draw(static_cast<uint32_t>(m_pending.size()), 1, 0, 0);
         cmd.endRendering();
     }

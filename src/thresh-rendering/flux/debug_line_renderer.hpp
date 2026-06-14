@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "vkbackend/buffer.hpp"
 #include "vkbackend/vulkan_context.hpp"
 
 namespace flux {
@@ -38,11 +39,9 @@ namespace flux {
         private:
             static constexpr std::size_t MAX_VERTICES = 16384;
 
-            VulkanContext&                        m_context;
-            ThreshVkPipeline*                     m_pipeline;
-            std::vector<DebugLineVertex>          m_pending{};
-            std::array<vk::raii::Buffer, 2>       m_vertex_buffers{nullptr, nullptr};
-            std::array<vk::raii::DeviceMemory, 2> m_vertex_buffer_memory{nullptr, nullptr};
-            std::array<void*, 2>                  m_mapped_memory{nullptr, nullptr};
+            VulkanContext&               m_context;
+            ThreshVkPipeline*            m_pipeline;
+            std::vector<DebugLineVertex> m_pending{};
+            std::array<Buffer, 2>        m_vertex_buffers{};
     };
 } // flux
