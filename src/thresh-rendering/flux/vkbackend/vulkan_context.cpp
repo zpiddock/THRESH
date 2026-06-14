@@ -39,11 +39,17 @@ namespace flux {
     auto VulkanContext::create_depth_resources() -> void {
 
         vk::Format format = m_vk_device.find_depth_format();
-        auto [depth_image, depth_image_memory] = m_vk_device.create_image(m_vk_swapchain.swapchain_extent().width, m_vk_swapchain.swapchain_extent().height, format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        m_depth_image = std::move(depth_image);
-        m_depth_image_memory = std::move(depth_image_memory);
-        m_depth_image_view = m_vk_device.create_image_view(m_depth_image, format, vk::ImageAspectFlagBits::eDepth);
+        m_depth_image = flux::Image(m_vk_device, {
+            .extent     = m_vk_swapchain.swapchain_extent(),
+            .format     = format,
+            .usage      = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+            .aspect     = vk::ImageAspectFlagBits::eDepth,
+            .tiling     = vk::ImageTiling::eOptimal,
+            .memory     = vk::MemoryPropertyFlagBits::eDeviceLocal,
+            .mip_levels = 1,
+            .debug_name = "Depth Image"
+        });
     }
 
     auto VulkanContext::create_command_buffers() -> void {
@@ -121,7 +127,7 @@ namespace flux {
 
             vk::DescriptorImageInfo image_info {
                 .sampler = m_offscreen_sampler,
-                .imageView = m_offscreen_image_views[i],
+                .imageView = m_offscreen_images[i].view(),
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
             };
 
@@ -196,32 +202,27 @@ namespace flux {
 
     auto VulkanContext::create_offscreen_resources() -> void {
 
-        m_offscreen_image_views.clear();
-        m_offscreen_image_memory.clear();
         m_offscreen_images.clear();
 
         m_offscreen_format = pick_offsreen_format();
         const auto extent = m_vk_swapchain.swapchain_extent();
 
         m_offscreen_images.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_offscreen_image_views.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_offscreen_image_memory.reserve(MAX_FRAMES_IN_FLIGHT);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            auto [image, memory] = m_vk_device.create_image(
-                extent.width,
-                extent.height,
-                m_offscreen_format,
-                vk::ImageTiling::eOptimal,
-                vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
-                vk::MemoryPropertyFlagBits::eDeviceLocal
-                );
 
-            auto view = m_vk_device.create_image_view(image, m_offscreen_format, vk::ImageAspectFlagBits::eColor);
+            auto image = flux::Image(m_vk_device, {
+                .extent = extent,
+                .format = m_offscreen_format,
+                .usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
+                .aspect = vk::ImageAspectFlagBits::eColor,
+                .tiling = vk::ImageTiling::eOptimal,
+                .memory = vk::MemoryPropertyFlagBits::eDeviceLocal,
+                .mip_levels = 1,
+                .debug_name = std::format("Forward_Pass_Offscreen_Image_{}", i).c_str()
+            });
 
             m_offscreen_images.emplace_back(std::move(image));
-            m_offscreen_image_memory.emplace_back(std::move(memory));
-            m_offscreen_image_views.emplace_back(std::move(view));
         }
 
         // Check if offscreen sampler has been created or not

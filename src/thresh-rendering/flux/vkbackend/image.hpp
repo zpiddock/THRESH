@@ -35,8 +35,8 @@ namespace flux {
 
             Image(const Image&)                    = delete;
             auto operator=(const Image&) -> Image& = delete;
-            Image(Image&&)                         = delete;
-            auto operator=(Image&&) -> Image&      = delete;
+            Image(Image&&)                         = default;
+            auto operator=(Image&&) -> Image&      = default;
 
             [[nodiscard]] auto handle() const -> vk::Image    { return *m_image; }
             [[nodiscard]] auto format() const -> vk::Format   { return m_desc.format; }

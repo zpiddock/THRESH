@@ -379,11 +379,11 @@ namespace flux {
         if (m_debug_line_renderer && m_camera_data) {
 
             const auto view_projection = m_camera_data->projection * m_camera_data->view;
-            m_debug_line_renderer->record_frame(cmd_buffer, view_projection, m_context->m_offscreen_image_views[m_context->m_frame_index], m_context->m_depth_image_view, m_context->m_vk_swapchain.swapchain_extent());
+            m_debug_line_renderer->record_frame(cmd_buffer, view_projection, m_context->m_offscreen_images[m_context->m_frame_index].view(), m_context->m_depth_image.view(), m_context->m_vk_swapchain.swapchain_extent());
         }
 
         m_context->transition_image_layout(
-            m_context->m_offscreen_images[m_context->m_frame_index],
+            m_context->m_offscreen_images[m_context->m_frame_index].handle(),
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::AccessFlagBits2::eColorAttachmentWrite,
@@ -421,7 +421,7 @@ namespace flux {
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
 
         m_context->transition_image_layout(
-            m_context->m_offscreen_images[frame],
+            m_context->m_offscreen_images[frame].handle(),
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
             {},
@@ -432,7 +432,7 @@ namespace flux {
             );
 
         m_context->transition_image_layout(
-            m_context->m_depth_image,
+            m_context->m_depth_image.handle(),
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
@@ -446,14 +446,14 @@ namespace flux {
         constexpr vk::ClearValue depth_clear_value = vk::ClearDepthStencilValue(1.0f, 0);
 
         vk::RenderingAttachmentInfo colour_attach {
-            .imageView = m_context->m_offscreen_image_views[frame],
+            .imageView = m_context->m_offscreen_images[frame].view(),
             .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
             .clearValue = clear_color
         };
         vk::RenderingAttachmentInfo depth_attach {
-            .imageView = m_context->m_depth_image_view,
+            .imageView = m_context->m_depth_image.view(),
             .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eDontCare,

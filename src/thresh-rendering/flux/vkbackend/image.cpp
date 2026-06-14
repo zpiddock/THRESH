@@ -5,7 +5,7 @@
 #include "image.hpp"
 
 namespace flux {
-    Image::Image(ThreshVkDevice& device, const Desc& desc) {
+    Image::Image(ThreshVkDevice& device, const Desc& desc) : m_desc(desc) {
 
         m_image = vk::raii::Image(device.logical(), vk::ImageCreateInfo{
             .imageType   = vk::ImageType::e2D,

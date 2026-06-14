@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 
+#include "image.hpp"
 #include "vulkan/vulkan_raii.hpp"
 #include "vk_structs.hpp"
 #include "vulkan_device.hpp"
@@ -74,14 +75,12 @@ namespace flux {
             uint32_t                                      m_frame_index = 0;
 
             // Depth Images
-            vk::raii::Image m_depth_image = nullptr;
-            vk::raii::DeviceMemory m_depth_image_memory = nullptr;
-            vk::raii::ImageView m_depth_image_view = nullptr;
+            flux::Image m_depth_image;
 
             // Offscreen Images
-            std::vector<vk::raii::Image> m_offscreen_images;
-            std::vector<vk::raii::DeviceMemory> m_offscreen_image_memory;
-            std::vector<vk::raii::ImageView> m_offscreen_image_views;
+            std::vector<flux::Image> m_offscreen_images;
+            // std::vector<vk::raii::DeviceMemory> m_offscreen_image_memory;
+            // std::vector<vk::raii::ImageView> m_offscreen_image_views;
             vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
 
