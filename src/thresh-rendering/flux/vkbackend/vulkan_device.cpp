@@ -20,9 +20,9 @@ namespace flux {
 
     auto ThreshVkDevice::find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t {
 
-        vk::PhysicalDeviceMemoryProperties memory_properties = m_physical_device.getMemoryProperties();
-        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++) {
-            if ((type_filter & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+        vk::PhysicalDeviceMemoryProperties2 memory_properties = m_physical_device.getMemoryProperties2();
+        for (uint32_t i = 0; i < memory_properties.memoryProperties.memoryTypeCount; i++) {
+            if ((type_filter & (1 << i)) && (memory_properties.memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;
             }
         }
@@ -132,9 +132,13 @@ namespace flux {
 
         command_buffer.end();
 
-        m_graphics_queue.submit(vk::SubmitInfo{
-        .commandBufferCount = 1,
-        .pCommandBuffers    = &*command_buffer.raw()},
+        vk::CommandBufferSubmitInfo submit_info{
+            .commandBuffer = *command_buffer.raw()
+        };
+
+        m_graphics_queue.submit2(vk::SubmitInfo2{
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos    = &submit_info},
         nullptr);
 
         m_graphics_queue.waitIdle();
@@ -191,7 +195,7 @@ namespace flux {
         vk::FormatFeatureFlags features) -> vk::Format {
 
         for (const auto& candidate : candidates) {
-            auto format_properties = m_physical_device.getFormatProperties(candidate);
+            auto format_properties = m_physical_device.getFormatProperties2(candidate).formatProperties;
 
             if (tiling == vk::ImageTiling::eLinear && (format_properties.linearTilingFeatures & features) == features) {
                 return candidate;
@@ -230,10 +234,10 @@ namespace flux {
     }
 
     auto ThreshVkDevice::create_logical_device(const vk::SurfaceKHR& surface) -> void {
-        const auto queue_family_properties = m_physical_device.getQueueFamilyProperties();
+        const auto queue_family_properties = m_physical_device.getQueueFamilyProperties2();
 
         for (uint32_t qfpIndex = 0; qfpIndex < queue_family_properties.size(); qfpIndex++) {
-            if ((queue_family_properties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
+            if ((queue_family_properties[qfpIndex].queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) &&
                 m_physical_device.getSurfaceSupportKHR(qfpIndex, surface)) {
                 // found a queue family that supports both graphics and present
                 m_queue_family_index = qfpIndex;
@@ -306,12 +310,12 @@ namespace flux {
     }
 
     auto ThreshVkDevice::is_device_suitable(const vk::PhysicalDevice& device) -> bool {
-        const auto device_properties = device.getProperties();
-        const auto support_VK1_4 = device_properties.apiVersion >= vk::ApiVersion14;
+        const auto device_properties = device.getProperties2();
+        const auto support_VK1_4 = device_properties.properties.apiVersion >= vk::ApiVersion14;
 
-        auto queue_families   = device.getQueueFamilyProperties();
+        auto queue_families   = device.getQueueFamilyProperties2();
         auto support_graphics = std::ranges::any_of(queue_families, [](const auto& family) {
-            return !!(family.queueFlags & vk::QueueFlagBits::eGraphics);
+            return !!(family.queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics);
         });
 
         auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();

@@ -103,7 +103,7 @@ namespace flux {
         };
 
         std::vector<vk::ValidationFeatureEnableEXT> sync_enables = {
-            vk::ValidationFeatureEnableEXT::eSynchronizationValidation
+            vk::ValidationFeatureEnableEXT::eSynchronizationValidation,
         };
         vk::ValidationFeaturesEXT validation_features{};
         validation_features.setEnabledValidationFeatures(sync_enables);
@@ -126,7 +126,8 @@ namespace flux {
         vk::DebugUtilsMessageTypeFlagsEXT messageTypeFlags(
                                                            vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                                            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
+                                                           vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+                                                           vk::DebugUtilsMessageTypeFlagBitsEXT::eDeviceAddressBinding);
         vk::DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfoEXT{
             .messageSeverity = severityFlags,
             .messageType     = messageTypeFlags,
