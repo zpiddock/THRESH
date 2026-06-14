@@ -4,6 +4,7 @@
 
 #include "vulkan_device.hpp"
 
+#include "buffer.hpp"
 #include "substratum/log.hpp"
 
 namespace flux {
@@ -98,6 +99,32 @@ namespace flux {
             buffer.bindMemory(*buffer_memory, 0);
 
             return {std::move(buffer), std::move(buffer_memory)};
+    }
+
+    auto ThreshVkDevice::upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage,
+        const char* debug_name) -> flux::Buffer {
+
+        flux::Buffer staging_buffer(*this, {
+            .size = data.size(),
+            .usage = vk::BufferUsageFlagBits::eTransferSrc,
+            .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+            .persistent_map = true,
+            .debug_name = "Staging Buffer"
+        });
+        std::memcpy(staging_buffer.mapped().data(), data.data(), data.size());
+
+        Buffer result(*this, {
+            .size = data.size(),
+            .usage = usage | vk::BufferUsageFlagBits::eTransferDst,
+            .memory = vk::MemoryPropertyFlagBits::eDeviceLocal,
+            .debug_name = debug_name
+        });
+
+        const auto cmd = begin_single_time_commands();
+        cmd.copyBuffer(staging_buffer.handle(), result.handle(), vk::BufferCopy{.size = data.size()});
+        end_single_time_commands(cmd);
+
+        return result;
     }
 
     auto ThreshVkDevice::begin_single_time_commands() -> vk::raii::CommandBuffer {

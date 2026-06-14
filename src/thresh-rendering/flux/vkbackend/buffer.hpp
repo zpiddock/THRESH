@@ -3,9 +3,12 @@
 //
 
 #pragma once
-#include "vulkan_device.hpp"
+
+#include "vulkan/vulkan_raii.hpp"
 
 namespace flux {
+    class ThreshVkDevice;
+
     class Buffer {
 
         public:
@@ -23,8 +26,8 @@ namespace flux {
 
             Buffer(const Buffer&)                     = delete;
             auto operator=(const Buffer&) -> Buffer&  = delete;
-            Buffer(const Buffer&&)                    = delete;
-            auto operator=(const Buffer&&) -> Buffer& = delete;
+            Buffer(Buffer&&)                          = default;
+            auto operator=(Buffer&&) -> Buffer&       = default;
 
             [[nodiscard]] auto handle() const -> vk::Buffer { return *m_buffer; }
             [[nodiscard]] auto size() const -> vk::DeviceSize { return m_size; }

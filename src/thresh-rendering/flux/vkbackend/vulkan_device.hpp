@@ -6,6 +6,8 @@
 #include <vulkan/vulkan_raii.hpp>
 
 namespace flux {
+    class Buffer;
+
     class ThreshVkDevice {
 
         public:
@@ -16,6 +18,8 @@ namespace flux {
             auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
 
             auto create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>;
+
+            auto upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage, const char* debug_name = nullptr) -> flux::Buffer;
 
             auto begin_single_time_commands() -> vk::raii::CommandBuffer;
 

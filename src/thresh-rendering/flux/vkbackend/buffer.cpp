@@ -4,6 +4,8 @@
 
 #include "buffer.hpp"
 
+#include "vulkan_device.hpp"
+
 namespace flux {
     Buffer::Buffer(ThreshVkDevice& device, const Desc& desc) : m_size(desc.size) {
 
