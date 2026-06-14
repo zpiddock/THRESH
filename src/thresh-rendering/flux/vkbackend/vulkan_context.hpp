@@ -85,14 +85,11 @@ namespace flux {
             vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
 
-            // Camera Data Buffers
-            std::vector<vk::raii::Buffer>        m_camera_buffers;
-            std::vector<vk::raii::DeviceMemory>  m_camera_buffer_memory;
-            std::vector<void*>                   m_camera_buffers_mapped;
+            // Heap Data Buffers
 
-            std::vector<vk::raii::Buffer>        m_light_buffers;
-            std::vector<vk::raii::DeviceMemory>  m_light_buffer_memory;
-            std::vector<void*>                   m_light_buffers_mapped;
+            std::vector<flux::Buffer> m_camera_buffers;
+
+            std::vector<flux::Buffer> m_light_buffers;
 
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;

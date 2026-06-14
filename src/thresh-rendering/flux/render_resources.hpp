@@ -6,14 +6,13 @@
 
 #include <vulkan/vulkan_raii.hpp>
 #include "flux/math.hpp"
+#include "vkbackend/buffer.hpp"
 
 namespace flux {
     struct MeshResource {
 
-        vk::raii::Buffer vertex_buffer{nullptr};
-        vk::raii::Buffer index_buffer{nullptr};
-        vk::raii::DeviceMemory vertex_buffer_memory{nullptr};
-        vk::raii::DeviceMemory index_buffer_memory{nullptr};
+        flux::Buffer vertex;
+        flux::Buffer index;
         uint32_t index_count{0};
         flux::AABB local_aabb{};
     };

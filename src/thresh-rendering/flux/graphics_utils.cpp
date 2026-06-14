@@ -149,10 +149,10 @@ namespace flux {
 
         if (m_camera_data != std::nullopt) {
 
-            memcpy(m_context->m_camera_buffers_mapped[frame_index], &m_camera_data.value(), sizeof(CameraData));
+            memcpy(m_context->m_camera_buffers[frame_index].mapped().data(), &m_camera_data.value(), sizeof(CameraData));
         }
         if (m_light_data != std::nullopt) {
-            memcpy(m_context->m_light_buffers_mapped[frame_index], &m_light_data.value(), sizeof(LightData));
+            memcpy(m_context->m_light_buffers[frame_index].mapped().data(), &m_light_data.value(), sizeof(LightData));
         }
     }
 
@@ -163,41 +163,15 @@ namespace flux {
 
     auto GraphicsUtils::create_mesh_resource(const MeshData& mesh_data) -> MeshResource {
 
+        auto& device = m_context->m_vk_device;
+
         MeshResource result;
         for (const auto& vertex : mesh_data.vertices) {
             result.local_aabb.expand(vertex.position);
         }
-        auto& device = m_context->m_vk_device;
 
-        vk::DeviceSize buffer_size = sizeof(Vertex) * mesh_data.vertices.size();
-
-        auto [staging_buffer, staging_buffer_memory] =
-            device.create_buffer(buffer_size,
-                vk::BufferUsageFlagBits::eTransferSrc,
-                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-                );
-
-        void* data_staging = staging_buffer_memory.mapMemory(0, buffer_size);
-        memcpy(data_staging, mesh_data.vertices.data(), buffer_size);
-        staging_buffer_memory.unmapMemory();
-
-        std::tie(result.vertex_buffer, result.vertex_buffer_memory) =
-             device.create_buffer(buffer_size, vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
-
-        device.copy_buffer(staging_buffer, result.vertex_buffer, buffer_size);
-
-        buffer_size = sizeof(std::uint32_t) * mesh_data.indices.size();
-        auto [staging_buffer_indices, staging_buffer_memory_indices] =
-            device.create_buffer(buffer_size,
-                vk::BufferUsageFlagBits::eTransferSrc,
-                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-                );
-        data_staging = staging_buffer_memory_indices.mapMemory(0, buffer_size);
-        memcpy(data_staging, mesh_data.indices.data(), buffer_size);
-        staging_buffer_memory_indices.unmapMemory();
-        std::tie(result.index_buffer, result.index_buffer_memory) =
-             device.create_buffer(buffer_size, vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        device.copy_buffer(staging_buffer_indices, result.index_buffer, buffer_size);
+        result.vertex = device.upload_device_local(std::as_bytes(std::span{mesh_data.vertices}), vk::BufferUsageFlagBits::eVertexBuffer, "Vertex Buffer");
+        result.index = device.upload_device_local(std::as_bytes(std::span{mesh_data.indices}), vk::BufferUsageFlagBits::eIndexBuffer, "Index Buffer");
 
         result.index_count = mesh_data.indices.size();
 
@@ -293,7 +267,7 @@ namespace flux {
         for (uint32_t i = 0; i < VulkanContext::MAX_FRAMES_IN_FLIGHT; i++) {
 
             const vk::DescriptorBufferInfo camera_info{
-                .buffer = m_context->m_camera_buffers[i],
+                .buffer = m_context->m_camera_buffers[i].handle(),
                 .offset = 0,
                 .range = sizeof(CameraData)
             };
@@ -303,7 +277,7 @@ namespace flux {
                 .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
             };
             const vk::DescriptorBufferInfo light_info{
-                .buffer = m_context->m_light_buffers[i],
+                .buffer = m_context->m_light_buffers[i].handle(),
                 .offset = 0,
                 .range = sizeof(LightData)
             };
@@ -512,8 +486,8 @@ namespace flux {
             const PushConstants push_constants { cmd.model, cmd.base_colour };
             cmd_buffer.pushConstants<PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
 
-            cmd_buffer.bindVertexBuffers(0, {*mesh->vertex_buffer}, {0});
-            cmd_buffer.bindIndexBuffer(*mesh->index_buffer, 0, vk::IndexType::eUint32);
+            cmd_buffer.bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
+            cmd_buffer.bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
             cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
             cmd_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
         }

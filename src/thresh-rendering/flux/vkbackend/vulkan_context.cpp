@@ -59,34 +59,28 @@ namespace flux {
     auto VulkanContext::create_uniform_buffers() -> void {
 
         m_camera_buffers.clear();
-        m_camera_buffer_memory.clear();
-        m_camera_buffers_mapped.clear();
 
         m_light_buffers.clear();
-        m_light_buffer_memory.clear();
-        m_light_buffers_mapped.clear();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-            vk::DeviceSize camera_buffer_size = sizeof(CameraData);
-            auto [camera_buffer, camera_memory] =
-                m_vk_device.create_buffer(camera_buffer_size,
-                    vk::BufferUsageFlagBits::eUniformBuffer,
-                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-                    );
+            auto camera_buffer = flux::Buffer(m_vk_device, {
+                .size = sizeof(CameraData),
+                .usage = vk::BufferUsageFlagBits::eUniformBuffer,
+                .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                .persistent_map = true,
+                .debug_name = "Camera Buffer"
+            });
             m_camera_buffers.emplace_back(std::move(camera_buffer));
-            m_camera_buffer_memory.emplace_back(std::move(camera_memory));
-            m_camera_buffers_mapped.emplace_back(m_camera_buffer_memory[i].mapMemory(0, camera_buffer_size));
 
-            vk::DeviceSize light_buffer_size = sizeof(LightData);
-            auto [light_buffer, light_memory] =
-                m_vk_device.create_buffer(light_buffer_size,
-                    vk::BufferUsageFlagBits::eUniformBuffer,
-                    vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent
-                    );
+            auto light_buffer = flux::Buffer(m_vk_device, {
+                .size = sizeof(LightData),
+                .usage = vk::BufferUsageFlagBits::eUniformBuffer,
+                .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                .persistent_map = true,
+                .debug_name = "Light Buffer"
+            });
             m_light_buffers.emplace_back(std::move(light_buffer));
-            m_light_buffer_memory.emplace_back(std::move(light_memory));
-            m_light_buffers_mapped.emplace_back(m_light_buffer_memory[i].mapMemory(0, light_buffer_size));
         }
     }
 
