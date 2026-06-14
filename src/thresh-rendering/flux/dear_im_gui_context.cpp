@@ -88,9 +88,9 @@ namespace flux {
         ImGui::EndFrame();
     }
 
-    auto DearImGuiContext::record_draw_data(const vk::raii::CommandBuffer& cmd) -> void {
+    auto DearImGuiContext::record_draw_data(flux::CommandBuffer& cmd) -> void {
 
         ImGui::Render();
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd.raw());
     }
 } // flux

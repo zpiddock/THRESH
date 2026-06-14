@@ -29,7 +29,7 @@ namespace flux {
             auto clear() -> void;
 
             auto record_frame(
-                vk::raii::CommandBuffer& cmd,
+                flux::CommandBuffer& cmd,
                 const flux::float4x4& view_proj,
                 vk::ImageView colour_view,
                 vk::ImageView depth_view,

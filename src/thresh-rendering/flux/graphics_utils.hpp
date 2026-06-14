@@ -82,13 +82,13 @@ namespace flux {
             auto debug_line_renderer() -> DebugLineRenderer*;
 
         private:
-            auto record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_command_buffers(flux::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_geometry_commands(flux::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_composite_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
-            auto record_imgui_commands(const vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_imgui_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
             std::unique_ptr<VulkanContext> m_context;
 

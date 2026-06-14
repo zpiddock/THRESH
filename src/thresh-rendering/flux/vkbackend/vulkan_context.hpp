@@ -66,7 +66,7 @@ namespace flux {
             std::vector<vk::raii::DescriptorSet> m_composite_pass_descriptor_sets;
             // ThreshVkPipeline  m_vk_pipeline;
 
-            std::vector<vk::raii::CommandBuffer>          m_command_buffers;
+            std::vector<flux::CommandBuffer>          m_command_buffers;
 
 
             std::vector<vk::raii::Semaphore>              m_present_complete_semaphores;
@@ -79,8 +79,6 @@ namespace flux {
 
             // Offscreen Images
             std::vector<flux::Image> m_offscreen_images;
-            // std::vector<vk::raii::DeviceMemory> m_offscreen_image_memory;
-            // std::vector<vk::raii::ImageView> m_offscreen_image_views;
             vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
 

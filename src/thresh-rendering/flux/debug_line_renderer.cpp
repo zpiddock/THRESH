@@ -81,7 +81,7 @@ namespace flux {
         m_pending.clear();
     }
 
-    auto DebugLineRenderer::record_frame(vk::raii::CommandBuffer& cmd, const flux::float4x4& view_proj,
+    auto DebugLineRenderer::record_frame(flux::CommandBuffer& cmd, const flux::float4x4& view_proj,
         vk::ImageView colour_view, vk::ImageView depth_view, vk::Extent2D extents) -> void {
 
         if (m_pending.empty()) {
@@ -112,9 +112,9 @@ namespace flux {
             .pColorAttachments = &colour_info,
             .pDepthAttachment = &depth_info
         };
-        cmd.beginRendering(rendering_info);
-        cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline->graphics_pipeline());
-        cmd.setViewport(0,
+        cmd.raw().beginRendering(rendering_info);
+        cmd.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline->graphics_pipeline());
+        cmd.raw().setViewport(0,
             vk::Viewport{
             0,
             static_cast<float>(extents.height),    // y starts at bottom
@@ -122,12 +122,12 @@ namespace flux {
             -static_cast<float>(extents.height),   // negative height = Y-flip
             0, 1
         });
-        cmd.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extents});
+        cmd.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extents});
 
         DebugLinePushConstants push_constants{view_proj};
-        cmd.pushConstants<DebugLinePushConstants>(*m_pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex, 0, push_constants);
-        cmd.bindVertexBuffers(0, {m_vertex_buffers[frame].handle()}, {0});
-        cmd.draw(static_cast<uint32_t>(m_pending.size()), 1, 0, 0);
-        cmd.endRendering();
+        cmd.raw().pushConstants<DebugLinePushConstants>(*m_pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex, 0, push_constants);
+        cmd.raw().bindVertexBuffers(0, {m_vertex_buffers[frame].handle()}, {0});
+        cmd.raw().draw(static_cast<uint32_t>(m_pending.size()), 1, 0, 0);
+        cmd.raw().endRendering();
     }
 } // flux

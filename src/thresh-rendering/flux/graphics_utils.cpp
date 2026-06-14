@@ -82,7 +82,7 @@ namespace flux {
             .pWaitSemaphores = &present_semaphore,
             .pWaitDstStageMask = &wait_destination_stage_mask,
             .commandBufferCount = 1,
-            .pCommandBuffers = &*m_context->m_command_buffers[m_context->m_frame_index],
+            .pCommandBuffers = &*m_context->m_command_buffers[m_context->m_frame_index].raw(),
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = &render_semaphore
         };
@@ -353,10 +353,10 @@ namespace flux {
         return m_draw_commands;
     }
 
-    auto GraphicsUtils::record_command_buffers(vk::raii::CommandBuffer& cmd_buffer, const uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
+    auto GraphicsUtils::record_command_buffers(flux::CommandBuffer& cmd_buffer, const uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
 
         constexpr vk::CommandBufferBeginInfo begin_info{};
-        cmd_buffer.begin(begin_info);
+        cmd_buffer.begin(begin_info.flags);
         record_geometry_commands(cmd_buffer, cmds);
 
         if (m_debug_line_renderer && m_camera_data) {
@@ -396,7 +396,7 @@ namespace flux {
         cmd_buffer.end();
     }
 
-    auto GraphicsUtils::record_geometry_commands(vk::raii::CommandBuffer& cmd_buffer,
+    auto GraphicsUtils::record_geometry_commands(flux::CommandBuffer& cmd_buffer,
         const std::vector<DrawCommand>& cmds) -> void {
 
         const auto frame = m_context->m_frame_index;
@@ -450,10 +450,10 @@ namespace flux {
             .pDepthAttachment = &depth_attach
         };
 
-        cmd_buffer.beginRendering(rendering_info);
-        cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
-        cmd_buffer.setViewport(0, vk::Viewport{0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0, 1});
-        cmd_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
+        cmd_buffer.raw().beginRendering(rendering_info);
+        cmd_buffer.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
+        cmd_buffer.raw().setViewport(0, vk::Viewport{0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0, 1});
+        cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
 
         std::uint32_t prev_material = 0;
         for (const auto& cmd : cmds) {
@@ -462,22 +462,22 @@ namespace flux {
             const auto* material = get_material_resource(cmd.material_handle);
 
             if (cmd.material_handle != prev_material) {
-                cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
+                cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
                 prev_material = cmd.material_handle;
             }
 
             const PushConstants push_constants { cmd.model, cmd.base_colour };
-            cmd_buffer.pushConstants<PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
+            cmd_buffer.raw().pushConstants<PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
 
-            cmd_buffer.bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
-            cmd_buffer.bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
-            cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
-            cmd_buffer.drawIndexed(mesh->index_count, 1, 0, 0, 0);
+            cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
+            cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
+            cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
+            cmd_buffer.raw().drawIndexed(mesh->index_count, 1, 0, 0, 0);
         }
-        cmd_buffer.endRendering();
+        cmd_buffer.raw().endRendering();
     }
 
-    auto GraphicsUtils::record_composite_commands(vk::raii::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
+    auto GraphicsUtils::record_composite_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
 
         const auto frame = m_context->m_frame_index;
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
@@ -509,16 +509,16 @@ namespace flux {
             .pColorAttachments = &colour_attach,
         };
 
-        cmd_buffer.beginRendering(rendering_info);
-        cmd_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
-        cmd_buffer.setViewport(0, vk::Viewport{0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1});
-        cmd_buffer.setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
-        cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *m_context->m_composite_pass_descriptor_sets[frame], nullptr);
-        cmd_buffer.draw(3, 1, 0, 0);
-        cmd_buffer.endRendering();
+        cmd_buffer.raw().beginRendering(rendering_info);
+        cmd_buffer.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
+        cmd_buffer.raw().setViewport(0, vk::Viewport{0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1});
+        cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
+        cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *m_context->m_composite_pass_descriptor_sets[frame], nullptr);
+        cmd_buffer.raw().draw(3, 1, 0, 0);
+        cmd_buffer.raw().endRendering();
     }
 
-    auto GraphicsUtils::record_imgui_commands(const vk::raii::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
+    auto GraphicsUtils::record_imgui_commands(flux::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
 
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
         vk::RenderingAttachmentInfo colour_attach {
@@ -533,9 +533,9 @@ namespace flux {
             .colorAttachmentCount = 1,
             .pColorAttachments = &colour_attach,
         };
-        cmd_buffer.beginRendering(rendering_info);
+        cmd_buffer.raw().beginRendering(rendering_info);
         m_imgui_context.record_draw_data(cmd_buffer);
-        cmd_buffer.endRendering();
+        cmd_buffer.raw().endRendering();
     }
 
     auto GraphicsUtils::imgui_init() -> void {

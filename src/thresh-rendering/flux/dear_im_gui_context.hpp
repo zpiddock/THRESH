@@ -30,7 +30,7 @@ namespace flux {
             // new_frame() doesn't assert on the unfinished previous frame.
             auto discard_frame() -> void;
 
-            auto record_draw_data(const vk::raii::CommandBuffer& cmd) -> void;
+            auto record_draw_data(flux::CommandBuffer& cmd) -> void;
 
             bool m_enabled = false;
 

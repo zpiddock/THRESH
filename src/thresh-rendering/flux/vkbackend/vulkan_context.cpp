@@ -59,7 +59,9 @@ namespace flux {
             .commandBufferCount = MAX_FRAMES_IN_FLIGHT
         };
 
-        m_command_buffers = vk::raii::CommandBuffers(m_vk_device.logical(), alloc_info);
+        for (auto& cmd : m_vk_device.logical().allocateCommandBuffers(alloc_info)) {
+            m_command_buffers.emplace_back(std::move(cmd));
+        }
     }
 
     auto VulkanContext::create_uniform_buffers() -> void {
@@ -185,7 +187,7 @@ namespace flux {
             .imageMemoryBarrierCount = 1,
             .pImageMemoryBarriers    = &barrier
         };
-        m_command_buffers[m_frame_index].pipelineBarrier2(dependency_info);
+        m_command_buffers[m_frame_index].raw().pipelineBarrier2(dependency_info);
     }
 
     auto VulkanContext::pick_offsreen_format() -> vk::Format {
