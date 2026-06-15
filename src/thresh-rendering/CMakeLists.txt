@@ -31,6 +31,8 @@ add_library(Flux STATIC
         flux/gpu_data.hpp
         flux/vkbackend/frame_context.cpp
         flux/vkbackend/frame_context.hpp
+        flux/vkbackend/descriptor_heap.cpp
+        flux/vkbackend/descriptor_heap.hpp
 )
 
 target_link_libraries(Flux PUBLIC
