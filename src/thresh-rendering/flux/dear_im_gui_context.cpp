@@ -23,13 +23,6 @@ namespace flux {
 
         ImGui::StyleColorsDark();
 
-        // ImGui 1.92 prefers managing its own descriptor pool — it knows exactly which
-        // descriptor types it needs (SAMPLER + SAMPLED_IMAGE for the new texture system,
-        // plus COMBINED_IMAGE_SAMPLER for compat). Passing DescriptorPoolSize > 0 with
-        // DescriptorPool == VK_NULL_HANDLE tells ImGui to allocate internally.
-        // We're not using m_descriptor_pool any more — kept as nullptr for now; remove
-        // the field from the header on next cleanup pass.
-
         ImGui_ImplSDL3_InitForVulkan(window.getWindow());
 
         auto format = vk_context.m_vk_swapchain.swapchain_surface_format().format;

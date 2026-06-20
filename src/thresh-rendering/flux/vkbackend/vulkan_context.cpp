@@ -37,8 +37,7 @@ namespace flux {
         create_offscreen_resources();
         register_geometry_pipeline();
         register_composite_pipeline();
-        create_uniform_buffers();
-        create_command_buffers();
+        create_frame_contexts();
         create_sync_objects();
 
         m_material_buffer = MaterialBuffer(m_vk_device, 1024);
@@ -63,11 +62,7 @@ namespace flux {
         });
     }
 
-    auto VulkanContext::create_command_buffers() -> void {
-
-    }
-
-    auto VulkanContext::create_uniform_buffers() -> void {
+    auto VulkanContext::create_frame_contexts() -> void {
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 

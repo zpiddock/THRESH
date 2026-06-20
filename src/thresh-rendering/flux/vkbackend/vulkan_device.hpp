@@ -18,8 +18,6 @@ namespace flux {
 
             auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
 
-            auto create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory>;
-
             auto upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage, const char* debug_name = nullptr) -> flux::Buffer;
 
             auto upload_image(std::span<const std::byte> pixels, vk::Extent2D extent, vk::Format format,
@@ -28,8 +26,6 @@ namespace flux {
             auto begin_single_time_commands() -> flux::CommandBuffer;
 
             auto end_single_time_commands(flux::CommandBuffer& command_buffer) -> void;
-
-            auto create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode, vk::ImageUsageFlags usage_flags, vk::MemoryPropertyFlags memory_props) -> std::pair<vk::raii::Image, vk::raii::DeviceMemory>;
 
             auto create_image_view(const vk::Image& image, vk::Format format, vk::ImageAspectFlags flags) -> vk::raii::ImageView;
 

@@ -27,9 +27,7 @@ namespace flux {
 
             auto create_depth_resources() -> void;
 
-            auto create_uniform_buffers() -> void;
-
-            auto create_command_buffers() -> void;
+            auto create_frame_contexts() -> void;
 
             auto create_sync_objects() -> void;
 

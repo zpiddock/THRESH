@@ -30,31 +30,6 @@ namespace flux {
         std::unreachable();
     }
 
-    auto ThreshVkDevice::create_buffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
-        vk::MemoryPropertyFlags properties) -> std::pair<vk::raii::Buffer, vk::raii::DeviceMemory> {
-
-            const vk::BufferCreateInfo buffer_info{
-                .size = size,
-                .usage = usage,
-                .sharingMode = vk::SharingMode::eExclusive
-              };
-
-            auto buffer = vk::raii::Buffer(m_device, buffer_info);
-
-            auto mem_reqs = buffer.getMemoryRequirements();
-
-            vk::MemoryAllocateInfo alloc_info{
-                .allocationSize = mem_reqs.size,
-                .memoryTypeIndex = find_memory_type(mem_reqs.memoryTypeBits, properties)
-            };
-
-            auto buffer_memory = vk::raii::DeviceMemory(m_device, alloc_info);
-
-            buffer.bindMemory(*buffer_memory, 0);
-
-            return {std::move(buffer), std::move(buffer_memory)};
-    }
-
     auto ThreshVkDevice::upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage,
         const char* debug_name) -> flux::Buffer {
 
@@ -142,34 +117,6 @@ namespace flux {
         nullptr);
 
         m_graphics_queue.waitIdle();
-    }
-
-    auto ThreshVkDevice::create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling_mode,
-        vk::ImageUsageFlags usage_flags,
-        vk::MemoryPropertyFlags memory_props) -> std::pair<vk::raii::Image, vk::raii::DeviceMemory> {
-
-        vk::raii::Image texture_image_temp({});
-        vk::raii::DeviceMemory texture_image_memory_temp({});
-
-        vk::ImageCreateInfo image_info{
-            .imageType = vk::ImageType::e2D,
-            .format = format,
-            .extent = {width, height, 1},
-            .mipLevels = 1,
-            .arrayLayers = 1,
-            .samples = vk::SampleCountFlagBits::e1,
-            .tiling = tiling_mode,
-            .usage = usage_flags,
-            .sharingMode = vk::SharingMode::eExclusive,
-        };
-        texture_image_temp = vk::raii::Image(m_device, image_info);
-        texture_image_memory_temp = vk::raii::DeviceMemory(m_device, vk::MemoryAllocateInfo{
-            .allocationSize = texture_image_temp.getMemoryRequirements().size,
-            .memoryTypeIndex = find_memory_type(texture_image_temp.getMemoryRequirements().memoryTypeBits, memory_props)
-        });
-        texture_image_temp.bindMemory(*texture_image_memory_temp, 0);
-
-        return {std::move(texture_image_temp), std::move(texture_image_memory_temp)};
     }
 
     auto ThreshVkDevice::create_image_view(const vk::Image& image, vk::Format format,
