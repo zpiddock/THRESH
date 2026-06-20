@@ -44,8 +44,6 @@ namespace flux {
 
             auto create_texture_resource(const TextureData& texture_data) -> TextureResource;
 
-            auto create_material_descriptor_sets(const TextureResource& texture) -> std::vector<vk::raii::DescriptorSet>;
-
             auto register_mesh(const MeshData& data) -> std::uint32_t;
 
             auto register_texture(const std::string& path) -> std::uint32_t;

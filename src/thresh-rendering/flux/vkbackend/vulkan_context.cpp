@@ -20,15 +20,24 @@ namespace flux {
     VulkanContext::VulkanContext(const VulkanInstanceContext& ctx, const thresh::Window& window) :
     m_vk_instance(ctx, window),
     m_vk_device(m_vk_instance.instance(), m_vk_instance.surface()),
-    m_vk_swapchain(window, m_vk_instance, m_vk_device) {
+    m_vk_swapchain(window, m_vk_instance, m_vk_device),
+    m_resource_heap(m_vk_device, DescriptorHeap::Kind::RESOURCE, 4096),
+    m_sampler_heap(m_vk_device, DescriptorHeap::Kind::SAMPLER, 64) {
+
+        m_default_sampler_slot = m_sampler_heap.allocate();
+        m_sampler_heap.write_sampler(m_default_sampler_slot, vk::SamplerCreateInfo{
+            .magFilter    = vk::Filter::eLinear, .minFilter = vk::Filter::eLinear,
+            .mipmapMode   = vk::SamplerMipmapMode::eLinear,
+            .addressModeU = vk::SamplerAddressMode::eRepeat,
+            .addressModeV = vk::SamplerAddressMode::eRepeat,
+            .addressModeW = vk::SamplerAddressMode::eRepeat,
+        });
 
         create_depth_resources();
         create_offscreen_resources();
         register_geometry_pipeline();
         register_composite_pipeline();
         create_uniform_buffers();
-        create_descriptor_pool();
-        create_composite_descriptor_sets();
         create_command_buffers();
         create_sync_objects();
     }
@@ -61,59 +70,6 @@ namespace flux {
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
             m_frames[i] = FrameContext::create(m_vk_device);
-        }
-    }
-
-    auto VulkanContext::create_descriptor_pool() -> void {
-
-        std::array pool_size {
-
-            vk::DescriptorPoolSize { vk::DescriptorType::eUniformBuffer, 64 * MAX_FRAMES_IN_FLIGHT * 2 },
-            vk::DescriptorPoolSize { vk::DescriptorType::eCombinedImageSampler, 64 * MAX_FRAMES_IN_FLIGHT },
-        };
-
-        vk::DescriptorPoolCreateInfo pool_create_info {
-            .flags          = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-            .maxSets        = 64 * MAX_FRAMES_IN_FLIGHT,
-            .poolSizeCount  = pool_size.size(),
-            .pPoolSizes     = pool_size.data(),
-        };
-
-        m_descriptor_pool = vk::raii::DescriptorPool(m_vk_device.logical(), pool_create_info);
-    }
-
-    auto VulkanContext::create_composite_descriptor_sets() -> void {
-
-        auto* composite_pipeline = get_pipeline("composite");
-
-        std::vector layouts(MAX_FRAMES_IN_FLIGHT, *composite_pipeline->descriptor_set_layout());
-
-        vk::DescriptorSetAllocateInfo alloc_info {
-            .descriptorPool = m_descriptor_pool,
-            .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
-            .pSetLayouts = layouts.data()
-        };
-        m_composite_pass_descriptor_sets.clear();
-        auto sets = m_vk_device.logical().allocateDescriptorSets(alloc_info);
-        m_composite_pass_descriptor_sets = std::move(sets);
-
-        for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-            vk::DescriptorImageInfo image_info {
-                .sampler = m_offscreen_sampler,
-                .imageView = m_offscreen_images[i].view(),
-                .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-            };
-
-            vk::WriteDescriptorSet writes {
-                .dstSet = m_composite_pass_descriptor_sets[i],
-                .dstBinding = 0,
-                .descriptorCount = 1,
-                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                .pImageInfo = &image_info
-            };
-
-            m_vk_device.logical().updateDescriptorSets(writes, {});
         }
     }
 
@@ -160,26 +116,13 @@ namespace flux {
                 .debug_name = std::format("Forward_Pass_Offscreen_Image_{}", i).c_str()
             });
 
+            if (m_offscreen_slots[i] == HEAP_INVALID_SLOT) {
+                m_offscreen_slots[i] = m_resource_heap.allocate();
+            }
+            m_resource_heap.write_sampled_image(m_offscreen_slots[i], image.view_create_info(), vk::ImageLayout::eShaderReadOnlyOptimal);
+            image.set_heap_index(DescriptorHeap::shader_index(m_offscreen_slots[i]));
+
             m_offscreen_images.emplace_back(std::move(image));
-        }
-
-        // Check if offscreen sampler has been created or not
-        if (!*m_offscreen_sampler) {
-            // Nearest for a 1:1 copy. Switch back to eLinear if offscreen extent ever
-            // diverges from swapchain extent (resolution scaling, fixed-res offscreen, etc).
-            constexpr vk::SamplerCreateInfo sampler_info {
-                .magFilter = vk::Filter::eNearest,
-                .minFilter = vk::Filter::eNearest,
-                .mipmapMode = vk::SamplerMipmapMode::eNearest,
-                .addressModeU = vk::SamplerAddressMode::eClampToEdge,
-                .addressModeV = vk::SamplerAddressMode::eClampToEdge,
-                .addressModeW = vk::SamplerAddressMode::eClampToEdge,
-                .anisotropyEnable = vk::False,
-                .compareEnable = vk::False,
-                .minLod = 0.f, .maxLod = 0.f
-            };
-
-            m_offscreen_sampler = vk::raii::Sampler(m_vk_device.logical(), sampler_info);
         }
     }
 
@@ -210,26 +153,12 @@ namespace flux {
     auto VulkanContext::register_geometry_pipeline() -> void {
 
         const PipelineContext context {
-            .shader_path = "opaque_mesh.spv",
-            .bindings = {
-                    {
-                        .binding = 0,
-                        .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
-                        .descriptorCount = 1,
-                        .stageFlags      = vk::ShaderStageFlagBits::eFragment
-                    }
-                },
-            .push_constants = {
-                    {
-                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-                        0,
-                        sizeof(gpu::PushConstants)
-                    }
-                },
+            .shader_path      = "opaque_mesh.spv",
+            .binding_model    = BindingModel::DESCRIPTOR_HEAP,
             .use_vertex_input = true,
-            .depth_test = true,
-            .colour_format = m_offscreen_format,
-            .depth_format = m_vk_device.find_depth_format()
+            .depth_test       = true,
+            .colour_format    = m_offscreen_format,
+            .depth_format     = m_vk_device.find_depth_format()
         };
 
         register_pipeline("opaque_mesh", context);
@@ -238,18 +167,13 @@ namespace flux {
     auto VulkanContext::register_composite_pipeline() -> void {
 
         const PipelineContext context {
-            .shader_path = "composite.spv",
-            .bindings = {
-                    { .binding = 0,
-                      .descriptorType  = vk::DescriptorType::eCombinedImageSampler,
-                      .descriptorCount = 1,
-                      .stageFlags      = vk::ShaderStageFlagBits::eFragment },
-                },
+            .shader_path      = "composite.spv",
+            .binding_model    = BindingModel::DESCRIPTOR_HEAP,
             .use_vertex_input = false,
-            .depth_test = false,
-            .cull_mode = vk::CullModeFlagBits::eNone,    // fullscreen tri — winding doesn't matter
-            .colour_format = m_vk_swapchain.swapchain_surface_format().format,
-            .depth_format = vk::Format::eUndefined
+            .depth_test       = false,
+            .cull_mode        = vk::CullModeFlagBits::eNone,
+            .colour_format    = m_vk_swapchain.swapchain_surface_format().format,    // fullscreen tri — winding doesn't matter
+            .depth_format     = vk::Format::eUndefined
         };
 
         register_pipeline("composite", context);

@@ -20,17 +20,16 @@ namespace flux {
 
         PipelineContext pipeline_context{
 
-            .shader_path = "debug_lines.spv",
-            .bindings = {},
-            .push_constants = {{vk::ShaderStageFlagBits::eVertex, 0, sizeof(DebugLinePushConstants)}},
-            .use_vertex_input = true,
-            .depth_test = true,
-            .depth_write = false,
-            .cull_mode = vk::CullModeFlagBits::eNone,
-            .colour_format = ctx.m_offscreen_format,
-            .depth_format = ctx.m_vk_device.find_depth_format(),
-            .topology = vk::PrimitiveTopology::eLineList,
-            .vertex_bindings = bindings,
+            .shader_path       = "debug_lines.spv",
+            .binding_model     = BindingModel::DESCRIPTOR_HEAP,
+            .use_vertex_input  = true,
+            .depth_test        = true,
+            .depth_write       = false,
+            .cull_mode         = vk::CullModeFlagBits::eNone,
+            .colour_format     = ctx.m_offscreen_format,
+            .depth_format      = ctx.m_vk_device.find_depth_format(),
+            .topology          = vk::PrimitiveTopology::eLineList,
+            .vertex_bindings   = bindings,
             .vertex_attributes = attribs
         };
         m_pipeline = ctx.register_pipeline("debug_lines", pipeline_context);
@@ -124,8 +123,8 @@ namespace flux {
         });
         cmd.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extents});
 
-        DebugLinePushConstants push_constants{view_proj};
-        cmd.raw().pushConstants<DebugLinePushConstants>(*m_pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex, 0, push_constants);
+
+        cmd.push_data(0, DebugLinePushConstants{view_proj});
         cmd.raw().bindVertexBuffers(0, {m_vertex_buffers[frame].handle()}, {0});
         cmd.raw().draw(static_cast<uint32_t>(m_pending.size()), 1, 0, 0);
         cmd.raw().endRendering();

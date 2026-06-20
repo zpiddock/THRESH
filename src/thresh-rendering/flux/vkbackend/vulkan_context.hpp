@@ -28,10 +28,6 @@ namespace flux {
 
             auto create_uniform_buffers() -> void;
 
-            auto create_descriptor_pool() -> void;
-
-            auto create_composite_descriptor_sets() -> void;
-
             auto create_command_buffers() -> void;
 
             auto create_sync_objects() -> void;
@@ -58,13 +54,13 @@ namespace flux {
             ThreshVkInstance  m_vk_instance;
             ThreshVkDevice    m_vk_device;
             ThreshVkSwapchain m_vk_swapchain;
-            
-            vk::raii::DescriptorPool             m_descriptor_pool         = nullptr;
+
+            DescriptorHeap    m_resource_heap;
+            DescriptorHeap    m_sampler_heap;
+            HeapSlot          m_default_sampler_slot = HEAP_INVALID_SLOT;
+            std::array<HeapSlot, MAX_FRAMES_IN_FLIGHT> m_offscreen_slots{HEAP_INVALID_SLOT, HEAP_INVALID_SLOT};
 
             std::unordered_map<std::string, std::unique_ptr<ThreshVkPipeline>> m_pipelines;
-
-            std::vector<vk::raii::DescriptorSet> m_composite_pass_descriptor_sets;
-            // ThreshVkPipeline  m_vk_pipeline;
 
             std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> m_frames;
 
@@ -77,7 +73,6 @@ namespace flux {
 
             // Offscreen Images
             std::vector<flux::Image> m_offscreen_images;
-            vk::raii::Sampler m_offscreen_sampler = nullptr;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
 
             friend class GraphicsUtils;

@@ -27,8 +27,6 @@ namespace flux {
         std::string vertex_entry = "vertexMain";
         std::string fragment_entry = "fragmentMain";
         std::string compute_entry; // future use
-        std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        std::vector<vk::PushConstantRange> push_constants;
         bool use_vertex_input = true;
         bool depth_test = true;
         bool depth_write = true;

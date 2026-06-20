@@ -32,6 +32,15 @@ namespace flux {
             };
             m_descriptor_set_layout = vk::raii::DescriptorSetLayout(device.logical(), descriptor_set_layout_info);
 
+            const vk::PipelineLayoutCreateInfo pipeline_layout_info{
+                .setLayoutCount         = context.bindings.empty() ? 0u : 1u,
+                .pSetLayouts            = context.bindings.empty() ? nullptr : &*m_descriptor_set_layout,
+                .pushConstantRangeCount = static_cast<std::uint32_t>(context.push_constants.size()),
+                .pPushConstantRanges    = context.push_constants.empty() ? nullptr : context.push_constants.data(),
+            };
+            m_pipeline_layout = vk::raii::PipelineLayout(device.logical(), pipeline_layout_info);
+        }
+
         assert(substratum::VFS::is_initialized());
 
         const auto shader_module = load_shader(std::format("/shader/{}", context.shader_path), device);

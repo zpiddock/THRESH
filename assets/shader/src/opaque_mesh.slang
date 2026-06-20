@@ -12,10 +12,9 @@ struct PushConstants {
     float4   colour_tint;
     CameraData* camera_data;
     LightData* light_data;
+    DescriptorHandle<Texture2D<float4>> albedo;   // replaces the albedo_sampler binding
+    DescriptorHandle<SamplerState>      sampler;
 }
-
-[vk::binding(0, 0)]
-Sampler2D textureSampler;
 
 [vk::push_constant]
 ConstantBuffer<PushConstants> push_constants;
@@ -41,7 +40,7 @@ VertexOutput vertexMain(VertexInput input)
 float4 fragmentMain(VertexOutput input) : SV_Target
 {
     // sampled albedo
-    float4 albedo = textureSampler.Sample(input.texcoord) * push_constants.colour_tint;
+    float4 albedo = push_constants.albedo.Sample(*push_constants.sampler, input.texcoord) * push_constants.colour_tint;
 
     float3 N = normalize(input.normal);
 

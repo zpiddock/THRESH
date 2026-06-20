@@ -1,8 +1,12 @@
 import fullscreen;
 
-[vk::binding(0, 0)]
-Sampler2D<float4> colour_target;
+struct CompositePushData {
+    DescriptorHandle<Texture2D<float4>> colour_target;
+    DescriptorHandle<SamplerState> sampler;
+};
 
+[vk::push_constant]
+CompositePushData push_data;
 
 [shader("vertex")]
 FullscreenVertex vertexMain(uint vert_id : SV_VertexID) {
@@ -13,5 +17,5 @@ FullscreenVertex vertexMain(uint vert_id : SV_VertexID) {
 [shader("fragment")]
 float4 fragmentMain(FullscreenVertex fullscreen_vertex) : SV_Target {
 
-    return colour_target.Sample(fullscreen_vertex.uv);
+    return push_data.colour_target.Sample(*push_data.sampler, fullscreen_vertex.uv);
 }

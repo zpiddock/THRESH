@@ -19,7 +19,6 @@ namespace flux {
 
     struct TextureResource {
         flux::Image image{};
-        vk::raii::Sampler sampler{nullptr};
     };
 
     struct MaterialResource {
@@ -31,8 +30,6 @@ namespace flux {
         std::uint32_t metallic_texture_handle = 0;
         std::uint32_t roughness_texture_handle = 0;
         std::uint32_t emission_texture_handle = 0;
-
-        std::vector<vk::raii::DescriptorSet> descriptor_sets;
     };
 
     struct DrawCommand {

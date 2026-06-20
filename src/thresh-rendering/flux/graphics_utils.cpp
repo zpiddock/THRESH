@@ -118,7 +118,6 @@ namespace flux {
         m_context->m_vk_swapchain.recreate(*m_window, m_context->m_vk_instance, m_context->m_vk_device);
         m_context->create_depth_resources();
         m_context->create_offscreen_resources();
-        m_context->create_composite_descriptor_sets();
     }
 
     auto GraphicsUtils::shutdown() -> void {
@@ -207,61 +206,9 @@ namespace flux {
         vk::Format::eR8G8B8A8Srgb,
         nullptr);
 
-        vk::PhysicalDeviceProperties props = device.physical().getProperties();
-        vk::SamplerCreateInfo sampler_info{
-            .magFilter = vk::Filter::eLinear,
-            .minFilter = vk::Filter::eLinear,
-            .mipmapMode = vk::SamplerMipmapMode::eLinear,
-            .addressModeU = vk::SamplerAddressMode::eMirroredRepeat,
-            .addressModeV = vk::SamplerAddressMode::eMirroredRepeat,
-            .addressModeW = vk::SamplerAddressMode::eMirroredRepeat,
-            .anisotropyEnable = vk::True,
-            .maxAnisotropy = props.limits.maxSamplerAnisotropy,
-            .compareEnable = vk::False,
-            .compareOp = vk::CompareOp::eAlways,
-        };
-
-        vk::raii::Sampler sampler = device.logical().createSampler(sampler_info);
-
         return TextureResource{
             .image        = std::move(image),
-            .sampler      = std::move(sampler)
         };
-    }
-
-    auto GraphicsUtils::create_material_descriptor_sets(const TextureResource& texture) -> std::vector<vk::raii::DescriptorSet> {
-
-        auto& device = m_context->m_vk_device;
-
-        std::vector layouts(VulkanContext::MAX_FRAMES_IN_FLIGHT, *m_context->get_pipeline("opaque_mesh")->descriptor_set_layout());
-
-        vk::DescriptorSetAllocateInfo alloc_info{
-            .descriptorPool = m_context->m_descriptor_pool,
-            .descriptorSetCount = VulkanContext::MAX_FRAMES_IN_FLIGHT,
-            .pSetLayouts = layouts.data()
-        };
-
-        auto sets = device.logical().allocateDescriptorSets(alloc_info);
-
-        for (uint32_t i = 0; i < VulkanContext::MAX_FRAMES_IN_FLIGHT; i++) {
-
-            const vk::DescriptorImageInfo texture_info{
-                .sampler = texture.sampler,
-                .imageView = texture.image.view(),
-                .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-            };
-            std::array descriptor_writes {
-                vk::WriteDescriptorSet {
-                    .dstSet = sets[i],
-                    .dstBinding = 0,
-                    .descriptorCount = 1,
-                    .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                    .pImageInfo = &texture_info
-                }
-            };
-            device.logical().updateDescriptorSets(descriptor_writes, {});
-        }
-        return sets;
     }
 
     auto GraphicsUtils::register_mesh(const MeshData& data) -> std::uint32_t {
@@ -277,6 +224,11 @@ namespace flux {
     auto GraphicsUtils::register_texture(const std::string& path) -> std::uint32_t {
 
         TextureResource texture_resource = create_texture_resource(path);
+
+        const HeapSlot slot = m_context->m_resource_heap.allocate();
+        m_context->m_resource_heap.write_sampled_image(slot, texture_resource.image.view_create_info(), vk::ImageLayout::eShaderReadOnlyOptimal);
+        texture_resource.image.set_heap_index(DescriptorHeap::shader_index(slot));
+
         m_texture_resources.emplace_back(std::move(texture_resource));
         const auto handle = static_cast<std::uint32_t>(m_texture_resources.size());
         SUB_TRACE("Registered texture handle {} from '{}'", handle, path);
@@ -291,7 +243,6 @@ namespace flux {
         material.material_type = material_type;
         material.albedo_texture_handle = texture_handle;
         material.albedo_tint = base_colour;
-        material.descriptor_sets = create_material_descriptor_sets(*get_texture_resource(texture_handle));
         m_material_resources.emplace_back(std::move(material));
         const auto handle = static_cast<std::uint32_t>(m_material_resources.size());
         SUB_TRACE("Registered material handle {} (type='{}', albedo_tex={})",
@@ -329,6 +280,9 @@ namespace flux {
 
         constexpr vk::CommandBufferBeginInfo begin_info{};
         cmd_buffer.begin(begin_info.flags);
+
+        cmd_buffer.bind_heaps(m_context->m_resource_heap, m_context->m_sampler_heap);
+
         record_geometry_commands(cmd_buffer, cmds);
 
         if (m_debug_line_renderer && m_camera_data) {
@@ -423,23 +377,19 @@ namespace flux {
             // SUB_TRACE("{}:{}", cmd.mesh_handle, cmd.material_handle);
             const auto* mesh = get_mesh_resource(cmd.mesh_handle);
             const auto* material = get_material_resource(cmd.material_handle);
-
-            if (cmd.material_handle != prev_material) {
-                cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
-                prev_material = cmd.material_handle;
-            }
+            const auto* albedo = get_texture_resource(material->albedo_texture_handle);
 
             const gpu::PushConstants push_constants {
                 cmd.model,
                 cmd.base_colour,
                 frame_data->camera_address,
                 frame_data->light_data_address,
+                flux::gpu::DescriptorHandle::make(albedo->image.heap_index()),
+                flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
             };
-            cmd_buffer.raw().pushConstants<gpu::PushConstants>(*pipeline->pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, push_constants);
-
+            cmd_buffer.push_data(0, push_constants);
             cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
             cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
-            cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *material->descriptor_sets[frame], nullptr);
             cmd_buffer.raw().drawIndexed(mesh->index_count, 1, 0, 0, 0);
         }
         cmd_buffer.raw().endRendering();
@@ -484,7 +434,12 @@ namespace flux {
         cmd_buffer.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->graphics_pipeline());
         cmd_buffer.raw().setViewport(0, vk::Viewport{0, 0, static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 1});
         cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
-        cmd_buffer.raw().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline_layout(), 0, *m_context->m_composite_pass_descriptor_sets[frame], nullptr);
+        cmd_buffer.push_data(
+            0,
+            flux::gpu::CompositePushConstants{
+                .colour_image = flux::gpu::DescriptorHandle::make(m_context->m_offscreen_images[frame].heap_index()),
+                .sampler      = flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
+            });
         cmd_buffer.raw().draw(3, 1, 0, 0);
         cmd_buffer.raw().endRendering();
     }
