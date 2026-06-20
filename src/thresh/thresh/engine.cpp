@@ -51,6 +51,7 @@ namespace thresh {
         SUB_DEBUG("Initialising graphics subsystem");
         m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
         m_graphics_utils->vulkan_init(*m_window);
+        m_graphics_utils->register_dummy_texture();
         m_graphics_utils->imgui_init();
 
         SUB_DEBUG("Initialising input manager");

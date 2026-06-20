@@ -1,4 +1,5 @@
 #include "include/frame_data.slang"
+#include "include/material_data.slang"
 
 struct VertexInput
 {
@@ -8,16 +9,19 @@ struct VertexInput
 };
 
 struct PushConstants {
+    // Frame data, offset 0
+    CameraData*                    camera_data;
+    LightData*                     light_data;
+    MaterialData*                  materials;
+    DescriptorHandle<SamplerState> sampler;
+    // Draw Data, offset 32
     float4x4 model;
     float4   colour_tint;
-    CameraData* camera_data;
-    LightData* light_data;
-    DescriptorHandle<Texture2D<float4>> albedo;   // replaces the albedo_sampler binding
-    DescriptorHandle<SamplerState>      sampler;
+    uint     material_index;
 }
 
 [vk::push_constant]
-ConstantBuffer<PushConstants> push_constants;
+PushConstants push_constants;
 
 struct VertexOutput
 {
@@ -39,8 +43,11 @@ VertexOutput vertexMain(VertexInput input)
 [shader("fragment")]
 float4 fragmentMain(VertexOutput input) : SV_Target
 {
+    MaterialData material = push_constants.materials[push_constants.material_index];
+
     // sampled albedo
-    float4 albedo = push_constants.albedo.Sample(*push_constants.sampler, input.texcoord) * push_constants.colour_tint;
+    let albedo_texture = DescriptorHandle<Texture2D<float4>>(material.base_colour_texture_handle);
+    float4 albedo = albedo_texture.Sample(*push_constants.sampler, input.texcoord) * material.base_colour_factor;
 
     float3 N = normalize(input.normal);
 

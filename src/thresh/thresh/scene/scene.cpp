@@ -98,7 +98,7 @@ namespace thresh {
 
                 graphics->submit_draw_command({
                     .model           = transform.transform,
-                    .base_colour     = material->albedo_tint,
+                    .base_colour     = flux::float4(1.f),
                     .mesh_handle     = mesh.handle,
                     .material_handle = mesh.material_handle,
                 });

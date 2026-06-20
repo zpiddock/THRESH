@@ -9,7 +9,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "../../../thresh/thresh/scene/ecs_types.hpp"
 #include "flux/graphics_types.hpp"
 #include "flux/math.hpp"
 #include "SDL3/SDL_vulkan.h"

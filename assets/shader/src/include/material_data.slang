@@ -13,4 +13,5 @@ struct MaterialData {
         uint    metallic_roughness_texture_handle; // G Chan: Roughness, B Chan: Metallic
         uint    occlusion_texture_handle;
         uint    flags;
+        uint2   _pad; // pad to 80 bytes
     };

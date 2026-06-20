@@ -24,12 +24,7 @@ namespace flux {
     struct MaterialResource {
 
         std::string material_type;
-        std::uint32_t albedo_texture_handle = 0;
-        flux::float4 albedo_tint = flux::float4(1.0f);
-        std::uint32_t normal_texture_handle = 0;
-        std::uint32_t metallic_texture_handle = 0;
-        std::uint32_t roughness_texture_handle = 0;
-        std::uint32_t emission_texture_handle = 0;
+        std::uint32_t gpu_index = 0;
     };
 
     struct DrawCommand {

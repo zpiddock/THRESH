@@ -79,6 +79,14 @@ namespace flux {
 
             auto debug_line_renderer() -> DebugLineRenderer*;
 
+            auto store_texture(TextureResource&& texture) -> std::uint32_t;
+
+            auto register_dummy_texture() -> void;
+
+            auto get_dummy_texture_handle() const -> std::uint32_t {
+                return m_dummy_texture_heap_index;
+            }
+
         private:
             auto record_command_buffers(flux::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
@@ -107,6 +115,8 @@ namespace flux {
             std::vector<DrawCommand> m_draw_commands;
 
             std::unique_ptr<DebugLineRenderer> m_debug_line_renderer;
+
+            std::uint32_t m_dummy_texture_heap_index = 0;
     };
 
 } // namespace flux

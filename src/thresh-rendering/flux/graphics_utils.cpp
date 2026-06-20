@@ -223,14 +223,7 @@ namespace flux {
 
     auto GraphicsUtils::register_texture(const std::string& path) -> std::uint32_t {
 
-        TextureResource texture_resource = create_texture_resource(path);
-
-        const HeapSlot slot = m_context->m_resource_heap.allocate();
-        m_context->m_resource_heap.write_sampled_image(slot, texture_resource.image.view_create_info(), vk::ImageLayout::eShaderReadOnlyOptimal);
-        texture_resource.image.set_heap_index(DescriptorHeap::shader_index(slot));
-
-        m_texture_resources.emplace_back(std::move(texture_resource));
-        const auto handle = static_cast<std::uint32_t>(m_texture_resources.size());
+        const auto handle = store_texture(create_texture_resource(path));
         SUB_TRACE("Registered texture handle {} from '{}'", handle, path);
         return handle;
     }
@@ -239,14 +232,30 @@ namespace flux {
     const flux::float4 base_colour,
             const std::string& material_type) -> std::uint32_t {
 
-        MaterialResource material;
-        material.material_type = material_type;
-        material.albedo_texture_handle = texture_handle;
-        material.albedo_tint = base_colour;
-        m_material_resources.emplace_back(std::move(material));
+        const auto* albedo = get_texture_resource(texture_handle);
+        const std::uint32_t albedo_slot = albedo ? albedo->image.heap_index() : m_dummy_texture_heap_index;
+
+        const flux::gpu::MaterialData data {
+            .base_colour_factor = base_colour,
+            .emissive_factor = flux::float3{0},
+            .metallic_factor = 1.f,
+            .roughness_factor = 1.f,
+            .normal_scale = 1.f,
+            .occlusion_strength = 1.f,
+            .alpha_cutoff = 0.5f,
+            .base_colour_texture_handle = albedo_slot,
+            .normal_texture_handle = m_dummy_texture_heap_index,
+            .emissive_texture_handle = m_dummy_texture_heap_index,
+            .metallic_roughness_texture_handle = m_dummy_texture_heap_index,
+            .occlusion_texture_handle = m_dummy_texture_heap_index,
+            .flags = 0
+        };
+        const std::uint32_t gpu_index = m_context->m_material_buffer.register_material(data);
+
+        m_material_resources.emplace_back(MaterialResource{.material_type = material_type, .gpu_index = gpu_index});
         const auto handle = static_cast<std::uint32_t>(m_material_resources.size());
-        SUB_TRACE("Registered material handle {} (type='{}', albedo_tex={})",
-                  handle, material_type, texture_handle);
+        SUB_TRACE("Registered material handle {} -> gpu index {} (type='{}', albedo_slot={})",
+                  handle, gpu_index, material_type, albedo_slot);
         return handle;
     }
 
@@ -372,22 +381,23 @@ namespace flux {
         cmd_buffer.raw().setViewport(0, vk::Viewport{0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0, 1});
         cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
 
-        std::uint32_t prev_material = 0;
+        cmd_buffer.push_data(0, flux::gpu::FramePushConstants{
+            .camera = frame_data->camera_address,
+            .lights = frame_data->light_data_address,
+            .materials = m_context->m_material_buffer.device_address(),
+            .default_sampler = flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
+        });
         for (const auto& cmd : cmds) {
             // SUB_TRACE("{}:{}", cmd.mesh_handle, cmd.material_handle);
             const auto* mesh = get_mesh_resource(cmd.mesh_handle);
             const auto* material = get_material_resource(cmd.material_handle);
-            const auto* albedo = get_texture_resource(material->albedo_texture_handle);
 
-            const gpu::PushConstants push_constants {
-                cmd.model,
-                cmd.base_colour,
-                frame_data->camera_address,
-                frame_data->light_data_address,
-                flux::gpu::DescriptorHandle::make(albedo->image.heap_index()),
-                flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
+            const flux::gpu::DrawPushConstants push_constants {
+                .model = cmd.model,
+                .colour_tint = cmd.base_colour,
+                .material_handle = material->gpu_index
             };
-            cmd_buffer.push_data(0, push_constants);
+            cmd_buffer.push_data(flux::gpu::DRAW_PUSH_OFFSET, push_constants);
             cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
             cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
             cmd_buffer.raw().drawIndexed(mesh->index_count, 1, 0, 0, 0);
@@ -500,5 +510,27 @@ namespace flux {
             return nullptr;
         }
         return m_debug_line_renderer.get();
+    }
+
+    auto GraphicsUtils::store_texture(TextureResource&& texture) -> std::uint32_t {
+        const HeapSlot slot = m_context->m_resource_heap.allocate();
+        m_context->m_resource_heap.write_sampled_image(slot, texture.image.view_create_info(), vk::ImageLayout::eShaderReadOnlyOptimal);
+        texture.image.set_heap_index(DescriptorHeap::shader_index(slot));
+        m_texture_resources.emplace_back(std::move(texture));
+        return static_cast<std::uint32_t>(m_texture_resources.size());
+    }
+
+    auto GraphicsUtils::register_dummy_texture() -> void {
+
+        static constexpr std::array<std::uint8_t, 4> white{255, 255, 255, 255};
+        const flux::TextureData texture_data{
+        .width = 1,
+        .height = 1,
+        .num_channels = 4,
+        .pixel_data = std::span(const_cast<std::uint8_t*>(white.data()), white.size())
+        };
+
+        const std::uint32_t texture_handle = store_texture(create_texture_resource(texture_data));
+        m_dummy_texture_heap_index = get_texture_resource(texture_handle)->image.heap_index();
     }
 } // namespace flux

@@ -67,6 +67,25 @@ namespace flux::gpu {
         std::uint32_t metallic_roughness_texture_handle; // G Chan: Roughness, B Chan: Metallic
         std::uint32_t occlusion_texture_handle;
         std::uint32_t flags;
+        std::uint32_t _pad[2];   // explicit pad to 80
     };
     static_assert(sizeof(MaterialData) == 80);
+
+    struct FramePushConstants {
+        vk::DeviceAddress camera;
+        vk::DeviceAddress lights;
+        vk::DeviceAddress materials;
+        DescriptorHandle  default_sampler;
+    };
+    static_assert(sizeof(FramePushConstants) == 32);
+
+    inline constexpr uint32_t DRAW_PUSH_OFFSET = sizeof(FramePushConstants);
+
+    struct alignas(16) DrawPushConstants {
+        float4x4 model;
+        float4   colour_tint;
+        uint32_t material_handle;
+    };
+    static_assert(sizeof(DrawPushConstants) == 96);
+    static_assert(sizeof(FramePushConstants) + sizeof(DrawPushConstants) <= 128, "Must stay below Vulkan maxPushDataSize");
 }
