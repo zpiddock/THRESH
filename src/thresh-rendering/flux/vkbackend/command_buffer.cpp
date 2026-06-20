@@ -65,4 +65,9 @@ namespace flux {
         m_command_buffer.copyBufferToImage(src.handle(), dst.handle(),
                                 vk::ImageLayout::eTransferDstOptimal, region);
     }
+
+    auto CommandBuffer::bind_heaps(const DescriptorHeap& resource_heap, const DescriptorHeap& sampler_heap) -> void {
+        m_command_buffer.bindResourceHeapEXT(resource_heap.bind_info());
+        m_command_buffer.bindSamplerHeapEXT(sampler_heap.bind_info());
+    }
 } // flux

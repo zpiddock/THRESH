@@ -3,7 +3,9 @@
 //
 
 #pragma once
+#include <vulkan/vulkan_raii.hpp>
 #include "math.hpp"
+#include "vkbackend/descriptor_handle.hpp"
 
 namespace flux::gpu {
 
@@ -33,6 +35,15 @@ namespace flux::gpu {
         flux::float4      colour_tint;  // 16
         vk::DeviceAddress camera;       //  8 -> CameraData* in the shader
         vk::DeviceAddress lights;       //  8 -> LightData*
+        DescriptorHandle  albedo_tex;   //  8 -> resource heap index
+        DescriptorHandle  sampler;      //  8 -> sampler heap index
     };
-    static_assert(sizeof(PushConstants) == 96);
+    static_assert(sizeof(PushConstants) == 112);
+
+    struct CompositePushConstants {
+
+        DescriptorHandle  colour_image;
+        DescriptorHandle  sampler;
+    };
+    static_assert(sizeof(CompositePushConstants) == 16);
 }

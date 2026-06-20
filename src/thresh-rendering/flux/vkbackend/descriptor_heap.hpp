@@ -6,11 +6,11 @@
 #include <cstdint>
 #include <vulkan/vulkan_raii.hpp>
 
-#include "vulkan_device.hpp"
 #include "buffer.hpp"
 
 namespace flux {
 
+    class ThreshVkDevice;
     // Strong index type. Value == the index DescriptorHandle<T> consumes in shaders,
     // in units of the cook-time stride. Never a byte offset.
     enum class HeapSlot : std::uint32_t {};

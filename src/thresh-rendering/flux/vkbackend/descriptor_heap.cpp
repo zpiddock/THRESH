@@ -5,6 +5,7 @@
 #include "descriptor_heap.hpp"
 
 #include "substratum/log.hpp"
+#include "vulkan_device.hpp"
 
 namespace flux {
     DescriptorHeap::DescriptorHeap(ThreshVkDevice& device, Kind kind, uint32_t capacity) :
@@ -46,7 +47,7 @@ namespace flux {
         const auto alignment = (kind == Kind::RESOURCE) ? props.resourceHeapAlignment
                                                         : props.samplerHeapAlignment;
         if (m_storage.device_address() % alignment != 0) {
-            SUB_FATAL("Heap buffer address not {}-aligned — implement in-buffer range alignment", alignment);
+            SUB_FATAL("Heap buffer address not {}-aligned - implement in-buffer range alignment", alignment);
         }
 
         // Free list over [m_first_index, m_first_index + capacity). Pushed high-to-low so the
@@ -92,6 +93,7 @@ namespace flux {
             .size = m_stride
         };
         m_device.logical().writeResourceDescriptorsEXT(resource_info, dst);
+        SUB_DEBUG("[HEAP] Wrote sampled image to heap slot {}, byte_offset {}, stride {}", static_cast<uint32_t>(slot), byte_offset(slot), m_stride);
     }
 
     auto DescriptorHeap::write_sampler(HeapSlot slot, const vk::SamplerCreateInfo& sampler) -> void {
@@ -102,6 +104,7 @@ namespace flux {
             .size    = m_stride,
         };
         m_device.logical().writeSamplerDescriptorsEXT(sampler, dst);
+        SUB_DEBUG("[HEAP] Wrote sampler to heap slot {}, byte_offset {}, stride {}", static_cast<uint32_t>(slot), byte_offset(slot), m_stride);
     }
 
     auto DescriptorHeap::bind_info() const -> vk::BindHeapInfoEXT {

@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan_raii.hpp>
 
+#include "descriptor_heap.hpp"
+
 namespace flux {
     class Buffer;
     class Image;
@@ -42,6 +44,19 @@ namespace flux {
             auto copy_buffer_to_image(const Buffer& src, const Image& dst) const -> void;
 
             [[nodiscard]] auto raw() const -> const vk::raii::CommandBuffer& { return m_command_buffer; }
+
+            auto bind_heaps(const DescriptorHeap& resource_heap, const DescriptorHeap& sampler_heap) -> void;
+
+            template<typename T>
+            auto push_data(const uint32_t offset, const T& value) -> void {
+                static_assert(std::is_trivially_copyable_v<T>);
+                static_assert(sizeof(T) % 4 == 0, "push data size must be a multiple of 4 (VU)");
+                assert(offset % 4 == 0);
+                m_command_buffer.pushDataEXT(vk::PushDataInfoEXT{
+                    .offset = offset, // no layout, no stage flags
+                    .data   = { .address = &value, .size = sizeof(T) },
+                });
+            }
 
         private:
             auto emit_barrier(vk::Image image, vk::ImageAspectFlags aspect, const ImageState& src, const ImageState& dst);

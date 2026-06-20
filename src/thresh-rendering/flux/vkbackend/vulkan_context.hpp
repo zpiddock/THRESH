@@ -5,9 +5,9 @@
 #pragma once
 #include <string>
 
+#include "vulkan/vulkan_raii.hpp"
 #include "frame_context.hpp"
 #include "image.hpp"
-#include "vulkan/vulkan_raii.hpp"
 #include "vk_structs.hpp"
 #include "vulkan_device.hpp"
 #include "vulkan_instance.hpp"
@@ -47,6 +47,10 @@ namespace flux {
             auto register_geometry_pipeline() -> void;
 
             auto register_composite_pipeline() -> void;
+
+            auto default_sampler_index() const -> uint32_t {
+                return DescriptorHeap::shader_index(m_default_sampler_slot);
+            }
 
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;

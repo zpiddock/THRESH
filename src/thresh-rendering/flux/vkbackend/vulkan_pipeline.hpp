@@ -11,10 +11,18 @@
 
 namespace flux {
 
+    enum class BindingModel {
+        DESCRIPTOR_HEAP,
+        DESCRIPTOR_SET,
+    };
+
     struct PipelineContext {
         // Each slang shader should have all entrypoints in main file
         // Will be loaded from VFS "/shader/{shader_path}"
         std::string shader_path;
+
+        BindingModel binding_model = BindingModel::DESCRIPTOR_HEAP; // By default, we want everything through the Heap
+
         // If string is empty stage will be omitted
         std::string vertex_entry = "vertexMain";
         std::string fragment_entry = "fragmentMain";
@@ -28,6 +36,10 @@ namespace flux {
         vk::Format colour_format = vk::Format::eUndefined;
         vk::Format depth_format = vk::Format::eUndefined;
         vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
+
+        // For use with explicit descriptor sets only, will be ignored under descriptor heap pipelines
+        std::vector<vk::DescriptorSetLayoutBinding> bindings;
+        std::vector<vk::PushConstantRange>          push_constants;
 
         // If empty, ThreshVkPipeline falls back to the hardcoded flux::Vertex layout (existing behaviour).
         std::vector<vk::VertexInputBindingDescription>   vertex_bindings;
