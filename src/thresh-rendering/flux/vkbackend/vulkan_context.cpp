@@ -9,6 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "../../../thresh/thresh/scene/ecs_types.hpp"
 #include "flux/graphics_types.hpp"
 #include "flux/math.hpp"
 #include "SDL3/SDL_vulkan.h"
@@ -40,6 +41,8 @@ namespace flux {
         create_uniform_buffers();
         create_command_buffers();
         create_sync_objects();
+
+        m_material_buffer = MaterialBuffer(m_vk_device, 1024);
     }
 
     VulkanContext::~VulkanContext() {

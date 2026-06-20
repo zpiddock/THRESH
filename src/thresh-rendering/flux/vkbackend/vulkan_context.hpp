@@ -13,6 +13,7 @@
 #include "vulkan_instance.hpp"
 #include "vulkan_pipeline.hpp"
 #include "vulkan_swapchain.hpp"
+#include "flux/material_buffer.hpp"
 #include "flux/render_resources.hpp"
 #include "horizon/window.hpp"
 
@@ -48,6 +49,10 @@ namespace flux {
                 return DescriptorHeap::shader_index(m_default_sampler_slot);
             }
 
+            auto material_buffer() -> MaterialBuffer& {
+                return m_material_buffer;
+            }
+
             // const bits
             constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -74,6 +79,9 @@ namespace flux {
             // Offscreen Images
             std::vector<flux::Image> m_offscreen_images;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
+
+            // Materials
+            MaterialBuffer m_material_buffer;
 
             friend class GraphicsUtils;
             friend class DearImGuiContext;

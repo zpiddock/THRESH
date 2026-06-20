@@ -34,6 +34,8 @@ add_library(Flux STATIC
         flux/vkbackend/descriptor_heap.cpp
         flux/vkbackend/descriptor_heap.hpp
         flux/vkbackend/descriptor_handle.hpp
+        flux/material_buffer.cpp
+        flux/material_buffer.hpp
 )
 
 target_link_libraries(Flux PUBLIC
