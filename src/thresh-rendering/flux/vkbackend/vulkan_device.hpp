@@ -11,6 +11,11 @@ namespace flux {
     class Buffer;
     class Image;
 
+    enum class WantsDeviceAddress {
+        NO,
+        YES,
+    };
+
     class ThreshVkDevice {
 
         public:
@@ -34,6 +39,10 @@ namespace flux {
             auto find_depth_format() -> vk::Format;
 
             auto has_stencil_component(vk::Format format) -> bool;
+
+            auto allocate_memory(const vk::MemoryRequirements& requirements, vk::MemoryPropertyFlags properties, WantsDeviceAddress wants_device_address) -> vk::raii::DeviceMemory;
+
+            auto set_debug_name(vk::ObjectType type, uint64_t handle, const char* name) -> void;
 
             auto physical() -> const vk::raii::PhysicalDevice& {
                 return m_physical_device;

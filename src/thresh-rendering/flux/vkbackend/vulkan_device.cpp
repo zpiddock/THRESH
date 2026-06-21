@@ -367,4 +367,29 @@ namespace flux {
                  p.imageDescriptorSize, p.bufferDescriptorSize, p.samplerDescriptorSize,
                  p.maxPushDataSize, p.minResourceHeapReservedRange, p.minSamplerHeapReservedRange);
     }
+
+    auto ThreshVkDevice::allocate_memory(const vk::MemoryRequirements& requirements, vk::MemoryPropertyFlags properties,
+        const WantsDeviceAddress wants_device_address) -> vk::raii::DeviceMemory {
+
+        constexpr vk::MemoryAllocateFlagsInfo address_flags{
+            .flags = vk::MemoryAllocateFlagBits::eDeviceAddress,
+        };
+        return vk::raii::DeviceMemory(logical(), {
+            .pNext = wants_device_address == WantsDeviceAddress::YES ? &address_flags : nullptr,
+            .allocationSize = requirements.size,
+            .memoryTypeIndex = find_memory_type(requirements.memoryTypeBits, properties)
+        });
+    }
+
+    auto ThreshVkDevice::set_debug_name(vk::ObjectType type, uint64_t handle, const char* name) -> void {
+
+        if (!name) {
+            return;
+        }
+        m_device.setDebugUtilsObjectNameEXT({
+            .objectType = type,
+            .objectHandle = handle,
+            .pObjectName = name
+        });
+    }
 } // flux

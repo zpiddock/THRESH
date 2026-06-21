@@ -16,31 +16,24 @@ namespace flux {
         });
 
         const auto requirements = m_buffer.getMemoryRequirements();
-        const auto wants_address = static_cast<bool>(desc.usage & vk::BufferUsageFlagBits::eShaderDeviceAddress);
+        const auto wants_address =
+            static_cast<bool>(desc.usage & vk::BufferUsageFlagBits::eShaderDeviceAddress) ? WantsDeviceAddress::YES : WantsDeviceAddress::NO;
 
-        const vk::MemoryAllocateFlagsInfo address_flags {
-            .flags = vk::MemoryAllocateFlagBits::eDeviceAddress
-        };
-
-        m_memory = vk::raii::DeviceMemory(device.logical(), vk::MemoryAllocateInfo{
-            .pNext = wants_address ? &address_flags : nullptr,
-            .allocationSize = requirements.size,
-            .memoryTypeIndex = device.find_memory_type(requirements.memoryTypeBits, desc.memory)
-        });
+        m_memory = device.allocate_memory(requirements, desc.memory, wants_address);
         m_buffer.bindMemory(*m_memory, 0);
 
         if (desc.persistent_map) {
             m_mapped_memory = m_memory.mapMemory(0, desc.size);
         }
-        if (wants_address) {
+        if (wants_address == WantsDeviceAddress::YES) {
             m_device_address = device.logical().getBufferAddress({.buffer = *m_buffer});
         }
         if (desc.debug_name) {
-            device.logical().setDebugUtilsObjectNameEXT({
-                .objectType = vk::ObjectType::eBuffer,
-                .objectHandle = reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*m_buffer)),
-                .pObjectName = desc.debug_name
-            });
+            device.set_debug_name(
+                vk::ObjectType::eBuffer,
+                reinterpret_cast<uint64_t>(static_cast<VkBuffer>(*m_buffer)),
+                desc.debug_name
+                );
         }
     }
 } // flux

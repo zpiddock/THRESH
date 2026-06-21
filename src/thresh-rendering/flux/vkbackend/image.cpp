@@ -20,10 +20,7 @@ namespace flux {
         });
 
         const auto reqs = m_image.getMemoryRequirements();
-        m_memory = vk::raii::DeviceMemory(device.logical(), vk::MemoryAllocateInfo{
-            .allocationSize  = reqs.size,
-            .memoryTypeIndex = device.find_memory_type(reqs.memoryTypeBits, desc.memory),
-        });
+        m_memory = device.allocate_memory(reqs, desc.memory, WantsDeviceAddress::NO);
         m_image.bindMemory(*m_memory, 0);
 
         m_view = vk::raii::ImageView(device.logical(), view_create_info());
@@ -32,11 +29,11 @@ namespace flux {
         // CommandBuffer::transition supplies the real initial layout.
 
         if (desc.debug_name) {
-            device.logical().setDebugUtilsObjectNameEXT({
-                .objectType   = vk::ObjectType::eImage,
-                .objectHandle = reinterpret_cast<uint64_t>(static_cast<VkImage>(*m_image)),
-                .pObjectName  = desc.debug_name,
-            });
+            device.set_debug_name(
+                vk::ObjectType::eImage,
+                reinterpret_cast<uint64_t>(static_cast<VkImage>(*m_image)),
+                desc.debug_name
+                );
         }
     }
 } // flux
