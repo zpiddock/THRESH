@@ -41,19 +41,19 @@ namespace thresh {
 
                     const auto [dx, dy] = input->get_relative_mouse_state();
 
-                    camera_controller.yaw -= helix::math::radians(dx * camera_controller.mouse_sensitivity);
-                    camera_controller.pitch -= helix::math::radians(dy * camera_controller.mouse_sensitivity);
+                    camera_controller.yaw -= helix::radians(dx * camera_controller.mouse_sensitivity);
+                    camera_controller.pitch -= helix::radians(dy * camera_controller.mouse_sensitivity);
 
-                    camera_controller.pitch = helix::math::clamp(camera_controller.pitch, helix::math::radians(-89.f), helix::math::radians(89.f));
+                    camera_controller.pitch = helix::clamp(camera_controller.pitch, helix::radians(-89.f), helix::radians(89.f));
 
-                    const auto q_yaw = helix::math::angleAxis(camera_controller.yaw, helix::float3(0.f, 1.f, 0.f));
-                    const auto q_pitch = helix::math::angleAxis(camera_controller.pitch, helix::float3(1.f, 0.f, 0.f));
+                    const auto q_yaw = helix::angleAxis(camera_controller.yaw, helix::float3(0.f, 1.f, 0.f));
+                    const auto q_pitch = helix::angleAxis(camera_controller.pitch, helix::float3(1.f, 0.f, 0.f));
 
                     transform.rotation = q_yaw * q_pitch;
 
                     // movement vectors
-                    const auto forward = helix::float3{-helix::math::sin(camera_controller.yaw), 0.f, -helix::math::cos(camera_controller.yaw)};
-                    const auto right = helix::float3{helix::math::cos(camera_controller.yaw), 0.f, -helix::math::sin(camera_controller.yaw)};
+                    const auto forward = helix::float3{-helix::sin(camera_controller.yaw), 0.f, -helix::cos(camera_controller.yaw)};
+                    const auto right = helix::float3{helix::cos(camera_controller.yaw), 0.f, -helix::sin(camera_controller.yaw)};
                     constexpr auto world_up = helix::float3{0.f, 1.f, 0.f};
 
                     helix::float3 wish{0.f};
@@ -78,8 +78,8 @@ namespace thresh {
                         wish -= world_up;
                     }
 
-                    if (helix::math::length(wish) > 0.0001f) {
-                        wish = helix::math::normalize(wish);
+                    if (helix::length(wish) > 0.0001f) {
+                        wish = helix::normalize(wish);
                         transform.position += wish * camera_controller.movement_speed * delta_time;
                     }
                 }
@@ -171,8 +171,8 @@ namespace thresh {
             helix::gpu::CameraData data{};
             constexpr auto identity = helix::float4x4{1.f};
 
-            data.view = helix::math::inverse(transform.transform);
-            data.projection = helix::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            data.view = helix::inverse(transform.transform);
+            data.projection = helix::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
 
             result = data;
         });
@@ -247,8 +247,8 @@ namespace thresh {
         .with<ActiveCamera>()
         .each([&](flecs::entity e, const WorldTransform& transform, const Camera& camera) {
             if (view_opt) return;
-            view_opt = helix::math::inverse(transform.transform);
-            auto proj = helix::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            view_opt = helix::inverse(transform.transform);
+            auto proj = helix::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
             proj_opt = proj;
             // Optional Y flip here if needed
             camera_pos_opt = helix::float3{transform.transform[3]};
@@ -264,14 +264,14 @@ namespace thresh {
         const float ndc_x = (2.0f * static_cast<float>(mouse_x) / static_cast<float>(viewport_w)) - 1.0f;
         const float ndc_y = 1.0f - (2.0f * static_cast<float>(mouse_y) / static_cast<float>(viewport_h));
 
-        const auto inv_vp = helix::math::inverse(*proj_opt * *view_opt);
+        const auto inv_vp = helix::inverse(*proj_opt * *view_opt);
         auto unproject = [&](float ndc_z) {
             const helix::float4 p = inv_vp * helix::float4{ndc_x, ndc_y, ndc_z, 1.0f};
             return helix::float3{p} / p.w;
         };
         const helix::float3 world_near = unproject(0.0f);  // Vulkan NDC z in [0,1]
         const helix::float3 world_far  = unproject(1.0f);
-        const helix::float3 ray_dir    = helix::math::normalize(world_far - world_near);
+        const helix::float3 ray_dir    = helix::normalize(world_far - world_near);
         const helix::float3 ray_origin = *camera_pos_opt;
 
         // Test against every entity with a WorldAABB. For each, also need the entity itself.

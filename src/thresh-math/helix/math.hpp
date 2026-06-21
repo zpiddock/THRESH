@@ -12,8 +12,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
-namespace helix::math {
+namespace helix {
 
+    // Functions
     using glm::translate;
     using glm::rotate;
     using glm::scale;
@@ -38,15 +39,12 @@ namespace helix::math {
     using glm::abs;
     using glm::value_ptr;
     using glm::decompose;
-}
 
-namespace helix::mathconstants {
+    // Constants
     using glm::pi;
     using glm::golden_ratio;
-}
 
-namespace helix {
-
+    // Types
     using float2 = glm::vec2;
     using float3 = glm::vec3;
     using float4 = glm::vec4;
@@ -118,8 +116,8 @@ namespace helix {
         const helix::float3 inv = helix::float3{1.0f} / rd;
         const helix::float3 t0  = (box.min - ro) * inv;
         const helix::float3 t1  = (box.max - ro) * inv;
-        const helix::float3 tsm = helix::math::min(t0, t1);
-        const helix::float3 tbg = helix::math::max(t0, t1);
+        const helix::float3 tsm = helix::min(t0, t1);
+        const helix::float3 tbg = helix::max(t0, t1);
         const float tmin = std::max({tsm.x, tsm.y, tsm.z, 0.0f});
         const float tmax = std::min({tbg.x, tbg.y, tbg.z});
         if (tmax < tmin) return std::nullopt;

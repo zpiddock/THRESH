@@ -19,7 +19,7 @@ struct ActiveCamera {};
 
 struct Camera {
 
-    float fov = helix::math::radians(90.0f);
+    float fov = helix::radians(90.0f);
     float near_plane = 0.1f;
     float far_plane = 100.0f;
 };
@@ -77,8 +77,8 @@ namespace helix::math {
 
     inline auto compose_local(const Transform& transform) -> helix::float4x4 {
         constexpr auto IDENTITY = helix::float4x4{1.f};
-        return helix::math::translate(IDENTITY, transform.position)
-            * helix::math::mat4_cast(transform.rotation)
-            * helix::math::scale(IDENTITY, transform.scale);
+        return helix::translate(IDENTITY, transform.position)
+            * helix::mat4_cast(transform.rotation)
+            * helix::scale(IDENTITY, transform.scale);
     }
 }

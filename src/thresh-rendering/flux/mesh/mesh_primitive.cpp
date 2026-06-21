@@ -69,7 +69,7 @@ auto helix::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
 
     MeshData mesh;
 
-    constexpr auto PI = helix::mathconstants::pi<float>();
+    constexpr auto PI = helix::pi<float>();
 
     mesh.vertices.reserve((stacks + 1) * (sectors + 1));
     mesh.indices.reserve(stacks * sectors * 6);

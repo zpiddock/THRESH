@@ -20,13 +20,13 @@ namespace {
             }
         }
 
-        const helix::float4x4 local = helix::math::inverse(parent_world) * new_world;
+        const helix::float4x4 local = helix::inverse(parent_world) * new_world;
 
         helix::float3 scale, skew, translation;
         helix::float4 perspective;
         helix::quat rotation;
 
-        helix::math::decompose(local, scale, rotation, translation, skew, perspective);
+        helix::decompose(local, scale, rotation, translation, skew, perspective);
 
         entity.set<Transform>({.position = translation, .rotation = rotation, .scale = scale});
     }
@@ -40,9 +40,9 @@ namespace {
         }
 
         auto& transform = entity.get_mut<Transform>();
-        ImGui::DragFloat3("Position", helix::math::value_ptr(transform.position), 0.05f);
-        ImGui::DragFloat4("Rotation", helix::math::value_ptr(transform.rotation), 0.01f); // Raw Quat
-        ImGui::DragFloat3("Scale", helix::math::value_ptr(transform.scale), 0.05f);
+        ImGui::DragFloat3("Position", helix::value_ptr(transform.position), 0.05f);
+        ImGui::DragFloat4("Rotation", helix::value_ptr(transform.rotation), 0.01f); // Raw Quat
+        ImGui::DragFloat3("Scale", helix::value_ptr(transform.scale), 0.05f);
     }
 
     auto draw_camera(flecs::entity entity) -> void {
@@ -53,9 +53,9 @@ namespace {
             return;
         }
         auto& camera = entity.get_mut<Camera>();
-        float fov_degrees = helix::math::degrees(camera.fov);
+        float fov_degrees = helix::degrees(camera.fov);
         if (ImGui::DragFloat("FOV (Degrees)", &fov_degrees, 0.1f, 1.f, 179.f)) {
-            camera.fov = helix::math::radians(fov_degrees);
+            camera.fov = helix::radians(fov_degrees);
         }
         ImGui::DragFloat("Near Plane", &camera.near_plane, 0.1f, 0.1f, 100.f);
         ImGui::DragFloat("Far Plane", &camera.far_plane, 0.1f, 0.1f, 10000.f);
@@ -69,7 +69,7 @@ namespace {
             return;
         }
         auto& light = entity.get_mut<AmbientLight>();
-        ImGui::ColorEdit3("Colour", helix::math::value_ptr(light.colour));
+        ImGui::ColorEdit3("Colour", helix::value_ptr(light.colour));
         ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.f, 10.f);
     }
 
@@ -190,11 +190,11 @@ namespace thresh {
         helix::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
 
         ImGuizmo::Manipulate(
-            helix::math::value_ptr(cam->view),
-            helix::math::value_ptr(cam->projection),
+            helix::value_ptr(cam->view),
+            helix::value_ptr(cam->projection),
             m_gizmo_operation,
             m_gizmo_mode,
-            helix::math::value_ptr(world));
+            helix::value_ptr(world));
 
         write_to_local(m_selected_entity, world);
     }
