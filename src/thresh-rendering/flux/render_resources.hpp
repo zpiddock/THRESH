@@ -5,7 +5,7 @@
 #pragma once
 
 #include <vulkan/vulkan_raii.hpp>
-#include "flux/math.hpp"
+#include "helix/math.hpp"
 #include "vkbackend/buffer.hpp"
 
 namespace flux {

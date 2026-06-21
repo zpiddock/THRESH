@@ -4,7 +4,7 @@
 
 #pragma once
 #include <vulkan/vulkan_raii.hpp>
-#include "math.hpp"
+#include "helix/math.hpp"
 #include "vkbackend/descriptor_handle.hpp"
 
 namespace flux::gpu {

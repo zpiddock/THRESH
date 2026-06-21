@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "flux/math.hpp"
+#include "helix/math.hpp"
 #include "thresh/thresh.hpp"
 
 struct SceneRoot{};

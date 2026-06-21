@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "gpu_data.hpp"
-#include "math.hpp"
+#include "helix/math.hpp"
 
 namespace flux {
 

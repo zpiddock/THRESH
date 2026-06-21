@@ -14,7 +14,6 @@ add_library(Flux STATIC
         flux/vkbackend/vulkan_swapchain.cpp
         flux/vkbackend/vulkan_swapchain.hpp
         flux/vkbackend/vulkan_pipeline.cpp
-        flux/math.hpp
         flux/mesh/mesh_primitive.hpp
         flux/render_resources.hpp
         flux/mesh/mesh_primitive.cpp
@@ -41,11 +40,10 @@ add_library(Flux STATIC
 target_link_libraries(Flux PUBLIC
         Substratum
         Horizon
+        Helix
         Vulkan::Vulkan
         stb
         imgui
-        PRIVATE
-        glm
 )
 target_compile_definitions(Flux PUBLIC
         VULKAN_HPP_NO_STRUCT_CONSTRUCTORS

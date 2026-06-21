@@ -10,7 +10,7 @@
 #include <stb_image.h>
 
 #include "flux/graphics_types.hpp"
-#include "flux/math.hpp"
+#include "helix/math.hpp"
 #include "SDL3/SDL_vulkan.h"
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
