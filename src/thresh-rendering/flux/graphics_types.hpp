@@ -8,7 +8,7 @@
 #include "gpu_data.hpp"
 #include "helix/math.hpp"
 
-namespace helix {
+namespace flux {
 
     struct TextureData {
 

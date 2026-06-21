@@ -28,7 +28,7 @@ namespace demo {
 
         if (scene) {
 
-            auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(helix::primitives::box());
+            auto box_mesh = thresh::Engine::get_instance().graphics()->register_mesh(flux::primitives::box());
             auto default_material = thresh::Engine::get_instance().assets().load_material("material/default.mat");
 
             // Manually creates a child of "Test Cube" with propagated world transform, 2 units above world transform of parent

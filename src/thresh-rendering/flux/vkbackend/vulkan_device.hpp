@@ -7,7 +7,7 @@
 
 #include "command_buffer.hpp"
 
-namespace helix {
+namespace flux {
     class Buffer;
     class Image;
 
@@ -18,14 +18,14 @@ namespace helix {
 
             auto find_memory_type(uint32_t type_filter, vk::MemoryPropertyFlags properties) -> uint32_t;
 
-            auto upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage, const char* debug_name = nullptr) -> helix::Buffer;
+            auto upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage, const char* debug_name = nullptr) -> flux::Buffer;
 
             auto upload_image(std::span<const std::byte> pixels, vk::Extent2D extent, vk::Format format,
                               const char*                name) -> Image;
 
-            auto begin_single_time_commands() -> helix::CommandBuffer;
+            auto begin_single_time_commands() -> flux::CommandBuffer;
 
-            auto end_single_time_commands(helix::CommandBuffer& command_buffer) -> void;
+            auto end_single_time_commands(flux::CommandBuffer& command_buffer) -> void;
 
             auto create_image_view(const vk::Image& image, vk::Format format, vk::ImageAspectFlags flags) -> vk::raii::ImageView;
 

@@ -7,7 +7,7 @@
 #include "buffer.hpp"
 #include "image.hpp"
 
-namespace helix {
+namespace flux {
 
     auto CommandBuffer::emit_barrier(vk::Image image, vk::ImageAspectFlags aspect, const ImageState& src,
         const ImageState& dst) {

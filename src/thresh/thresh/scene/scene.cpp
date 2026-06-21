@@ -111,7 +111,7 @@ namespace thresh {
                 helix::float4x4 world = parent_world;
                 if (const auto* t = e.try_get<Transform>()) {
 
-                    world = parent_world * helix::math::compose_local(*t);
+                    world = parent_world * flux::math::compose_local(*t);
                     e.set<WorldTransform>({world});
                 }
                 e.children([&](flecs::entity child) {
@@ -158,9 +158,9 @@ namespace thresh {
         }
     }
 
-    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<helix::gpu::CameraData> {
+    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::gpu::CameraData> {
 
-        std::optional<helix::gpu::CameraData> result = std::nullopt;
+        std::optional<flux::gpu::CameraData> result = std::nullopt;
 
         const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
@@ -168,7 +168,7 @@ namespace thresh {
 
             if (result) return; // First result wins
 
-            helix::gpu::CameraData data{};
+            flux::gpu::CameraData data{};
             constexpr auto identity = helix::float4x4{1.f};
 
             data.view = helix::inverse(transform.transform);
@@ -180,8 +180,8 @@ namespace thresh {
         return result;
     }
 
-    auto Scene::compute_active_light_data() -> std::optional<helix::gpu::LightData> {
-        auto result = helix::gpu::LightData{};
+    auto Scene::compute_active_light_data() -> std::optional<flux::gpu::LightData> {
+        auto result = flux::gpu::LightData{};
 
         bool ambient_light_found = false;
         m_world.query_builder<const AmbientLight>().build().each([&](flecs::entity entity, const AmbientLight& light) {
@@ -196,7 +196,7 @@ namespace thresh {
         int light_count = 0;
         m_world.query_builder<const WorldTransform, const Light>().build()
         .each([&](flecs::entity entity, const WorldTransform& transform, const Light& light) {
-            if (light_count >= helix::gpu::MAX_POINT_LIGHTS) {
+            if (light_count >= flux::gpu::MAX_POINT_LIGHTS) {
                 SUB_WARN("Too many point lights, ignoring all unregistered lights");
                 return;
             }

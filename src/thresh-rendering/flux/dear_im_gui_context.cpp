@@ -8,7 +8,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 
-namespace helix {
+namespace flux {
     DearImGuiContext::~DearImGuiContext() {
     }
 
@@ -46,7 +46,7 @@ namespace helix {
         init_info.Queue = *vk_context.m_vk_device.graphics_queue();
         init_info.DescriptorPool = VK_NULL_HANDLE;          // ImGui manages its own pool
         init_info.DescriptorPoolSize = 64;                  // headroom for ImGui_ImplVulkan_AddTexture calls later
-        init_info.MinImageCount = VulkanContext::MAX_FRAMES_IN_FLIGHT;
+        init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
         init_info.ImageCount = vk_context.m_vk_swapchain.swapchain_images().size();
         init_info.UseDynamicRendering = true;
         init_info.PipelineInfoMain = pipeline_info;
@@ -81,7 +81,7 @@ namespace helix {
         ImGui::EndFrame();
     }
 
-    auto DearImGuiContext::record_draw_data(helix::CommandBuffer& cmd) -> void {
+    auto DearImGuiContext::record_draw_data(flux::CommandBuffer& cmd) -> void {
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd.raw());

@@ -73,7 +73,7 @@ struct WorldAABB {
     helix::AABB aabb;
 };
 
-namespace helix::math {
+namespace flux::math {
 
     inline auto compose_local(const Transform& transform) -> helix::float4x4 {
         constexpr auto IDENTITY = helix::float4x4{1.f};

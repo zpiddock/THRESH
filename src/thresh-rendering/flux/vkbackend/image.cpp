@@ -4,7 +4,7 @@
 
 #include "image.hpp"
 
-namespace helix {
+namespace flux {
     Image::Image(ThreshVkDevice& device, const Desc& desc) : m_desc(desc) {
 
         m_image = vk::raii::Image(device.logical(), vk::ImageCreateInfo{

@@ -7,7 +7,7 @@
 #include "substratum/log.hpp"
 #include "vulkan_device.hpp"
 
-namespace helix {
+namespace flux {
     DescriptorHeap::DescriptorHeap(ThreshVkDevice& device, Kind kind, uint32_t capacity) :
     m_device(device),
     m_kind(kind),

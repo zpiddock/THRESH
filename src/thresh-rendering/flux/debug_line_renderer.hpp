@@ -6,7 +6,7 @@
 #include "vkbackend/buffer.hpp"
 #include "vkbackend/vulkan_context.hpp"
 
-namespace helix {
+namespace flux {
 
     struct DebugLineVertex {
         helix::float3 position;
@@ -24,12 +24,12 @@ namespace helix {
 
             auto submit_line(helix::float3 p0, helix::float3 p1, helix::float3 colour = helix::float3{1.f}) -> void;
 
-            auto submit_aabb(const AABB& aabb, helix::float3 colour = helix::float3{1.f}) -> void;
+            auto submit_aabb(const helix::AABB& aabb, helix::float3 colour = helix::float3{1.f}) -> void;
 
             auto clear() -> void;
 
             auto record_frame(
-                helix::CommandBuffer& cmd,
+                CommandBuffer& cmd,
                 const helix::float4x4& view_proj,
                 vk::ImageView colour_view,
                 vk::ImageView depth_view,

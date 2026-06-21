@@ -6,7 +6,7 @@
 
 #include "vulkan/vulkan_raii.hpp"
 
-namespace helix {
+namespace flux {
     class ThreshVkDevice;
 
     class Buffer {

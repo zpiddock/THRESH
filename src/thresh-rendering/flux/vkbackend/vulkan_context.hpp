@@ -17,7 +17,7 @@
 #include "flux/render_resources.hpp"
 #include "horizon/window.hpp"
 
-namespace helix {
+namespace flux {
 
     class VulkanContext {
         public:
@@ -72,10 +72,10 @@ namespace helix {
             uint32_t                                      m_frame_index = 0;
 
             // Depth Images
-            helix::Image m_depth_image;
+            flux::Image m_depth_image;
 
             // Offscreen Images
-            std::vector<helix::Image> m_offscreen_images;
+            std::vector<flux::Image> m_offscreen_images;
             vk::Format m_offscreen_format = vk::Format::eUndefined;
 
             // Materials

@@ -4,7 +4,7 @@
 
 #include "debug_line_renderer.hpp"
 
-namespace helix {
+namespace flux {
     DebugLineRenderer::DebugLineRenderer(VulkanContext& ctx) : m_context(ctx){
 
         // --- Vertex layout for {float3 pos, float3 colour} ---
@@ -36,7 +36,7 @@ namespace helix {
 
         constexpr auto buffer_size = sizeof(DebugLineVertex) * MAX_VERTICES;
         auto& device = ctx.m_vk_device;
-        for (int i = 0; i < VulkanContext::MAX_FRAMES_IN_FLIGHT; ++i) {
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
             m_vertex_buffers[i] = Buffer(device, {
                 .size           = buffer_size,
                 .usage          = vk::BufferUsageFlagBits::eVertexBuffer,
@@ -58,7 +58,7 @@ namespace helix {
         m_pending.push_back({p1, colour});
     }
 
-    auto DebugLineRenderer::submit_aabb(const AABB& aabb, helix::float3 colour) -> void {
+    auto DebugLineRenderer::submit_aabb(const helix::AABB& aabb, helix::float3 colour) -> void {
 
         const helix::float3 verts[8] = {
             {aabb.min.x, aabb.min.y, aabb.min.z}, {aabb.max.x, aabb.min.y, aabb.min.z},
@@ -80,7 +80,7 @@ namespace helix {
         m_pending.clear();
     }
 
-    auto DebugLineRenderer::record_frame(helix::CommandBuffer& cmd, const helix::float4x4& view_proj,
+    auto DebugLineRenderer::record_frame(CommandBuffer& cmd, const helix::float4x4& view_proj,
         vk::ImageView colour_view, vk::ImageView depth_view, vk::Extent2D extents) -> void {
 
         if (m_pending.empty()) {

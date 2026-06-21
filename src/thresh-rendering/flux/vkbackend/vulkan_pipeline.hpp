@@ -9,7 +9,7 @@
 #include "vulkan_instance.hpp"
 #include "vulkan_swapchain.hpp"
 
-namespace helix {
+namespace flux {
 
     enum class BindingModel {
         DESCRIPTOR_HEAP,

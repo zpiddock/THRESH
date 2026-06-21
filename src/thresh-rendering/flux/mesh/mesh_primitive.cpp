@@ -4,7 +4,7 @@
 
 #include "mesh_primitive.hpp"
 
-auto helix::primitives::box(const helix::float3 extents) -> MeshData {
+auto flux::primitives::box(const helix::float3 extents) -> MeshData {
 
     MeshData mesh;
 
@@ -64,7 +64,7 @@ auto helix::primitives::box(const helix::float3 extents) -> MeshData {
     return mesh;
 }
 
-auto helix::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
+auto flux::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
     -> MeshData {
 
     MeshData mesh;

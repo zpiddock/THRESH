@@ -5,7 +5,7 @@
 #pragma once
 #include <cstdint>
 
-namespace helix::gpu {
+namespace flux::gpu {
     struct alignas(8) DescriptorHandle {
         std::uint32_t index;
         std::uint32_t _zero; // Slang's uint->handle constructor zero-extends; keep zero.

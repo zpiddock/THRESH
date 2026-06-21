@@ -9,15 +9,17 @@
 #include "command_buffer.hpp"
 #include "flux/gpu_data.hpp"
 
-namespace helix {
+namespace flux {
     class ThreshVkDevice;
+
+    inline constexpr auto MAX_FRAMES_IN_FLIGHT = 2;
 
     struct FrameContext {
 
         static constexpr vk::DeviceSize CAMERA_OFFSET = 0;
-        static constexpr vk::DeviceSize LIGHT_DATA_OFFSET = (sizeof(helix::gpu::CameraData) + 15) & ~vk::DeviceSize{15};
+        static constexpr vk::DeviceSize LIGHT_DATA_OFFSET = (sizeof(flux::gpu::CameraData) + 15) & ~vk::DeviceSize{15};
 
-        helix::Buffer uniforms;
+        flux::Buffer uniforms;
         vk::DeviceAddress camera_address;
         vk::DeviceAddress light_data_address;
 

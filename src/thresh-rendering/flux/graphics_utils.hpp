@@ -11,7 +11,7 @@
 #include "vkbackend/vulkan_context.hpp"
 
 
-namespace helix {
+namespace flux {
 
     class GraphicsUtils {
         public:
@@ -88,13 +88,13 @@ namespace helix {
             }
 
         private:
-            auto record_command_buffers(helix::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_command_buffers(flux::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_geometry_commands(helix::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_geometry_commands(flux::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_composite_commands(helix::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_composite_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
-            auto record_imgui_commands(helix::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_imgui_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
             std::unique_ptr<VulkanContext> m_context;
 

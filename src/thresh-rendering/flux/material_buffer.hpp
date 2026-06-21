@@ -6,7 +6,7 @@
 #include "gpu_data.hpp"
 #include "vkbackend/buffer.hpp"
 
-namespace helix {
+namespace flux {
     class ThreshVkDevice;
 
     class MaterialBuffer {
@@ -15,7 +15,7 @@ namespace helix {
             MaterialBuffer() = default;
             MaterialBuffer(ThreshVkDevice& device, std::uint32_t capacity);
 
-            auto register_material(const helix::gpu::MaterialData& data) -> std::uint32_t;
+            auto register_material(const flux::gpu::MaterialData& data) -> std::uint32_t;
 
             [[nodiscard]] auto device_address() const -> vk::DeviceAddress { return m_storage.device_address(); }
             [[nodiscard]] auto count() const -> std::uint32_t { return m_count; }

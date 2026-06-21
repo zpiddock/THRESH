@@ -7,7 +7,7 @@
 #include "flux/graphics_types.hpp"
 
 
-namespace helix {
+namespace flux {
 
     struct MeshData {
 

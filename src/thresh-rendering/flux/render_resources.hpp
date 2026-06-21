@@ -8,17 +8,17 @@
 #include "helix/math.hpp"
 #include "vkbackend/buffer.hpp"
 
-namespace helix {
+namespace flux {
     struct MeshResource {
 
-        helix::Buffer vertex;
-        helix::Buffer index;
+        Buffer vertex;
+        Buffer index;
         uint32_t index_count{0};
         helix::AABB local_aabb{};
     };
 
     struct TextureResource {
-        helix::Image image{};
+        flux::Image image{};
     };
 
     struct MaterialResource {

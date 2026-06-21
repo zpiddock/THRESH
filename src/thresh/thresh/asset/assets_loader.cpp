@@ -13,7 +13,7 @@
 
 namespace thresh {
 
-AssetsLoader::AssetsLoader(helix::GraphicsUtils &gfx) : m_graphics(gfx) {}
+AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
 
     auto AssetsLoader::load_texture(const std::string &path) -> uint32_t {
 
@@ -70,14 +70,14 @@ AssetsLoader::AssetsLoader(helix::GraphicsUtils &gfx) : m_graphics(gfx) {}
 
         uint32_t handle = 0;
 
-        if (path == "primitive://box") handle = m_graphics.register_mesh(helix::primitives::box());
-        else if (path == "primitive://sphere") handle = m_graphics.register_mesh(helix::primitives::sphere());
+        if (path == "primitive://box") handle = m_graphics.register_mesh(flux::primitives::box());
+        else if (path == "primitive://sphere") handle = m_graphics.register_mesh(flux::primitives::sphere());
         else if (path.starts_with("primitive://")) {
             SUB_WARN("Unknown mesh primitive: '{}', defaulting to box primitive", path);
-            handle = m_graphics.register_mesh(helix::primitives::box());
+            handle = m_graphics.register_mesh(flux::primitives::box());
         } else {
             SUB_WARN("Model loading not yet implemented, defaulting to box primitive");
-            handle = m_graphics.register_mesh(helix::primitives::box());
+            handle = m_graphics.register_mesh(flux::primitives::box());
         }
 
         m_mesh_cache.insert(std::make_pair(path, handle));

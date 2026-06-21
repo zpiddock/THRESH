@@ -7,7 +7,7 @@
 #include "helix/math.hpp"
 #include "vkbackend/descriptor_handle.hpp"
 
-namespace helix::gpu {
+namespace flux::gpu {
 
     inline constexpr auto MAX_POINT_LIGHTS = 4;
 
@@ -82,8 +82,8 @@ namespace helix::gpu {
     inline constexpr uint32_t DRAW_PUSH_OFFSET = sizeof(FramePushConstants);
 
     struct alignas(16) DrawPushConstants {
-        float4x4 model;
-        float4   colour_tint;
+        helix::float4x4 model;
+        helix::float4   colour_tint;
         uint32_t material_handle;
     };
     static_assert(sizeof(DrawPushConstants) == 96);
