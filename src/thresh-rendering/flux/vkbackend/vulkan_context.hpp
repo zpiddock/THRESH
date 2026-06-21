@@ -51,9 +51,6 @@ namespace flux {
                 return m_material_buffer;
             }
 
-            // const bits
-            constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
-
             ThreshVkInstance  m_vk_instance;
             ThreshVkDevice    m_vk_device;
             ThreshVkSwapchain m_vk_swapchain;

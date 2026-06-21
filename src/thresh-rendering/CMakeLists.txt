@@ -35,6 +35,7 @@ add_library(Flux STATIC
         flux/vkbackend/descriptor_handle.hpp
         flux/material_buffer.cpp
         flux/material_buffer.hpp
+        flux/render_config.hpp
 )
 
 target_link_libraries(Flux PUBLIC
