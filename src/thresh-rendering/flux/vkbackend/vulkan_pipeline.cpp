@@ -8,7 +8,7 @@
 #include "substratum/filesystem/vfs.hpp"
 #include "substratum/log.hpp"
 
-namespace flux {
+namespace helix {
     ThreshVkPipeline::ThreshVkPipeline(const PipelineContext& context, ThreshVkDevice& device) {
         create_pipeline(context, device);
     }

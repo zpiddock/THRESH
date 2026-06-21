@@ -4,7 +4,7 @@
 
 #include "debug_line_renderer.hpp"
 
-namespace flux {
+namespace helix {
     DebugLineRenderer::DebugLineRenderer(VulkanContext& ctx) : m_context(ctx){
 
         // --- Vertex layout for {float3 pos, float3 colour} ---
@@ -49,7 +49,7 @@ namespace flux {
         m_pending.reserve(MAX_VERTICES);
     }
 
-    auto DebugLineRenderer::submit_line(const flux::float3 p0, const flux::float3 p1, const flux::float3 colour) -> void {
+    auto DebugLineRenderer::submit_line(const helix::float3 p0, const helix::float3 p1, const helix::float3 colour) -> void {
 
         if (m_pending.size() + 2 > MAX_VERTICES) {
             return; // silently drop any overflow lines
@@ -58,9 +58,9 @@ namespace flux {
         m_pending.push_back({p1, colour});
     }
 
-    auto DebugLineRenderer::submit_aabb(const AABB& aabb, flux::float3 colour) -> void {
+    auto DebugLineRenderer::submit_aabb(const AABB& aabb, helix::float3 colour) -> void {
 
-        const flux::float3 verts[8] = {
+        const helix::float3 verts[8] = {
             {aabb.min.x, aabb.min.y, aabb.min.z}, {aabb.max.x, aabb.min.y, aabb.min.z},
             {aabb.max.x, aabb.max.y, aabb.min.z}, {aabb.min.x, aabb.max.y, aabb.min.z},
             {aabb.min.x, aabb.min.y, aabb.max.z}, {aabb.max.x, aabb.min.y, aabb.max.z},
@@ -80,7 +80,7 @@ namespace flux {
         m_pending.clear();
     }
 
-    auto DebugLineRenderer::record_frame(flux::CommandBuffer& cmd, const flux::float4x4& view_proj,
+    auto DebugLineRenderer::record_frame(helix::CommandBuffer& cmd, const helix::float4x4& view_proj,
         vk::ImageView colour_view, vk::ImageView depth_view, vk::Extent2D extents) -> void {
 
         if (m_pending.empty()) {

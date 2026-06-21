@@ -8,7 +8,7 @@
 
 #include "buffer.hpp"
 
-namespace flux {
+namespace helix {
 
     class ThreshVkDevice;
     // Strong index type. Value == the index DescriptorHandle<T> consumes in shaders,

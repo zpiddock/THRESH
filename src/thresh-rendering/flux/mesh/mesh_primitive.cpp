@@ -4,7 +4,7 @@
 
 #include "mesh_primitive.hpp"
 
-auto flux::primitives::box(const flux::float3 extents) -> MeshData {
+auto helix::primitives::box(const helix::float3 extents) -> MeshData {
 
     MeshData mesh;
 
@@ -64,12 +64,12 @@ auto flux::primitives::box(const flux::float3 extents) -> MeshData {
     return mesh;
 }
 
-auto flux::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
+auto helix::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
     -> MeshData {
 
     MeshData mesh;
 
-    constexpr auto PI = flux::mathconstants::pi<float>();
+    constexpr auto PI = helix::mathconstants::pi<float>();
 
     mesh.vertices.reserve((stacks + 1) * (sectors + 1));
     mesh.indices.reserve(stacks * sectors * 6);
@@ -88,17 +88,17 @@ auto flux::primitives::sphere(float extent, uint32_t sectors, uint32_t stacks)
         for (std::uint32_t j = 0; j <= sectors; ++j) {
             const float sector_angle = static_cast<float>(j) * sector_step; // 0 .. 2pi
 
-            const flux::float3 position {
+            const helix::float3 position {
                 xy * std::cos(sector_angle),
                 z,
                 xy * std::sin(sector_angle),
             };
-            const flux::float3 normal {
+            const helix::float3 normal {
                 position.x * inv_radius,
                 position.y * inv_radius,
                 position.z * inv_radius,
             };
-            const flux::float2 uv {
+            const helix::float2 uv {
                 static_cast<float>(j) / static_cast<float>(sectors),
                 static_cast<float>(i) / static_cast<float>(stacks),
             };

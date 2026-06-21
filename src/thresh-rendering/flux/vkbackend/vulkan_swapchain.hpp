@@ -10,7 +10,7 @@
 #include "vulkan_instance.hpp"
 #include "horizon/window.hpp"
 
-namespace flux {
+namespace helix {
     class ThreshVkSwapchain {
 
         public:

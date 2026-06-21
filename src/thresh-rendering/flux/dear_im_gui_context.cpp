@@ -8,7 +8,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 
-namespace flux {
+namespace helix {
     DearImGuiContext::~DearImGuiContext() {
     }
 
@@ -81,7 +81,7 @@ namespace flux {
         ImGui::EndFrame();
     }
 
-    auto DearImGuiContext::record_draw_data(flux::CommandBuffer& cmd) -> void {
+    auto DearImGuiContext::record_draw_data(helix::CommandBuffer& cmd) -> void {
 
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), *cmd.raw());

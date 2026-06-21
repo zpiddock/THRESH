@@ -41,22 +41,22 @@ namespace thresh {
 
                     const auto [dx, dy] = input->get_relative_mouse_state();
 
-                    camera_controller.yaw -= flux::math::radians(dx * camera_controller.mouse_sensitivity);
-                    camera_controller.pitch -= flux::math::radians(dy * camera_controller.mouse_sensitivity);
+                    camera_controller.yaw -= helix::math::radians(dx * camera_controller.mouse_sensitivity);
+                    camera_controller.pitch -= helix::math::radians(dy * camera_controller.mouse_sensitivity);
 
-                    camera_controller.pitch = flux::math::clamp(camera_controller.pitch, flux::math::radians(-89.f), flux::math::radians(89.f));
+                    camera_controller.pitch = helix::math::clamp(camera_controller.pitch, helix::math::radians(-89.f), helix::math::radians(89.f));
 
-                    const auto q_yaw = flux::math::angleAxis(camera_controller.yaw, flux::float3(0.f, 1.f, 0.f));
-                    const auto q_pitch = flux::math::angleAxis(camera_controller.pitch, flux::float3(1.f, 0.f, 0.f));
+                    const auto q_yaw = helix::math::angleAxis(camera_controller.yaw, helix::float3(0.f, 1.f, 0.f));
+                    const auto q_pitch = helix::math::angleAxis(camera_controller.pitch, helix::float3(1.f, 0.f, 0.f));
 
                     transform.rotation = q_yaw * q_pitch;
 
                     // movement vectors
-                    const auto forward = flux::float3{-flux::math::sin(camera_controller.yaw), 0.f, -flux::math::cos(camera_controller.yaw)};
-                    const auto right = flux::float3{flux::math::cos(camera_controller.yaw), 0.f, -flux::math::sin(camera_controller.yaw)};
-                    constexpr auto world_up = flux::float3{0.f, 1.f, 0.f};
+                    const auto forward = helix::float3{-helix::math::sin(camera_controller.yaw), 0.f, -helix::math::cos(camera_controller.yaw)};
+                    const auto right = helix::float3{helix::math::cos(camera_controller.yaw), 0.f, -helix::math::sin(camera_controller.yaw)};
+                    constexpr auto world_up = helix::float3{0.f, 1.f, 0.f};
 
-                    flux::float3 wish{0.f};
+                    helix::float3 wish{0.f};
 
                     if (input->is_key_held(SDL_SCANCODE_W)) {
 
@@ -78,8 +78,8 @@ namespace thresh {
                         wish -= world_up;
                     }
 
-                    if (flux::math::length(wish) > 0.0001f) {
-                        wish = flux::math::normalize(wish);
+                    if (helix::math::length(wish) > 0.0001f) {
+                        wish = helix::math::normalize(wish);
                         transform.position += wish * camera_controller.movement_speed * delta_time;
                     }
                 }
@@ -98,7 +98,7 @@ namespace thresh {
 
                 graphics->submit_draw_command({
                     .model           = transform.transform,
-                    .base_colour     = flux::float4(1.f),
+                    .base_colour     = helix::float4(1.f),
                     .mesh_handle     = mesh.handle,
                     .material_handle = mesh.material_handle,
                 });
@@ -107,11 +107,11 @@ namespace thresh {
 
         m_world.system("PropogateWorldTransform").kind(flecs::PostUpdate)
         .run([this](flecs::iter& it) {
-            auto walk  = [] (this auto& self, flecs::entity e, const flux::float4x4& parent_world) -> void {
-                flux::float4x4 world = parent_world;
+            auto walk  = [] (this auto& self, flecs::entity e, const helix::float4x4& parent_world) -> void {
+                helix::float4x4 world = parent_world;
                 if (const auto* t = e.try_get<Transform>()) {
 
-                    world = parent_world * flux::math::compose_local(*t);
+                    world = parent_world * helix::math::compose_local(*t);
                     e.set<WorldTransform>({world});
                 }
                 e.children([&](flecs::entity child) {
@@ -119,19 +119,19 @@ namespace thresh {
                 });
             };
 
-            walk(m_scene_root, flux::float4x4{1.f});
+            walk(m_scene_root, helix::float4x4{1.f});
         });
 
         m_world.system("ComputeWorldAABB").kind(flecs::PostUpdate)
         .run([this](flecs::iter& it) {
 
             auto* gfx = Engine::get_instance().graphics();
-            auto fold = [&](this auto& self, flecs::entity e) -> flux::AABB {
-                flux::AABB aabb{};
+            auto fold = [&](this auto& self, flecs::entity e) -> helix::AABB {
+                helix::AABB aabb{};
                 if (const auto* mesh = e.try_get<Mesh>()) {
                     if (const auto* mesh_handle = gfx->get_mesh_resource(mesh->handle)) {
                         if (const auto* world_transform = e.try_get<WorldTransform>()) {
-                            aabb.expand(flux::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
+                            aabb.expand(helix::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
                         }
                     }
                 }
@@ -158,9 +158,9 @@ namespace thresh {
         }
     }
 
-    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<flux::gpu::CameraData> {
+    auto Scene::compute_active_camera_data(const float aspect) -> std::optional<helix::gpu::CameraData> {
 
-        std::optional<flux::gpu::CameraData> result = std::nullopt;
+        std::optional<helix::gpu::CameraData> result = std::nullopt;
 
         const auto camera_query = m_world.query_builder<WorldTransform, Camera>().with<ActiveCamera>().build();
 
@@ -168,11 +168,11 @@ namespace thresh {
 
             if (result) return; // First result wins
 
-            flux::gpu::CameraData data{};
-            constexpr auto identity = flux::float4x4{1.f};
+            helix::gpu::CameraData data{};
+            constexpr auto identity = helix::float4x4{1.f};
 
-            data.view = flux::math::inverse(transform.transform);
-            data.projection = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            data.view = helix::math::inverse(transform.transform);
+            data.projection = helix::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
 
             result = data;
         });
@@ -180,8 +180,8 @@ namespace thresh {
         return result;
     }
 
-    auto Scene::compute_active_light_data() -> std::optional<flux::gpu::LightData> {
-        auto result = flux::gpu::LightData{};
+    auto Scene::compute_active_light_data() -> std::optional<helix::gpu::LightData> {
+        auto result = helix::gpu::LightData{};
 
         bool ambient_light_found = false;
         m_world.query_builder<const AmbientLight>().build().each([&](flecs::entity entity, const AmbientLight& light) {
@@ -189,19 +189,19 @@ namespace thresh {
                 SUB_WARN("Multiple ambient lights found, ignoring all but the first");
                 return;
             }
-            result.ambient = flux::float4(light.colour, light.intensity);
+            result.ambient = helix::float4(light.colour, light.intensity);
             ambient_light_found = true;
         });
 
         int light_count = 0;
         m_world.query_builder<const WorldTransform, const Light>().build()
         .each([&](flecs::entity entity, const WorldTransform& transform, const Light& light) {
-            if (light_count >= flux::gpu::MAX_POINT_LIGHTS) {
+            if (light_count >= helix::gpu::MAX_POINT_LIGHTS) {
                 SUB_WARN("Too many point lights, ignoring all unregistered lights");
                 return;
             }
             result.lights[light_count].position = transform.transform[3];
-            result.lights[light_count].colour = flux::float4(light.colour, light.intensity);
+            result.lights[light_count].colour = helix::float4(light.colour, light.intensity);
             light_count++;
         });
         result.num_lights = light_count;
@@ -240,18 +240,18 @@ namespace thresh {
 
         const float aspect = static_cast<float>(viewport_w) / static_cast<float>(viewport_h);
 
-        std::optional<flux::float4x4> view_opt, proj_opt;
-        std::optional<flux::float3> camera_pos_opt;
+        std::optional<helix::float4x4> view_opt, proj_opt;
+        std::optional<helix::float3> camera_pos_opt;
 
         m_world.query_builder<const WorldTransform, const Camera>()
         .with<ActiveCamera>()
         .each([&](flecs::entity e, const WorldTransform& transform, const Camera& camera) {
             if (view_opt) return;
-            view_opt = flux::math::inverse(transform.transform);
-            auto proj = flux::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
+            view_opt = helix::math::inverse(transform.transform);
+            auto proj = helix::math::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
             proj_opt = proj;
             // Optional Y flip here if needed
-            camera_pos_opt = flux::float3{transform.transform[3]};
+            camera_pos_opt = helix::float3{transform.transform[3]};
         });
 
         if (!view_opt || !proj_opt || !camera_pos_opt) {
@@ -264,15 +264,15 @@ namespace thresh {
         const float ndc_x = (2.0f * static_cast<float>(mouse_x) / static_cast<float>(viewport_w)) - 1.0f;
         const float ndc_y = 1.0f - (2.0f * static_cast<float>(mouse_y) / static_cast<float>(viewport_h));
 
-        const auto inv_vp = flux::math::inverse(*proj_opt * *view_opt);
+        const auto inv_vp = helix::math::inverse(*proj_opt * *view_opt);
         auto unproject = [&](float ndc_z) {
-            const flux::float4 p = inv_vp * flux::float4{ndc_x, ndc_y, ndc_z, 1.0f};
-            return flux::float3{p} / p.w;
+            const helix::float4 p = inv_vp * helix::float4{ndc_x, ndc_y, ndc_z, 1.0f};
+            return helix::float3{p} / p.w;
         };
-        const flux::float3 world_near = unproject(0.0f);  // Vulkan NDC z in [0,1]
-        const flux::float3 world_far  = unproject(1.0f);
-        const flux::float3 ray_dir    = flux::math::normalize(world_far - world_near);
-        const flux::float3 ray_origin = *camera_pos_opt;
+        const helix::float3 world_near = unproject(0.0f);  // Vulkan NDC z in [0,1]
+        const helix::float3 world_far  = unproject(1.0f);
+        const helix::float3 ray_dir    = helix::math::normalize(world_far - world_near);
+        const helix::float3 ray_origin = *camera_pos_opt;
 
         // Test against every entity with a WorldAABB. For each, also need the entity itself.
         std::optional<PickHit> best;
@@ -280,7 +280,7 @@ namespace thresh {
         .with<Mesh>()
         .build().each(
             [&](flecs::entity e, const WorldAABB& wa) {
-                const auto hit = flux::ray_aabb_intersect(ray_origin, ray_dir, wa.aabb);
+                const auto hit = helix::ray_aabb_intersect(ray_origin, ray_dir, wa.aabb);
                 if (!hit) return;
                 if (!best || *hit < best->flags) {
                     best = PickHit{e, *hit};

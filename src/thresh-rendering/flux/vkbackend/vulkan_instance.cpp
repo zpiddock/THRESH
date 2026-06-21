@@ -11,7 +11,7 @@
 #include "vk_structs.hpp"
 #include "substratum/log.hpp"
 
-namespace flux {
+namespace helix {
     ThreshVkInstance::ThreshVkInstance(const VulkanInstanceContext& ctx, const thresh::Window& window) {
 
         create_instance(ctx);

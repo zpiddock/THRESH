@@ -15,7 +15,7 @@
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
 
-namespace flux {
+namespace helix {
 
     VulkanContext::VulkanContext(const VulkanInstanceContext& ctx, const thresh::Window& window) :
     m_vk_instance(ctx, window),
@@ -50,7 +50,7 @@ namespace flux {
 
         vk::Format format = m_vk_device.find_depth_format();
 
-        m_depth_image = flux::Image(m_vk_device, {
+        m_depth_image = helix::Image(m_vk_device, {
             .extent     = m_vk_swapchain.swapchain_extent(),
             .format     = format,
             .usage      = vk::ImageUsageFlagBits::eDepthStencilAttachment,
@@ -102,7 +102,7 @@ namespace flux {
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-            auto image = flux::Image(m_vk_device, {
+            auto image = helix::Image(m_vk_device, {
                 .extent = extent,
                 .format = m_offscreen_format,
                 .usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,

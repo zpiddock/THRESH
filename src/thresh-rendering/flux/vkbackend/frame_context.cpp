@@ -6,13 +6,13 @@
 
 #include "vulkan_device.hpp"
 
-namespace flux {
+namespace helix {
     auto FrameContext::create(ThreshVkDevice& device) -> FrameContext {
 
         FrameContext frame;
 
         frame.uniforms = Buffer(device, {
-            .size = LIGHT_DATA_OFFSET + sizeof(flux::gpu::LightData),
+            .size = LIGHT_DATA_OFFSET + sizeof(helix::gpu::LightData),
             .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress,
             .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
             .persistent_map = true,
@@ -27,7 +27,7 @@ namespace flux {
             .level       = vk::CommandBufferLevel::ePrimary,
             .commandBufferCount = 1
         };
-        frame.command_buffer = flux::CommandBuffer{std::move(device.logical().allocateCommandBuffers(alloc_info).front())};
+        frame.command_buffer = helix::CommandBuffer{std::move(device.logical().allocateCommandBuffers(alloc_info).front())};
 
         frame.present_complete = vk::raii::Semaphore(device.logical(), vk::SemaphoreCreateInfo{});
         frame.in_flight_fence  = vk::raii::Fence(device.logical(), vk::FenceCreateInfo{.flags = vk::FenceCreateFlagBits::eSignaled});

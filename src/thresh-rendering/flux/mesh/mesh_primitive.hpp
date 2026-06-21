@@ -7,7 +7,7 @@
 #include "flux/graphics_types.hpp"
 
 
-namespace flux {
+namespace helix {
 
     struct MeshData {
 
@@ -17,7 +17,7 @@ namespace flux {
 
     namespace primitives {
 
-        auto box(flux::float3 extents = {1.f, 1.f, 1.f}) -> MeshData;
+        auto box(helix::float3 extents = {1.f, 1.f, 1.f}) -> MeshData;
 
         auto sphere(float extent = 1.f, uint32_t sectors = 32, uint32_t stacks = 16) -> MeshData;
     }

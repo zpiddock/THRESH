@@ -7,7 +7,7 @@
 
 #include "vulkan_device.hpp"
 
-namespace flux {
+namespace helix {
 
     struct ImageState {
         vk::ImageLayout layout = vk::ImageLayout::eUndefined;

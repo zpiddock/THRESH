@@ -49,7 +49,7 @@ namespace thresh {
         m_window = std::make_unique<Window>(window_context);
 
         SUB_DEBUG("Initialising graphics subsystem");
-        m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
+        m_graphics_utils = std::make_unique<helix::GraphicsUtils>();
         m_graphics_utils->vulkan_init(*m_window);
         m_graphics_utils->register_dummy_texture();
         m_graphics_utils->imgui_init();
@@ -148,10 +148,10 @@ namespace thresh {
         return m_input_manager.get();
     }
 
-    auto Engine::graphics() -> flux::GraphicsUtils* {
+    auto Engine::graphics() -> helix::GraphicsUtils* {
 
         if (!m_graphics_utils) {
-            m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
+            m_graphics_utils = std::make_unique<helix::GraphicsUtils>();
         }
         return m_graphics_utils.get();
     }

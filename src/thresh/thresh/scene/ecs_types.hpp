@@ -10,16 +10,16 @@ struct SceneRoot{};
 
 struct Transform {
 
-    flux::float3 position = {};
-    flux::quat rotation = {};
-    flux::float3 scale = flux::float3(1.f);
+    helix::float3 position = {};
+    helix::quat rotation = {};
+    helix::float3 scale = helix::float3(1.f);
 };
 
 struct ActiveCamera {};
 
 struct Camera {
 
-    float fov = flux::math::radians(90.0f);
+    float fov = helix::math::radians(90.0f);
     float near_plane = 0.1f;
     float far_plane = 100.0f;
 };
@@ -36,13 +36,13 @@ struct CameraController {
 };
 
 struct AmbientLight {
-    flux::float3 colour = flux::float3(1.f);
+    helix::float3 colour = helix::float3(1.f);
     float intensity = 0.1f;
 };
 
 struct Light {
 
-    flux::float3 colour = flux::float3(1.f);
+    helix::float3 colour = helix::float3(1.f);
     float intensity = 1.f;
 };
 
@@ -66,19 +66,19 @@ struct Material {
 };
 
 struct WorldTransform {
-    flux::float4x4 transform{1.f};
+    helix::float4x4 transform{1.f};
 };
 
 struct WorldAABB {
-    flux::AABB aabb;
+    helix::AABB aabb;
 };
 
-namespace flux::math {
+namespace helix::math {
 
-    inline auto compose_local(const Transform& transform) -> flux::float4x4 {
-        constexpr auto IDENTITY = flux::float4x4{1.f};
-        return flux::math::translate(IDENTITY, transform.position)
-            * flux::math::mat4_cast(transform.rotation)
-            * flux::math::scale(IDENTITY, transform.scale);
+    inline auto compose_local(const Transform& transform) -> helix::float4x4 {
+        constexpr auto IDENTITY = helix::float4x4{1.f};
+        return helix::math::translate(IDENTITY, transform.position)
+            * helix::math::mat4_cast(transform.rotation)
+            * helix::math::scale(IDENTITY, transform.scale);
     }
 }

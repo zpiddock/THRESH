@@ -6,7 +6,7 @@
 
 #include "vulkan_device.hpp"
 
-namespace flux {
+namespace helix {
     Buffer::Buffer(ThreshVkDevice& device, const Desc& desc) : m_size(desc.size) {
 
         m_buffer = vk::raii::Buffer(device.logical(), vk::BufferCreateInfo{

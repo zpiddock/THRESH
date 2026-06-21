@@ -24,9 +24,9 @@ namespace thresh {
         register_math_components(world);
 
         world.component<Transform>()
-             .member<flux::float3>("position")
-             .member<flux::quat>("rotation")
-             .member<flux::float3>("scale");
+             .member<helix::float3>("position")
+             .member<helix::quat>("rotation")
+             .member<helix::float3>("scale");
 
         world.component<Camera>()
              .member<float>("fov")
@@ -41,11 +41,11 @@ namespace thresh {
              .member<bool>("movement_allowed");
 
         world.component<AmbientLight>()
-             .member<flux::float3>("colour")
+             .member<helix::float3>("colour")
              .member<float>("intensity");
 
         world.component<Light>()
-             .member<flux::float3>("colour")
+             .member<helix::float3>("colour")
              .member<float>("intensity");
 
         world.component<MeshSource>()
@@ -150,22 +150,22 @@ namespace thresh {
 
     auto SceneSerializer::register_math_components(flecs::world& world)
         -> void {
-        world.component<flux::float2>()
+        world.component<helix::float2>()
              .member<float>("x")
              .member<float>("y");
 
-        world.component<flux::float3>()
+        world.component<helix::float3>()
              .member<float>("x")
              .member<float>("y")
              .member<float>("z");
 
-        world.component<flux::float4>()
+        world.component<helix::float4>()
              .member<float>("x")
              .member<float>("y")
              .member<float>("z")
              .member<float>("w");
 
-        world.component<flux::quat>()
+        world.component<helix::quat>()
              .member<float>("x")
              .member<float>("y")
              .member<float>("z")

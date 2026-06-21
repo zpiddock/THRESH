@@ -51,7 +51,7 @@ class Engine {
 
         auto input() -> horizon::InputManager*;
 
-        auto graphics() -> flux::GraphicsUtils*;
+        auto graphics() -> helix::GraphicsUtils*;
 
         auto assets() -> AssetsLoader&;
 
@@ -69,7 +69,7 @@ class Engine {
 
         Application*                           m_application = nullptr;
         std::unique_ptr<Window>                m_window;
-        std::unique_ptr<flux::GraphicsUtils>   m_graphics_utils;
+        std::unique_ptr<helix::GraphicsUtils>   m_graphics_utils;
         std::unique_ptr<horizon::InputManager> m_input_manager;
         std::unique_ptr<AssetsLoader>          m_asset_manager;
 

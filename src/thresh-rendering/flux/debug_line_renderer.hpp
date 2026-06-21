@@ -6,15 +6,15 @@
 #include "vkbackend/buffer.hpp"
 #include "vkbackend/vulkan_context.hpp"
 
-namespace flux {
+namespace helix {
 
     struct DebugLineVertex {
-        flux::float3 position;
-        flux::float3 colour;
+        helix::float3 position;
+        helix::float3 colour;
     };
 
     struct DebugLinePushConstants {
-        flux::float4x4 view_proj;
+        helix::float4x4 view_proj;
     };
 
     class DebugLineRenderer {
@@ -22,15 +22,15 @@ namespace flux {
         public:
             explicit DebugLineRenderer(VulkanContext& ctx);
 
-            auto submit_line(flux::float3 p0, flux::float3 p1, flux::float3 colour = flux::float3{1.f}) -> void;
+            auto submit_line(helix::float3 p0, helix::float3 p1, helix::float3 colour = helix::float3{1.f}) -> void;
 
-            auto submit_aabb(const AABB& aabb, flux::float3 colour = flux::float3{1.f}) -> void;
+            auto submit_aabb(const AABB& aabb, helix::float3 colour = helix::float3{1.f}) -> void;
 
             auto clear() -> void;
 
             auto record_frame(
-                flux::CommandBuffer& cmd,
-                const flux::float4x4& view_proj,
+                helix::CommandBuffer& cmd,
+                const helix::float4x4& view_proj,
                 vk::ImageView colour_view,
                 vk::ImageView depth_view,
                 vk::Extent2D extents

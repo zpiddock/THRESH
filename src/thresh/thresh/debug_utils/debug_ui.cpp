@@ -11,22 +11,22 @@
 
 namespace {
 
-    auto write_to_local(flecs::entity entity, const flux::float4x4& new_world) -> void {
+    auto write_to_local(flecs::entity entity, const helix::float4x4& new_world) -> void {
 
-        flux::float4x4 parent_world{1.f};
+        helix::float4x4 parent_world{1.f};
         if (auto parent = entity.parent(); parent.is_valid()) {
             if (const auto* t = parent.try_get<WorldTransform>()) {
                 parent_world = t->transform;
             }
         }
 
-        const flux::float4x4 local = flux::math::inverse(parent_world) * new_world;
+        const helix::float4x4 local = helix::math::inverse(parent_world) * new_world;
 
-        flux::float3 scale, skew, translation;
-        flux::float4 perspective;
-        flux::quat rotation;
+        helix::float3 scale, skew, translation;
+        helix::float4 perspective;
+        helix::quat rotation;
 
-        flux::math::decompose(local, scale, rotation, translation, skew, perspective);
+        helix::math::decompose(local, scale, rotation, translation, skew, perspective);
 
         entity.set<Transform>({.position = translation, .rotation = rotation, .scale = scale});
     }
@@ -40,9 +40,9 @@ namespace {
         }
 
         auto& transform = entity.get_mut<Transform>();
-        ImGui::DragFloat3("Position", flux::math::value_ptr(transform.position), 0.05f);
-        ImGui::DragFloat4("Rotation", flux::math::value_ptr(transform.rotation), 0.01f); // Raw Quat
-        ImGui::DragFloat3("Scale", flux::math::value_ptr(transform.scale), 0.05f);
+        ImGui::DragFloat3("Position", helix::math::value_ptr(transform.position), 0.05f);
+        ImGui::DragFloat4("Rotation", helix::math::value_ptr(transform.rotation), 0.01f); // Raw Quat
+        ImGui::DragFloat3("Scale", helix::math::value_ptr(transform.scale), 0.05f);
     }
 
     auto draw_camera(flecs::entity entity) -> void {
@@ -53,9 +53,9 @@ namespace {
             return;
         }
         auto& camera = entity.get_mut<Camera>();
-        float fov_degrees = flux::math::degrees(camera.fov);
+        float fov_degrees = helix::math::degrees(camera.fov);
         if (ImGui::DragFloat("FOV (Degrees)", &fov_degrees, 0.1f, 1.f, 179.f)) {
-            camera.fov = flux::math::radians(fov_degrees);
+            camera.fov = helix::math::radians(fov_degrees);
         }
         ImGui::DragFloat("Near Plane", &camera.near_plane, 0.1f, 0.1f, 100.f);
         ImGui::DragFloat("Far Plane", &camera.far_plane, 0.1f, 0.1f, 10000.f);
@@ -69,7 +69,7 @@ namespace {
             return;
         }
         auto& light = entity.get_mut<AmbientLight>();
-        ImGui::ColorEdit3("Colour", flux::math::value_ptr(light.colour));
+        ImGui::ColorEdit3("Colour", helix::math::value_ptr(light.colour));
         ImGui::DragFloat("Intensity", &light.intensity, 0.1f, 0.f, 10.f);
     }
 
@@ -187,14 +187,14 @@ namespace thresh {
         ImGuizmo::SetDrawlist(ImGui::GetBackgroundDrawList());
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
 
-        flux::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
+        helix::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
 
         ImGuizmo::Manipulate(
-            flux::math::value_ptr(cam->view),
-            flux::math::value_ptr(cam->projection),
+            helix::math::value_ptr(cam->view),
+            helix::math::value_ptr(cam->projection),
             m_gizmo_operation,
             m_gizmo_mode,
-            flux::math::value_ptr(world));
+            helix::math::value_ptr(world));
 
         write_to_local(m_selected_entity, world);
     }
@@ -205,8 +205,8 @@ namespace thresh {
         if (!lines) return;
         scene.get_world().query_builder<const WorldAABB>().with<Mesh>().build()
             .each([&](flecs::entity e, const WorldAABB& w) {
-                const auto colour = (e == m_selected_entity) ? flux::float3{1, 1, 0}
-                                                 : flux::float3{0.5f, 0.5f, 0.5f};
+                const auto colour = (e == m_selected_entity) ? helix::float3{1, 1, 0}
+                                                 : helix::float3{0.5f, 0.5f, 0.5f};
                 lines->submit_aabb(w.aabb, colour);
             });
     }

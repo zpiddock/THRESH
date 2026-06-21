@@ -8,7 +8,7 @@
 #include "gpu_data.hpp"
 #include "helix/math.hpp"
 
-namespace flux {
+namespace helix {
 
     struct TextureData {
 
@@ -18,9 +18,9 @@ namespace flux {
 
     struct Vertex {
 
-        flux::float3 position;
-        flux::float3 normal;
-        flux::float2 tex_coord;
+        helix::float3 position;
+        helix::float3 normal;
+        helix::float2 tex_coord;
 
         static auto get_binding_description() -> vk::VertexInputBindingDescription {
 

@@ -8,7 +8,7 @@
 #include "vk_structs.hpp"
 #include "horizon/window.hpp"
 
-namespace flux {
+namespace helix {
     class ThreshVkInstance {
 
         public:

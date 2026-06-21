@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace flux {
+namespace helix {
 
     struct VulkanInstanceContext {
         std::string              application_name;

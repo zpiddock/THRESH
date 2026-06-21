@@ -7,7 +7,7 @@
 #include "SDL3/SDL_events.h"
 #include "vkbackend/vulkan_context.hpp"
 
-namespace flux {
+namespace helix {
     class DearImGuiContext {
 
         public:
@@ -30,7 +30,7 @@ namespace flux {
             // new_frame() doesn't assert on the unfinished previous frame.
             auto discard_frame() -> void;
 
-            auto record_draw_data(flux::CommandBuffer& cmd) -> void;
+            auto record_draw_data(helix::CommandBuffer& cmd) -> void;
 
             bool m_enabled = false;
 

@@ -13,7 +13,7 @@
 
 namespace thresh {
 
-AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
+AssetsLoader::AssetsLoader(helix::GraphicsUtils &gfx) : m_graphics(gfx) {}
 
     auto AssetsLoader::load_texture(const std::string &path) -> uint32_t {
 
@@ -53,7 +53,7 @@ AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
         auto albedo_tint = asset->albedo_tint;
         auto material_handle = m_graphics.register_material(
             albedo_handle,
-            flux::float4{albedo_tint[0], albedo_tint[1], albedo_tint[2], 1.f},
+            helix::float4{albedo_tint[0], albedo_tint[1], albedo_tint[2], 1.f},
             asset->material_type);
         m_material_cache.insert(std::make_pair(path, material_handle));
         SUB_TRACE("Material '{}' registered as handle {} (type='{}', albedo={})",
@@ -70,14 +70,14 @@ AssetsLoader::AssetsLoader(flux::GraphicsUtils &gfx) : m_graphics(gfx) {}
 
         uint32_t handle = 0;
 
-        if (path == "primitive://box") handle = m_graphics.register_mesh(flux::primitives::box());
-        else if (path == "primitive://sphere") handle = m_graphics.register_mesh(flux::primitives::sphere());
+        if (path == "primitive://box") handle = m_graphics.register_mesh(helix::primitives::box());
+        else if (path == "primitive://sphere") handle = m_graphics.register_mesh(helix::primitives::sphere());
         else if (path.starts_with("primitive://")) {
             SUB_WARN("Unknown mesh primitive: '{}', defaulting to box primitive", path);
-            handle = m_graphics.register_mesh(flux::primitives::box());
+            handle = m_graphics.register_mesh(helix::primitives::box());
         } else {
             SUB_WARN("Model loading not yet implemented, defaulting to box primitive");
-            handle = m_graphics.register_mesh(flux::primitives::box());
+            handle = m_graphics.register_mesh(helix::primitives::box());
         }
 
         m_mesh_cache.insert(std::make_pair(path, handle));

@@ -15,7 +15,7 @@
 #include "substratum/log.hpp"
 #include "substratum/filesystem/vfs.hpp"
 
-namespace flux {
+namespace helix {
     auto GraphicsUtils::vulkan_init(const VulkanInstanceContext& ctx, const thresh::Window& window) -> void {
         m_window = &window;
         m_context = std::make_unique<VulkanContext>(ctx, window);
@@ -229,15 +229,15 @@ namespace flux {
     }
 
     auto GraphicsUtils::register_material(const std::uint32_t& texture_handle,
-    const flux::float4 base_colour,
+    const helix::float4 base_colour,
             const std::string& material_type) -> std::uint32_t {
 
         const auto* albedo = get_texture_resource(texture_handle);
         const std::uint32_t albedo_slot = albedo ? albedo->image.heap_index() : m_dummy_texture_heap_index;
 
-        const flux::gpu::MaterialData data {
+        const helix::gpu::MaterialData data {
             .base_colour_factor = base_colour,
-            .emissive_factor = flux::float3{0},
+            .emissive_factor = helix::float3{0},
             .metallic_factor = 1.f,
             .roughness_factor = 1.f,
             .normal_scale = 1.f,
@@ -285,7 +285,7 @@ namespace flux {
         return m_draw_commands;
     }
 
-    auto GraphicsUtils::record_command_buffers(flux::CommandBuffer& cmd_buffer, const uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
+    auto GraphicsUtils::record_command_buffers(helix::CommandBuffer& cmd_buffer, const uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void {
 
         constexpr vk::CommandBufferBeginInfo begin_info{};
         cmd_buffer.begin(begin_info.flags);
@@ -330,7 +330,7 @@ namespace flux {
         cmd_buffer.end();
     }
 
-    auto GraphicsUtils::record_geometry_commands(flux::CommandBuffer& cmd_buffer,
+    auto GraphicsUtils::record_geometry_commands(helix::CommandBuffer& cmd_buffer,
         const std::vector<DrawCommand>& cmds) -> void {
 
         const auto frame = m_context->m_frame_index;
@@ -381,23 +381,23 @@ namespace flux {
         cmd_buffer.raw().setViewport(0, vk::Viewport{0, static_cast<float>(extent.height), static_cast<float>(extent.width), -static_cast<float>(extent.height), 0, 1});
         cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
 
-        cmd_buffer.push_data(0, flux::gpu::FramePushConstants{
+        cmd_buffer.push_data(0, helix::gpu::FramePushConstants{
             .camera = frame_data->camera_address,
             .lights = frame_data->light_data_address,
             .materials = m_context->m_material_buffer.device_address(),
-            .default_sampler = flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
+            .default_sampler = helix::gpu::DescriptorHandle::make(m_context->default_sampler_index())
         });
         for (const auto& cmd : cmds) {
             // SUB_TRACE("{}:{}", cmd.mesh_handle, cmd.material_handle);
             const auto* mesh = get_mesh_resource(cmd.mesh_handle);
             const auto* material = get_material_resource(cmd.material_handle);
 
-            const flux::gpu::DrawPushConstants push_constants {
+            const helix::gpu::DrawPushConstants push_constants {
                 .model = cmd.model,
                 .colour_tint = cmd.base_colour,
                 .material_handle = material->gpu_index
             };
-            cmd_buffer.push_data(flux::gpu::DRAW_PUSH_OFFSET, push_constants);
+            cmd_buffer.push_data(helix::gpu::DRAW_PUSH_OFFSET, push_constants);
             cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
             cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
             cmd_buffer.raw().drawIndexed(mesh->index_count, 1, 0, 0, 0);
@@ -405,7 +405,7 @@ namespace flux {
         cmd_buffer.raw().endRendering();
     }
 
-    auto GraphicsUtils::record_composite_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
+    auto GraphicsUtils::record_composite_commands(helix::CommandBuffer& cmd_buffer, uint32_t image_index) -> void {
 
         const auto frame = m_context->m_frame_index;
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
@@ -446,15 +446,15 @@ namespace flux {
         cmd_buffer.raw().setScissor(0, vk::Rect2D{vk::Offset2D{0, 0}, extent});
         cmd_buffer.push_data(
             0,
-            flux::gpu::CompositePushConstants{
-                .colour_image = flux::gpu::DescriptorHandle::make(m_context->m_offscreen_images[frame].heap_index()),
-                .sampler      = flux::gpu::DescriptorHandle::make(m_context->default_sampler_index())
+            helix::gpu::CompositePushConstants{
+                .colour_image = helix::gpu::DescriptorHandle::make(m_context->m_offscreen_images[frame].heap_index()),
+                .sampler      = helix::gpu::DescriptorHandle::make(m_context->default_sampler_index())
             });
         cmd_buffer.raw().draw(3, 1, 0, 0);
         cmd_buffer.raw().endRendering();
     }
 
-    auto GraphicsUtils::record_imgui_commands(flux::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
+    auto GraphicsUtils::record_imgui_commands(helix::CommandBuffer& cmd_buffer, const uint32_t image_index) -> void {
 
         const auto extent = m_context->m_vk_swapchain.swapchain_extent();
         vk::RenderingAttachmentInfo colour_attach {
@@ -523,7 +523,7 @@ namespace flux {
     auto GraphicsUtils::register_dummy_texture() -> void {
 
         static constexpr std::array<std::uint8_t, 4> white{255, 255, 255, 255};
-        const flux::TextureData texture_data{
+        const helix::TextureData texture_data{
         .width = 1,
         .height = 1,
         .num_channels = 4,

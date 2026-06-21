@@ -12,7 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
-namespace flux::math {
+namespace helix::math {
 
     using glm::translate;
     using glm::rotate;
@@ -40,14 +40,12 @@ namespace flux::math {
     using glm::decompose;
 }
 
-namespace flux::mathconstants {
-
+namespace helix::mathconstants {
     using glm::pi;
     using glm::golden_ratio;
 }
 
-
-namespace flux {
+namespace helix {
 
     using float2 = glm::vec2;
     using float3 = glm::vec3;
@@ -64,10 +62,10 @@ namespace flux {
 
     struct AABB {
     // Use sentinel: an "empty" AABB has min > max. valid() detects this.
-        flux::float3 min{ std::numeric_limits<float>::max(),
+        helix::float3 min{ std::numeric_limits<float>::max(),
                     std::numeric_limits<float>::max(),
                     std::numeric_limits<float>::max()};
-        flux::float3 max{-std::numeric_limits<float>::max(),
+        helix::float3 max{-std::numeric_limits<float>::max(),
                    -std::numeric_limits<float>::max(),
                    -std::numeric_limits<float>::max()};
 
@@ -96,17 +94,17 @@ namespace flux {
         if (!local.valid()) return {};
         AABB out;
         const std::array<float3,8> corners {
-            flux::float3{local.min.x, local.min.y, local.min.z},
-            flux::float3{local.max.x, local.min.y, local.min.z},
-            flux::float3{local.min.x, local.max.y, local.min.z},
-            flux::float3{local.max.x, local.max.y, local.min.z},
-            flux::float3{local.min.x, local.min.y, local.max.z},
-            flux::float3{local.max.x, local.min.y, local.max.z},
-            flux::float3{local.min.x, local.max.y, local.max.z},
-            flux::float3{local.max.x, local.max.y, local.max.z},
+            helix::float3{local.min.x, local.min.y, local.min.z},
+            helix::float3{local.max.x, local.min.y, local.min.z},
+            helix::float3{local.min.x, local.max.y, local.min.z},
+            helix::float3{local.max.x, local.max.y, local.min.z},
+            helix::float3{local.min.x, local.min.y, local.max.z},
+            helix::float3{local.max.x, local.min.y, local.max.z},
+            helix::float3{local.min.x, local.max.y, local.max.z},
+            helix::float3{local.max.x, local.max.y, local.max.z},
         };
         for (const auto& c : corners) {
-            const flux::float4 w = m * flux::float4{c, 1.0f};
+            const helix::float4 w = m * helix::float4{c, 1.0f};
             out.expand(float3{w});
         }
         return out;
@@ -114,14 +112,14 @@ namespace flux {
 
     // Branchless slab-test ray-AABB. Returns t_min if hit (>=0) else nullopt.
     // ray_origin/ray_dir in same space as aabb. ray_dir does NOT need to be unit length.
-    inline auto ray_aabb_intersect(const flux::float3& ro, const flux::float3& rd, const flux::AABB& box)
+    inline auto ray_aabb_intersect(const helix::float3& ro, const helix::float3& rd, const helix::AABB& box)
         -> std::optional<float> {
         if (!box.valid()) return std::nullopt;
-        const flux::float3 inv = flux::float3{1.0f} / rd;
-        const flux::float3 t0  = (box.min - ro) * inv;
-        const flux::float3 t1  = (box.max - ro) * inv;
-        const flux::float3 tsm = flux::math::min(t0, t1);
-        const flux::float3 tbg = flux::math::max(t0, t1);
+        const helix::float3 inv = helix::float3{1.0f} / rd;
+        const helix::float3 t0  = (box.min - ro) * inv;
+        const helix::float3 t1  = (box.max - ro) * inv;
+        const helix::float3 tsm = helix::math::min(t0, t1);
+        const helix::float3 tbg = helix::math::max(t0, t1);
         const float tmin = std::max({tsm.x, tsm.y, tsm.z, 0.0f});
         const float tmax = std::min({tbg.x, tbg.y, tbg.z});
         if (tmax < tmin) return std::nullopt;

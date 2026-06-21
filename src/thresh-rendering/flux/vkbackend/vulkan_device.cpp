@@ -8,7 +8,7 @@
 #include "image.hpp"
 #include "substratum/log.hpp"
 
-namespace flux {
+namespace helix {
     ThreshVkDevice::ThreshVkDevice(const vk::raii::Instance& instance, const vk::SurfaceKHR& surface) {
 
         pick_suitable_device(instance);
@@ -31,9 +31,9 @@ namespace flux {
     }
 
     auto ThreshVkDevice::upload_device_local(std::span<const std::byte> data, vk::BufferUsageFlags usage,
-        const char* debug_name) -> flux::Buffer {
+        const char* debug_name) -> helix::Buffer {
 
-        flux::Buffer staging_buffer(*this, {
+        helix::Buffer staging_buffer(*this, {
             .size = data.size(),
             .usage = vk::BufferUsageFlagBits::eTransferSrc,
             .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
@@ -88,7 +88,7 @@ namespace flux {
         return image;
 }
 
-    auto ThreshVkDevice::begin_single_time_commands() -> flux::CommandBuffer {
+    auto ThreshVkDevice::begin_single_time_commands() -> helix::CommandBuffer {
 
         const vk::CommandBufferAllocateInfo alloc_info{
             .commandPool = m_command_pool,
@@ -103,7 +103,7 @@ namespace flux {
         return cmd;
     }
 
-    auto ThreshVkDevice::end_single_time_commands(flux::CommandBuffer& command_buffer) -> void {
+    auto ThreshVkDevice::end_single_time_commands(helix::CommandBuffer& command_buffer) -> void {
 
         command_buffer.end();
 

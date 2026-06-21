@@ -7,7 +7,7 @@
 #include "horizon/window.hpp"
 #include "substratum/log.hpp"
 
-namespace flux {
+namespace helix {
     ThreshVkSwapchain::ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) {
 
         create_swapchain(window, instance, device);

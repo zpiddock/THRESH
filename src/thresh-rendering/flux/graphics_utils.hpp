@@ -11,7 +11,7 @@
 #include "vkbackend/vulkan_context.hpp"
 
 
-namespace flux {
+namespace helix {
 
     class GraphicsUtils {
         public:
@@ -49,7 +49,7 @@ namespace flux {
             auto register_texture(const std::string& path) -> std::uint32_t;
 
             auto register_material(const std::uint32_t& texture_handle,
-                flux::float4 base_colour = {1.f, 1.f, 1.f, 1.f},
+                helix::float4 base_colour = {1.f, 1.f, 1.f, 1.f},
                 const std::string& material_type = "opaque")
         -> std::uint32_t;
 
@@ -88,13 +88,13 @@ namespace flux {
             }
 
         private:
-            auto record_command_buffers(flux::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_command_buffers(helix::CommandBuffer& cmd_buffer, uint32_t image_index, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_geometry_commands(flux::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
+            auto record_geometry_commands(helix::CommandBuffer& cmd_buffer, const std::vector<DrawCommand>& cmds) -> void;
 
-            auto record_composite_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_composite_commands(helix::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
-            auto record_imgui_commands(flux::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
+            auto record_imgui_commands(helix::CommandBuffer& cmd_buffer, uint32_t image_index) -> void;
 
             std::unique_ptr<VulkanContext> m_context;
 

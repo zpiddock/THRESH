@@ -8,7 +8,7 @@
 
 #include "descriptor_heap.hpp"
 
-namespace flux {
+namespace helix {
     class Buffer;
     class Image;
     struct ImageState;
@@ -35,7 +35,7 @@ namespace flux {
             // execution order - fine while one thread records one primary buffer per frame
             // (true for flux today). Multi-threaded recording would move state into a
             // per-recording context
-            auto transition(flux::Image& image, const ImageState& dst) -> void;
+            auto transition(helix::Image& image, const ImageState& dst) -> void;
 
             auto transition_raw(vk::Image image, vk::ImageAspectFlags aspect, const ImageState& src, const ImageState& dst) -> void;
 
