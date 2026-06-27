@@ -9,7 +9,7 @@ namespace flux {
         std::string application_name;
         bool enable_validation_layers = true;
         bool enable_sync_validation = true;
-        vk::PresentModeKHR present_mode = vk::PresentModeKHR::eFifo;
+        vk::PresentModeKHR present_mode = vk::PresentModeKHR::eMailbox;
         std::uint32_t resource_heap_capacity = 4096;
         std::uint32_t sampler_heap_capacity = 64;
         std::uint32_t material_buffer_capacity = 1024;

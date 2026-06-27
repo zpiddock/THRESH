@@ -13,7 +13,7 @@
 
 #include "application.hpp"
 #include "asset/assets_loader.hpp"
-#include "flux/graphics_utils.hpp"
+#include "flux/renderer.hpp"
 #include "horizon/input_manager.hpp"
 #include "horizon/window.hpp"
 #include "scene/scene.hpp"
@@ -28,6 +28,8 @@ namespace thresh {
         SDL_InitFlags init_flags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
 
         SDL_WindowFlags window_flags = SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE;
+
+        flux::RenderConfig render_config{};
     };
 
 class Engine {
@@ -51,7 +53,7 @@ class Engine {
 
         auto input() -> horizon::InputManager*;
 
-        auto graphics() -> flux::GraphicsUtils*;
+        auto graphics() -> flux::Renderer*;
 
         auto assets() -> AssetsLoader&;
 
@@ -69,7 +71,7 @@ class Engine {
 
         Application*                           m_application = nullptr;
         std::unique_ptr<Window>                m_window;
-        std::unique_ptr<flux::GraphicsUtils>   m_graphics_utils;
+        std::unique_ptr<flux::Renderer>        m_renderer;
         std::unique_ptr<horizon::InputManager> m_input_manager;
         std::unique_ptr<AssetsLoader>          m_asset_manager;
 

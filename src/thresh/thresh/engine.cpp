@@ -7,7 +7,7 @@
 #include "thresh.hpp"
 
 #include "engine.hpp"
-#include "flux/graphics_utils.hpp"
+#include "flux/renderer.hpp"
 #include "scene/scene_serializer.hpp"
 #include "substratum/filesystem/vfs.hpp"
 #include "substratum/log.hpp"
@@ -49,10 +49,12 @@ namespace thresh {
         m_window = std::make_unique<Window>(window_context);
 
         SUB_DEBUG("Initialising graphics subsystem");
-        m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
-        m_graphics_utils->vulkan_init(*m_window);
-        m_graphics_utils->register_dummy_texture();
-        m_graphics_utils->imgui_init();
+        auto render_ctx = ctx.render_config;
+        if (render_ctx.application_name.empty()) {
+            render_ctx.application_name = ctx.title;
+        }
+        m_renderer = std::make_unique<flux::Renderer>(*m_window, render_ctx);
+        m_renderer->imgui_init();
 
         SUB_DEBUG("Initialising input manager");
         m_input_manager = std::make_unique<horizon::InputManager>();
@@ -81,14 +83,14 @@ namespace thresh {
             // Poll events
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
-                m_graphics_utils->imgui_process_event(event);
+                m_renderer->imgui_process_event(event);
                 switch (event.type) {
                     case SDL_EVENT_QUIT: {
                         m_window->setShouldClose(true);
                         break;
                     }
                     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED: {
-                        m_graphics_utils->set_framebuffer_resized(true);
+                        m_renderer->set_framebuffer_resized(true);
                         break;
                     }
                     default:
@@ -102,7 +104,7 @@ namespace thresh {
             m_last_frame_time = current_time;
 
             // Reset debug lines if they exist
-            if (auto* dlr = m_graphics_utils->debug_line_renderer()) {
+            if (auto* dlr = m_renderer->debug_line_renderer()) {
                 dlr->clear();
             }
 
@@ -111,11 +113,11 @@ namespace thresh {
 
             if (m_active_scene) {
                 m_active_scene->update(delta_time);
-                if (auto cam = m_active_scene->compute_active_camera_data(m_graphics_utils->get_aspect_ratio())) {
-                    m_graphics_utils->set_camera_data(*cam);
+                if (auto cam = m_active_scene->compute_active_camera_data(m_renderer->get_aspect_ratio())) {
+                    m_renderer->set_camera_data(*cam);
                 }
                 if (auto lights = m_active_scene->compute_active_light_data()) {
-                    m_graphics_utils->set_light_data(*lights);
+                    m_renderer->set_light_data(*lights);
                 }
             }
 
@@ -127,14 +129,14 @@ namespace thresh {
                 SDL_GetWindowSizeInPixels(m_window->getWindow(), &fb_width, &fb_height);
                 continue;
             }
-            if (m_graphics_utils->imgui_new_frame()) {
+            if (m_renderer->imgui_new_frame()) {
                 m_application->debug_render();
             }
-            m_graphics_utils->draw_frame();
+            m_renderer->draw_frame();
 
             // m_application->render();
         }
-        m_graphics_utils->shutdown();
+        m_renderer->shutdown();
 
         shutdown();
     }
@@ -148,17 +150,15 @@ namespace thresh {
         return m_input_manager.get();
     }
 
-    auto Engine::graphics() -> flux::GraphicsUtils* {
+    auto Engine::graphics() -> flux::Renderer* {
 
-        if (!m_graphics_utils) {
-            m_graphics_utils = std::make_unique<flux::GraphicsUtils>();
-        }
-        return m_graphics_utils.get();
+        assert(m_renderer);
+        return m_renderer.get();
     }
 
     auto Engine::assets() -> AssetsLoader & {
         if (!m_asset_manager) {
-            m_asset_manager = std::make_unique<AssetsLoader>(*graphics());
+            m_asset_manager = std::make_unique<AssetsLoader>(m_renderer->resources());
         }
         return *m_asset_manager;
     }
@@ -183,8 +183,8 @@ namespace thresh {
         m_application = nullptr;
         m_asset_manager.reset();
         m_input_manager.reset();
-        m_graphics_utils->imgui_shutdown();
-        m_graphics_utils.reset();
+        m_renderer->imgui_shutdown();
+        m_renderer.reset();
         substratum::VFS::shutdown();
         m_window.reset();
         SUB_DEBUG("Engine shutdown complete");

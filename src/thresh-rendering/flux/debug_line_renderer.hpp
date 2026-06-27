@@ -3,8 +3,14 @@
 //
 
 #pragma once
+#include <array>
+#include <cstddef>
+#include <vector>
+
+#include "helix/math.hpp"
 #include "vkbackend/buffer.hpp"
-#include "vkbackend/vulkan_context.hpp"
+#include "vkbackend/frame_context.hpp"   // flux::MAX_FRAMES_IN_FLIGHT
+#include "vkbackend/vulkan_pipeline.hpp"
 
 namespace flux {
 
@@ -20,7 +26,7 @@ namespace flux {
     class DebugLineRenderer {
 
         public:
-            explicit DebugLineRenderer(VulkanContext& ctx);
+            explicit DebugLineRenderer(ThreshVkDevice& device, ThreshVkPipeline& pipeline);
 
             auto submit_line(helix::float3 p0, helix::float3 p1, helix::float3 colour = helix::float3{1.f}) -> void;
 
@@ -30,17 +36,20 @@ namespace flux {
 
             auto record_frame(
                 CommandBuffer& cmd,
+                uint32_t frame_index,
                 const helix::float4x4& view_proj,
                 vk::ImageView colour_view,
                 vk::ImageView depth_view,
                 vk::Extent2D extents
                 ) -> void;
 
+            static auto pipeline_context(vk::Format colour, vk::Format depth) -> PipelineContext;
+
         private:
+
             static constexpr std::size_t MAX_VERTICES = 16384;
 
-            VulkanContext&               m_context;
-            ThreshVkPipeline*            m_pipeline;
+            ThreshVkPipeline&            m_pipeline;
             std::vector<DebugLineVertex> m_pending{};
             std::array<Buffer, 2>        m_vertex_buffers{};
     };

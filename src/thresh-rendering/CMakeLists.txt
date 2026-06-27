@@ -1,13 +1,11 @@
 set(THRESH_SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/assets/shader/src)
 
 add_library(Flux STATIC
-        flux/graphics_utils.hpp
-        flux/graphics_utils.cpp
+        flux/renderer.hpp
+        flux/renderer.cpp
         flux/vkbackend/vk_structs.hpp
         flux/vkbackend/vulkan_instance.cpp
         flux/vkbackend/vulkan_instance.hpp
-        flux/vkbackend/vulkan_context.cpp
-        flux/vkbackend/vulkan_context.hpp
         flux/graphics_types.hpp
         flux/vkbackend/vulkan_device.cpp
         flux/vkbackend/vulkan_device.hpp
@@ -36,6 +34,10 @@ add_library(Flux STATIC
         flux/material_buffer.cpp
         flux/material_buffer.hpp
         flux/render_config.hpp
+        flux/vkbackend/pipeline_registry.cpp
+        flux/vkbackend/pipeline_registry.hpp
+        flux/render_resource_registry.cpp
+        flux/render_resource_registry.hpp
 )
 
 target_link_libraries(Flux PUBLIC

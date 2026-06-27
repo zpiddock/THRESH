@@ -12,7 +12,7 @@ namespace flux {
     DearImGuiContext::~DearImGuiContext() {
     }
 
-    auto DearImGuiContext::init(const thresh::Window& window, VulkanContext& vk_context) -> void {
+    auto DearImGuiContext::init(const thresh::Window& window, const ImGuiInitInfo& info) -> void {
 
         IMGUI_CHECKVERSION();
 
@@ -25,12 +25,10 @@ namespace flux {
 
         ImGui_ImplSDL3_InitForVulkan(window.getWindow());
 
-        auto format = vk_context.m_vk_swapchain.swapchain_surface_format().format;
-
         vk::PipelineRenderingCreateInfo create_info = {
             .sType = vk::StructureType::ePipelineRenderingCreateInfo,
             .colorAttachmentCount = 1,
-            .pColorAttachmentFormats = &format
+            .pColorAttachmentFormats = &info.colour_format
         };
 
         ImGui_ImplVulkan_PipelineInfo pipeline_info = {
@@ -39,15 +37,15 @@ namespace flux {
         };
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = *vk_context.m_vk_instance.instance();
-        init_info.PhysicalDevice = *vk_context.m_vk_device.physical();
-        init_info.Device = *vk_context.m_vk_device.logical();
-        init_info.QueueFamily = vk_context.m_vk_device.queue_family_index();
-        init_info.Queue = *vk_context.m_vk_device.graphics_queue();
+        init_info.Instance = info.instance;
+        init_info.PhysicalDevice = info.physical_device;
+        init_info.Device = info.device;
+        init_info.QueueFamily = info.queue_family_index;
+        init_info.Queue = info.queue;
         init_info.DescriptorPool = VK_NULL_HANDLE;          // ImGui manages its own pool
         init_info.DescriptorPoolSize = 64;                  // headroom for ImGui_ImplVulkan_AddTexture calls later
-        init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-        init_info.ImageCount = vk_context.m_vk_swapchain.swapchain_images().size();
+        init_info.MinImageCount = info.min_image_count;
+        init_info.ImageCount = info.image_count;
         init_info.UseDynamicRendering = true;
         init_info.PipelineInfoMain = pipeline_info;
         ImGui_ImplVulkan_Init(&init_info);

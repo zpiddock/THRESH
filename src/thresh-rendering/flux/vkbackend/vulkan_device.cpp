@@ -57,7 +57,7 @@ namespace flux {
     }
 
     auto ThreshVkDevice::upload_image(std::span<const std::byte> pixels, vk::Extent2D extent,
-                                  vk::Format format, const char* name) -> Image {
+                                  vk::Format format, const char* name) -> flux::Image {
         Buffer staging(*this, {
             .size           = pixels.size(),
             .usage          = vk::BufferUsageFlagBits::eTransferSrc,
@@ -67,7 +67,7 @@ namespace flux {
         });
         std::memcpy(staging.mapped().data(), pixels.data(), pixels.size());
 
-        Image image(*this, {
+        flux::Image image(*this, {
             .extent     = extent,
             .format     = format,
             .usage      = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,

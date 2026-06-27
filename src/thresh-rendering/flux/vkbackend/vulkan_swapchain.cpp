@@ -8,13 +8,13 @@
 #include "substratum/log.hpp"
 
 namespace flux {
-    ThreshVkSwapchain::ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) {
+    ThreshVkSwapchain::ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device, vk::PresentModeKHR preferred) {
 
-        create_swapchain(window, instance, device);
+        create_swapchain(window, instance, device, preferred);
         create_image_views(device);
     }
 
-    auto ThreshVkSwapchain::create_swapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) -> void {
+    auto ThreshVkSwapchain::create_swapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device, vk::PresentModeKHR preferred) -> void {
 
         const auto surface = instance.surface();
 
@@ -26,7 +26,7 @@ namespace flux {
         m_swapchain_surface_format                = choose_swap_surface_format(formats);
 
         vk::PresentModeKHR present_mode =
-                choose_swapchain_present_mode(device.physical().getSurfacePresentModesKHR(surface));
+                choose_swapchain_present_mode(device.physical().getSurfacePresentModesKHR(surface), preferred);
         vk::SwapchainCreateInfoKHR swapchain_info{
             .surface          = surface,
             .minImageCount    = min_swap_image_count,
@@ -101,25 +101,25 @@ namespace flux {
     }
 
     auto ThreshVkSwapchain::choose_swapchain_present_mode(
-        const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR {
+        const std::vector<vk::PresentModeKHR>& present_modes, vk::PresentModeKHR preferred) -> vk::PresentModeKHR {
 
         assert(std::ranges::any_of(present_modes, [](auto presentMode) { return presentMode == vk::PresentModeKHR::eFifo
                    ; }));
         return std::ranges::any_of(present_modes,
-                                   [](const vk::PresentModeKHR value) { return vk::PresentModeKHR::eMailbox == value; })
-                   ? vk::PresentModeKHR::eMailbox
+                                   [preferred](const vk::PresentModeKHR value) { return preferred == value; })
+                   ? preferred
                    : vk::PresentModeKHR::eFifo;
     }
 
     auto ThreshVkSwapchain::recreate(const thresh::Window& window, ThreshVkInstance& instance,
-        ThreshVkDevice& device) -> void {
+        ThreshVkDevice& device, vk::PresentModeKHR preferred) -> void {
 
         SUB_DEBUG("Recreating swapchain");
         device.logical().waitIdle();
 
         cleanup_swapchain();
 
-        create_swapchain(window, instance, device);
+        create_swapchain(window, instance, device, preferred);
         create_image_views(device);
     }
 

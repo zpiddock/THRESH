@@ -5,37 +5,9 @@
 #include "debug_line_renderer.hpp"
 
 namespace flux {
-    DebugLineRenderer::DebugLineRenderer(VulkanContext& ctx) : m_context(ctx){
-
-        // --- Vertex layout for {float3 pos, float3 colour} ---
-        const std::vector<vk::VertexInputBindingDescription> bindings{
-            { .binding = 0, .stride = sizeof(DebugLineVertex), .inputRate = vk::VertexInputRate::eVertex },
-        };
-        const std::vector<vk::VertexInputAttributeDescription> attribs{
-            { .location = 0, .binding = 0, .format = vk::Format::eR32G32B32Sfloat,
-              .offset = offsetof(DebugLineVertex, position) },
-            { .location = 1, .binding = 0, .format = vk::Format::eR32G32B32Sfloat,
-              .offset = offsetof(DebugLineVertex, colour) },
-        };
-
-        PipelineContext pipeline_context{
-
-            .shader_path       = "debug_lines.spv",
-            .binding_model     = BindingModel::DESCRIPTOR_HEAP,
-            .use_vertex_input  = true,
-            .depth_test        = true,
-            .depth_write       = false,
-            .cull_mode         = vk::CullModeFlagBits::eNone,
-            .colour_format     = ctx.m_offscreen_format,
-            .depth_format      = ctx.m_vk_device.find_depth_format(),
-            .topology          = vk::PrimitiveTopology::eLineList,
-            .vertex_bindings   = bindings,
-            .vertex_attributes = attribs
-        };
-        m_pipeline = ctx.register_pipeline("debug_lines", pipeline_context);
+    DebugLineRenderer::DebugLineRenderer(ThreshVkDevice& device, ThreshVkPipeline& pipeline) : m_pipeline(pipeline)  {
 
         constexpr auto buffer_size = sizeof(DebugLineVertex) * MAX_VERTICES;
-        auto& device = ctx.m_vk_device;
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
             m_vertex_buffers[i] = Buffer(device, {
                 .size           = buffer_size,
@@ -80,15 +52,14 @@ namespace flux {
         m_pending.clear();
     }
 
-    auto DebugLineRenderer::record_frame(CommandBuffer& cmd, const helix::float4x4& view_proj,
+    auto DebugLineRenderer::record_frame(CommandBuffer& cmd,uint32_t frame_index, const helix::float4x4& view_proj,
         vk::ImageView colour_view, vk::ImageView depth_view, vk::Extent2D extents) -> void {
 
         if (m_pending.empty()) {
             return;
         }
 
-        const auto frame = m_context.m_frame_index;
-        std::memcpy(m_vertex_buffers[frame].mapped().data(), m_pending.data(), m_pending.size() * sizeof(DebugLineVertex));
+        std::memcpy(m_vertex_buffers[frame_index].mapped().data(), m_pending.data(), m_pending.size() * sizeof(DebugLineVertex));
 
         vk::RenderingAttachmentInfo colour_info{
 
@@ -112,7 +83,7 @@ namespace flux {
             .pDepthAttachment = &depth_info
         };
         cmd.raw().beginRendering(rendering_info);
-        cmd.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline->graphics_pipeline());
+        cmd.raw().bindPipeline(vk::PipelineBindPoint::eGraphics, *m_pipeline.graphics_pipeline());
         cmd.raw().setViewport(0,
             vk::Viewport{
             0,
@@ -125,8 +96,37 @@ namespace flux {
 
 
         cmd.push_data(0, DebugLinePushConstants{view_proj});
-        cmd.raw().bindVertexBuffers(0, {m_vertex_buffers[frame].handle()}, {0});
+        cmd.raw().bindVertexBuffers(0, {m_vertex_buffers[frame_index].handle()}, {0});
         cmd.raw().draw(static_cast<uint32_t>(m_pending.size()), 1, 0, 0);
         cmd.raw().endRendering();
+    }
+
+    auto DebugLineRenderer::pipeline_context(vk::Format colour, vk::Format depth) -> PipelineContext {
+
+        // --- Vertex layout for {float3 pos, float3 colour} ---
+        const std::vector<vk::VertexInputBindingDescription> bindings{
+                { .binding = 0, .stride = sizeof(DebugLineVertex), .inputRate = vk::VertexInputRate::eVertex },
+            };
+        const std::vector<vk::VertexInputAttributeDescription> attribs{
+                { .location = 0, .binding = 0, .format = vk::Format::eR32G32B32Sfloat,
+                  .offset = offsetof(DebugLineVertex, position) },
+                { .location = 1, .binding = 0, .format = vk::Format::eR32G32B32Sfloat,
+                  .offset = offsetof(DebugLineVertex, colour) },
+            };
+
+        return {
+
+            .shader_path       = "debug_lines",
+            .binding_model     = BindingModel::DESCRIPTOR_HEAP,
+            .use_vertex_input  = true,
+            .depth_test        = true,
+            .depth_write       = false,
+            .cull_mode         = vk::CullModeFlagBits::eNone,
+            .colour_format     = colour,
+            .depth_format      = depth,
+            .topology          = vk::PrimitiveTopology::eLineList,
+            .vertex_bindings   = bindings,
+            .vertex_attributes = attribs
+        };
     }
 } // flux

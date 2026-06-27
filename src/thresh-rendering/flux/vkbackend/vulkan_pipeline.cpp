@@ -161,7 +161,7 @@ namespace flux {
     auto ThreshVkPipeline::load_shader(const std::string& shader_path, ThreshVkDevice& device) -> vk::raii::ShaderModule {
 
         SUB_TRACE("Loading shader module '{}'", shader_path);
-        const auto shader_code = substratum::VFS::read_file(shader_path);
+        const auto shader_code = substratum::VFS::read_file(shader_path + ".spv");
 
         vk::ShaderModuleCreateInfo shader_module_info{
             .codeSize = shader_code.size() * sizeof(uint8_t),

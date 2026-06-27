@@ -14,9 +14,9 @@ namespace flux {
     class ThreshVkSwapchain {
 
         public:
-            ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device);
+            ThreshVkSwapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device, vk::PresentModeKHR preferred);
 
-            auto recreate(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) -> void;
+            auto recreate(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device, vk::PresentModeKHR preferred) -> void;
 
             auto swapchain() -> const vk::raii::SwapchainKHR& {
                 return m_swapchain;
@@ -44,7 +44,7 @@ namespace flux {
 
         private:
 
-            auto create_swapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device) -> void;
+            auto create_swapchain(const thresh::Window& window, ThreshVkInstance& instance, ThreshVkDevice& device, vk::PresentModeKHR preferred) -> void;
 
             auto create_image_views(ThreshVkDevice& device) -> void;
 
@@ -56,7 +56,7 @@ namespace flux {
             auto choose_min_swap_image_count(const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t;
 
             auto choose_swapchain_present_mode(
-                const std::vector<vk::PresentModeKHR>& present_modes) -> vk::PresentModeKHR;
+                const std::vector<vk::PresentModeKHR>& present_modes, vk::PresentModeKHR preferred) -> vk::PresentModeKHR;
 
             auto cleanup_swapchain() -> void;
 

@@ -94,7 +94,7 @@ namespace thresh {
         }
 
         // Merge the two {"results":[...]} docs into one results array.
-        glz::json_t doc{}, children{};
+        glz::generic doc{}, children{};
         if (glz::read_json(doc, std::string{root_raw}) || glz::read_json(children, std::string{child_raw})) {
             SUB_ERROR("save_scene: failed to parse serialized scene json");
             return false;

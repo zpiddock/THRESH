@@ -90,7 +90,7 @@ namespace thresh {
 
                 auto* graphics = Engine::get_instance().graphics();
 
-                const auto* material = graphics->get_material_resource(mesh.material_handle);
+                const auto* material = graphics->resources().get_material_resource(mesh.material_handle);
 
                 if (!material) {
                     return;
@@ -129,7 +129,7 @@ namespace thresh {
             auto fold = [&](this auto& self, flecs::entity e) -> helix::AABB {
                 helix::AABB aabb{};
                 if (const auto* mesh = e.try_get<Mesh>()) {
-                    if (const auto* mesh_handle = gfx->get_mesh_resource(mesh->handle)) {
+                    if (const auto* mesh_handle = gfx->resources().get_mesh_resource(mesh->handle)) {
                         if (const auto* world_transform = e.try_get<WorldTransform>()) {
                             aabb.expand(helix::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
                         }

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <vulkan/vulkan_raii.hpp>
 #include "helix/math.hpp"
 #include "vkbackend/buffer.hpp"
+#include "vkbackend/image.hpp"
 
 namespace flux {
     struct MeshResource {

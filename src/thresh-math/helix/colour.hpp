@@ -23,6 +23,10 @@ namespace helix {
         explicit constexpr Colour(const float3& v, const float a_ = 1.0f)
             : r{v.x}, g{v.y}, b{v.z}, a{a_} {}
 
+        explicit constexpr Colour(const float2& v) : r {v.x}, g{v.y}, b{1.0f} {}
+
+        explicit constexpr Colour(const float v) : r{v}, g{v}, b{v}, a{v} {}
+
         explicit constexpr operator float4() const { return {r, g, b, a}; }
         [[nodiscard]] constexpr float3 rgb() const { return {r, g, b}; }
 

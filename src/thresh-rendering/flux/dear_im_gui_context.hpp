@@ -3,12 +3,25 @@
 //
 
 #pragma once
+#include <vulkan/vulkan.hpp>
 #include "horizon/window.hpp"
 #include "SDL3/SDL_events.h"
-#include "vkbackend/vulkan_context.hpp"
+#include "vkbackend/command_buffer.hpp"
 
 namespace flux {
+
     class DearImGuiContext {
+
+        struct ImGuiInitInfo {
+            vk::Instance instance;
+            vk::PhysicalDevice physical_device;
+            vk::Device device;
+            uint32_t queue_family_index;
+            vk::Queue queue;
+            vk::Format colour_format;
+            uint32_t image_count;
+            uint32_t min_image_count;
+        };
 
         public:
             DearImGuiContext() = default;
@@ -17,7 +30,7 @@ namespace flux {
             DearImGuiContext(const DearImGuiContext&) = delete;
             auto operator=(const DearImGuiContext&) -> DearImGuiContext& = delete;
 
-            auto init(const thresh::Window& window, VulkanContext& vk_context) -> void;
+            auto init(const thresh::Window& window, const ImGuiInitInfo& info) -> void;
 
             auto shutdown() -> void;
 
