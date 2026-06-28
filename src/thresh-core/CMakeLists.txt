@@ -4,6 +4,8 @@ add_library(Substratum STATIC
         substratum/result.hpp
         substratum/filesystem/vfs.cpp
         substratum/filesystem/vfs.hpp
+        substratum/filesystem/filesystem.cpp
+        substratum/filesystem/filesystem.hpp
 )
 target_link_libraries(Substratum PUBLIC physfs-static)
 target_include_directories(Substratum PUBLIC

@@ -31,6 +31,31 @@ TEST_CASE("empty ModelAsset round-trips (both framings)") {
     }
 }
 
+TEST_CASE("compressible payload round-trips (compressed_size < payload_size)") {
+    // A large run of zero-bytes shrinks hard under zstd, so compressed_size < payload_size.
+    // This is the case the SHORT_PAYLOAD bound got wrong: the on-disk file is only
+    // sizeof(header)+compressed_size, but the check used to demand +payload_size.
+    MeshEntry mesh{};
+    mesh.vertex_count = 1024;
+    mesh.vertices.assign(mesh.vertex_count * sizeof(MeshVertex), std::uint8_t{0});
+    ModelAsset in{ .src_uri = "compressible", .meshes = { mesh }, .materials = {}, .nodes = {} };
+
+    auto encoded = ferret::encode_thresh_model(in, /*compress*/ true);
+    REQUIRE(encoded.has_value());
+
+    ModelFileHeader h{};
+    std::memcpy(&h, encoded->data(), sizeof h);
+    REQUIRE((h.flags & 1u) != 0u);              // actually compressed
+    CHECK(h.compressed_size < h.payload_size);  // actually shrank (else it wouldn't catch the bug)
+    CHECK(encoded->size() == sizeof(ModelFileHeader) + h.compressed_size);
+
+    auto out = decode_thresh_model(*encoded);
+    REQUIRE(out.has_value());
+    REQUIRE(out->meshes.size() == 1);
+    CHECK(out->meshes[0].vertex_count == 1024);
+    CHECK(out->meshes[0].vertices == in.meshes[0].vertices);
+}
+
 TEST_CASE("model_content_hash is stable for identical input") {
     auto a = *ferret::encode_thresh_model(ModelAsset{ .src_uri = "x", .meshes = {}, .materials = {}, .nodes = {} }, false);
     auto b = *ferret::encode_thresh_model(ModelAsset{ .src_uri = "x", .meshes = {}, .materials = {}, .nodes = {} }, false);

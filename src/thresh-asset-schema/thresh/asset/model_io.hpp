@@ -34,7 +34,7 @@ namespace thresh::asset {
         if (header.version != TMODEL_VERSION) {
             return std::unexpected(DecodeError::BAD_VERSION);
         }
-        if (data.size() < sizeof(ModelFileHeader) + header.payload_size) {
+        if (data.size() < sizeof(ModelFileHeader) + header.compressed_size) {
             return std::unexpected(DecodeError::SHORT_PAYLOAD);
         }
 

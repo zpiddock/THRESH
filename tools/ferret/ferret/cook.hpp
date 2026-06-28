@@ -5,6 +5,7 @@
 #pragma once
 #include <expected>
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <vector>
 

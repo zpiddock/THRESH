@@ -6,8 +6,10 @@
 
 #include <glaze/glaze.hpp>
 
+#include "assimp_import.hpp"
 #include "hash.hpp"
 #include "zstd.h"
+#include "assimp/Importer.hpp"
 #include "thresh/asset/model_asset.hpp"
 
 namespace ferret {
@@ -52,7 +54,21 @@ namespace ferret {
         }
         thresh::asset::ModelAsset asset{};
         asset.src_uri = model_path.filename().string();
-        // Empty model for now to prove the cook step
+
+        Assimp::Importer importer;
+        const aiScene* scene = import_scene(importer, model_path);
+        if (!scene) {
+            return std::unexpected(importer.GetErrorString());
+        }
+        auto walk = [&](this auto& self, const aiNode* node, std::int32_t parent) -> void {
+            const auto self_idx = static_cast<std::int32_t>(asset.nodes.size());
+            asset.nodes.push_back(make_node(node, parent));
+            for (unsigned i = 0; i < node->mNumChildren; ++i) {
+                self(node->mChildren[i], self_idx);
+            }
+        };
+        walk(scene->mRootNode, -1);
+
         if (auto w = write_thresh_model(out_model, asset, options.should_compress); !w) {
             return std::unexpected(w.error());
         }

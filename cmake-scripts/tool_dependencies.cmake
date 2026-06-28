@@ -1,6 +1,8 @@
 # Dependencies that only get pulled in if we are building the Thresh Tools
 
 # Assimp, only build what we absolutely require, being FBX and GLTF importers
+set(_thresh_build_shared_libs_saved "${BUILD_SHARED_LIBS}")
+set(BUILD_SHARED_LIBS OFF)
 CPMAddPackage(
         NAME Assimp
         GITHUB_REPOSITORY assimp/assimp
@@ -12,6 +14,7 @@ CPMAddPackage(
         "ASSIMP_BUILD_GLTF_IMPORTER ON" "ASSIMP_BUILD_FBX_IMPORTER ON"
         "ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF"
 )
+set(BUILD_SHARED_LIBS "${_thresh_build_shared_libs_saved}")
 
 # xxHash for blazing fast hashing
 CPMAddPackage(

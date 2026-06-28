@@ -3,12 +3,14 @@ add_library(ferret STATIC
         ferret/cook.hpp
         ferret/hash.cpp
         ferret/hash.hpp
+        ferret/assimp_import.cpp
+        ferret/assimp_import.hpp
 )
 target_link_libraries(ferret
         PUBLIC
         Asset_Schema
+        assimp
         PRIVATE
-        assimp::assimp
         xxhash
         stb
         ktx

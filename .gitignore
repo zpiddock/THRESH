@@ -47,4 +47,10 @@ CMakeUserPresets.json
 cmake-build-debug
 build
 shader_cache
+# Ignored file types
 *.spv
+*.gltf
+*.glb
+*.fbx
+*.png
+*.jpg
