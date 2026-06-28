@@ -35,4 +35,9 @@ namespace ferret {
     auto cook_material_textures(const aiScene* scene, const std::filesystem::path& src_dir, const aiMaterial* mat,
                                 TextureCodec codec, const std::filesystem::path& out_dir,
                                 thresh::asset::MaterialEntry& entry) -> void;
+
+    // Bake the two engine default maps (1×1 white base-colour, 1×1 flat-normal) into `out_dir` as
+    // <hash>.ktx2 sidecars and print their hashes. Run once; paste the printed values into
+    // material_flags.hpp (WHITE_HASH / FLAT_NORMAL_HASH). Idempotent (content-addressed dedup).
+    auto cook_default_textures(const std::filesystem::path& out_dir) -> void;
 } // ferret

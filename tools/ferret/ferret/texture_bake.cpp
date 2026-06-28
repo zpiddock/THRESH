@@ -4,10 +4,14 @@
 
 #include "texture_bake.hpp"
 
+#include <array>
+#include <cassert>
 #include <format>
 #include <optional>
 #include <print>
 #include <vector>
+
+#include "thresh/asset/material_flags.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -46,8 +50,11 @@ namespace ferret {
             ktxTexture_SetImageFromMemory(ktxTexture(tex), l, 0, 0, level.data(), level.size());
         }
 
-        if (codec == ferret::TextureCodec::UASTC_BC7) {              // Step 18
-            ktxBasisParams p{}; p.structSize = sizeof(p); p.uastc = KTX_TRUE;
+        if (codec == ferret::TextureCodec::UASTC_BC7) {
+            ktxBasisParams p{};
+            p.structSize = sizeof(p);
+            p.uastc = KTX_TRUE;
+            p.uastcFlags = KTX_PACK_UASTC_LEVEL_DEFAULT;
             ktxTexture2_CompressBasisEx(tex, &p);
         }
 
@@ -170,5 +177,18 @@ namespace ferret {
         bake_slot(scene, src_dir, mat, TextureUsage::MetallicRoughness, ColourSpace::Linear, codec, out_dir, entry.metallic_roughness_texture);
         bake_slot(scene, src_dir, mat, TextureUsage::Occlusion,         ColourSpace::Linear, codec, out_dir, entry.occlusion_texture);
         bake_slot(scene, src_dir, mat, TextureUsage::Emissive,          ColourSpace::sRGB,   codec, out_dir, entry.emissive_texture);
+    }
+
+    auto cook_default_textures(const std::filesystem::path& out_dir) -> void {
+        std::filesystem::create_directories(out_dir);
+        constexpr std::array<std::uint8_t, 4> white  { 255, 255, 255, 255 };
+        constexpr std::array<std::uint8_t, 4> normal { 128, 128, 255, 255 };   // flat tangent-space normal
+        const std::uint64_t w = bake_raw_rgba(white,  1, 1, thresh::asset::TextureUsage::BaseColour, out_dir);
+        const std::uint64_t n = bake_raw_rgba(normal, 1, 1, thresh::asset::TextureUsage::Normal,     out_dir);
+        std::println("WHITE_HASH       = 0x{:016x}", w);
+        std::println("FLAT_NORMAL_HASH = 0x{:016x}", n);
+        // 0 = not yet pinned; once pinned, these guard codec/format drift on re-cook.
+        assert((thresh::asset::WHITE_HASH == 0       || w == thresh::asset::WHITE_HASH)       && "re-pin WHITE_HASH");
+        assert((thresh::asset::FLAT_NORMAL_HASH == 0 || n == thresh::asset::FLAT_NORMAL_HASH) && "re-pin FLAT_NORMAL_HASH");
     }
 } // ferret

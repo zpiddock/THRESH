@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "cook.hpp"
+#include "texture_bake.hpp"
 #include "substratum/filesystem/filesystem.hpp"
 #include "thresh/asset/model_io.hpp"
 
@@ -46,6 +47,16 @@ auto main(int argc, char** argv) -> int {
             return 2;
         }
         std::println(stdout, "Cooked model to {}!", result->output_path.string());
+        return 0;
+    }
+
+    if (cmd == "cook-defaults") {
+        if (argc < 3) {
+            std::println(stderr, "Usage: ferret-cli cook-defaults <textures_dir>");
+            return 1;
+        }
+        ferret::cook_default_textures(argv[2]);
+        std::println(stdout, "Cooked default textures to {}", argv[2]);
         return 0;
     }
 

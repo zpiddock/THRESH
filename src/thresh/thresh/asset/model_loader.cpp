@@ -9,6 +9,7 @@
 #include <ktx.h>
 
 #include "substratum/filesystem/vfs.hpp"
+#include "thresh/asset/material_flags.hpp"
 #include "thresh/asset/model_io.hpp"
 #include "thresh/scene/ecs_types.hpp"
 
@@ -104,21 +105,24 @@ namespace thresh {
 
     auto ModelLoader::resolve_texture(const asset::TextureRef& ref) -> std::uint32_t {
 
-        if (ref.hash == 0) return m_registry.dummy_texture_handle();        // slot has no texture
+        // Empty slot → the engine default for that usage (flat-normal for normals, white otherwise).
+        const std::uint64_t hash = ref.hash ? ref.hash
+            : (ref.usage == asset::TextureUsage::Normal ? asset::FLAT_NORMAL_HASH : asset::WHITE_HASH);
+        if (hash == 0) return m_registry.dummy_texture_handle();            // defaults not cooked/pinned
 
-        if (auto it = m_texture_by_hash.find(ref.hash); it != m_texture_by_hash.end())
-            return it->second;                                             // one heap slot per unique texture
+        if (auto it = m_texture_by_hash.find(hash); it != m_texture_by_hash.end())
+            return it->second;                                             // one heap slot per unique texture/default
 
-        const auto bytes = substratum::VFS::read_file(std::format("textures/{:016x}.ktx2", ref.hash));
+        const auto bytes = substratum::VFS::read_file(std::format("textures/{:016x}.ktx2", hash));
         if (bytes.empty()) {
-            std::println("resolve_texture: missing sidecar textures/{:016x}.ktx2 (using dummy)", ref.hash);
+            std::println("resolve_texture: missing sidecar textures/{:016x}.ktx2 (using dummy)", hash);
             return m_registry.dummy_texture_handle();
         }
 
         ktxTexture2* tex = nullptr;
         if (ktxTexture2_CreateFromMemory(bytes.data(), bytes.size(),
                 KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &tex) != KTX_SUCCESS) {
-            std::println("resolve_texture: KTX2 parse failed for {:016x}", ref.hash);
+            std::println("resolve_texture: KTX2 parse failed for {:016x}", hash);
             return m_registry.dummy_texture_handle();
         }
 
@@ -148,7 +152,7 @@ namespace thresh {
         ktxTexture_Destroy(ktxTexture(tex));
 
         const std::uint32_t slot = m_registry.get_texture_resource(handle)->image.heap_index();
-        m_texture_by_hash.emplace(ref.hash, slot);
+        m_texture_by_hash.emplace(hash, slot);
         return slot;
     }
 
