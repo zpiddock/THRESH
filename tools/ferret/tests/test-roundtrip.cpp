@@ -2,8 +2,8 @@
 // Created by Admin on 28/06/2026.
 //
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
-#include "doctest.h"
+#include "doctest/doctest.h"
 
-TEST_CASE("Testing we can see Ferret") {
-    
+TEST_CASE("Ferret Links") {
+    CHECK(true);
 }
