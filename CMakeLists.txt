@@ -16,6 +16,10 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Thresh Build Options
+option(THRESH_BUILD_EXAMPLES "Builds the engine examples and samples, currently only the Demo FPS" ON)
+option(THRESH_BUILD_TOOLS    "Builds the tooling executables (Ferret Asset CLI)"                   OFF)
+
 # Uniform descriptor stride, shared by the shader cook step and the runtime.
 # Slang's default (-spirv-*-heap-stride 0) uses per-TYPE descriptor sizes, which makes the
 # same slot index map to different byte offsets for images vs buffers, potentially causing an index-vs-offset size bug.
@@ -35,11 +39,11 @@ include(cmake-scripts/dependencies.cmake)
 include(cmake-scripts/add_slang_shader.cmake)
 
 # Treat warnings as errors
-#if(MSVC)
-#    add_compile_options(/W4 /WX)
-#else()
-#    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
-#endif()
+if(MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-unused-parameter)
+endif()
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_link_options(-static-libgcc -static-libstdc++)
@@ -52,11 +56,12 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInf
 endif()
 
 
-add_subdirectory(src/thresh-core)
-add_subdirectory(src/thresh-asset-schema)
-add_subdirectory(src/thresh-math)
-add_subdirectory(src/thresh-windowing)
-add_subdirectory(src/thresh-rendering)
-add_subdirectory(src/thresh)
+add_subdirectory(src)
 
-add_subdirectory(examples/demo-app)
+if(THRESH_BUILD_TOOLS)
+    add_subdirectory(tools/ferret)
+endif ()
+
+if(THRESH_BUILD_EXAMPLES)
+    add_subdirectory(examples/demo-app)
+endif ()

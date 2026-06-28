@@ -15,7 +15,7 @@ function(add_slang_shader_target TARGET)
             -I ${THRESH_SHADERS_DIR}
             -target spirv
             -profile spirv_1_5
-            -capability spvDescriptorHeapEXT # Enables the feature, if a shader/pipeline doesn't use it, it's ignored
+            -capability spvDescriptorHeapEXT # Enables the feature, if a shader/pipeline doesn't use it, it's ignored, so safe to enable for ALL compiled shaders
             -spirv-resource-heap-stride ${THRESH_RESOURCE_HEAP_STRIDE}
             -spirv-sampler-heap-stride ${THRESH_SAMPLER_HEAP_STRIDE}
             -emit-spirv-directly

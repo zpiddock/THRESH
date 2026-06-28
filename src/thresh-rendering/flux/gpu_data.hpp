@@ -67,7 +67,7 @@ namespace flux::gpu {
         std::uint32_t metallic_roughness_texture_handle; // G Chan: Roughness, B Chan: Metallic
         std::uint32_t occlusion_texture_handle;
         std::uint32_t flags;
-        std::uint32_t _pad[2];   // explicit pad to 80
+        std::uint32_t _pad[2]{};   // explicit pad to 80
     };
     static_assert(sizeof(MaterialData) == 80);
 

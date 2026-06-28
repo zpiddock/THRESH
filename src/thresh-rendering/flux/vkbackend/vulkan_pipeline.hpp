@@ -26,7 +26,7 @@ namespace flux {
         // If string is empty stage will be omitted
         std::string vertex_entry = "vertexMain";
         std::string fragment_entry = "fragmentMain";
-        std::string compute_entry; // future use
+        std::string compute_entry = ""; // future use
         bool use_vertex_input = true;
         bool depth_test = true;
         bool depth_write = true;
@@ -36,12 +36,12 @@ namespace flux {
         vk::PrimitiveTopology topology = vk::PrimitiveTopology::eTriangleList;
 
         // For use with explicit descriptor sets only, will be ignored under descriptor heap pipelines
-        std::vector<vk::DescriptorSetLayoutBinding> bindings;
-        std::vector<vk::PushConstantRange>          push_constants;
+        std::vector<vk::DescriptorSetLayoutBinding> bindings{};
+        std::vector<vk::PushConstantRange>          push_constants{};
 
         // If empty, ThreshVkPipeline falls back to the hardcoded flux::Vertex layout (existing behaviour).
-        std::vector<vk::VertexInputBindingDescription>   vertex_bindings;
-        std::vector<vk::VertexInputAttributeDescription> vertex_attributes;
+        std::vector<vk::VertexInputBindingDescription>   vertex_bindings{};
+        std::vector<vk::VertexInputAttributeDescription> vertex_attributes{};
     };
 
     class ThreshVkPipeline {

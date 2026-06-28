@@ -32,8 +32,12 @@ namespace flux {
         };
 
         ImGui_ImplVulkan_PipelineInfo pipeline_info = {
-            .MSAASamples                 = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT,
+            .RenderPass                  = nullptr, // We use dynamic rendering so this will be ignored
+            .Subpass                     = 0, // Same as above
+            .MSAASamples                 = VkSampleCountFlagBits::VK_SAMPLE_COUNT_1_BIT ,
+            .ExtraDynamicStates          = {},
             .PipelineRenderingCreateInfo = create_info,
+            .SwapChainImageUsage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         };
 
         ImGui_ImplVulkan_InitInfo init_info = {};

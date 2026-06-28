@@ -32,7 +32,7 @@ namespace demo {
             auto default_material = thresh::Engine::get_instance().assets().load_material("material/default.mat");
 
             // Manually creates a child of "Test Cube" with propagated world transform, 2 units above world transform of parent
-            auto child = scene->get_or_create_entity("ChildBox")
+            [[maybe_unused]] auto child = scene->get_or_create_entity("ChildBox")
                 .child_of(scene->get_or_create_entity("Test Cube"))
                 .set<Transform>({.position = {0,2,0}, .scale = helix::float3{0.5f}})
                 .set<MeshSource>({.path = "primitive://box"})

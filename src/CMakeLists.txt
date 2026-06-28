@@ -1,0 +1,6 @@
+add_subdirectory(thresh-core)
+add_subdirectory(thresh-asset-schema)
+add_subdirectory(thresh-math)
+add_subdirectory(thresh-windowing)
+add_subdirectory(thresh-rendering)
+add_subdirectory(thresh)

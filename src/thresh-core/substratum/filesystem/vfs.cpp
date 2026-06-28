@@ -197,7 +197,7 @@ namespace substratum {
         const auto written = PHYSFS_writeBytes(handle, contents.data(), contents.size());
 
         PHYSFS_close(handle);
-        if (written != contents.size()) {
+        if (static_cast<unsigned long long>(written) != contents.size()) {
 
             SUB_ERROR("VFS::write_file_string() failed for '{}': {} / {}", virtual_path, written, contents.size());
             return false;

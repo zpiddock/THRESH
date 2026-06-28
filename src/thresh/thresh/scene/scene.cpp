@@ -169,7 +169,6 @@ namespace thresh {
             if (result) return; // First result wins
 
             flux::gpu::CameraData data{};
-            constexpr auto identity = helix::float4x4{1.f};
 
             data.view = helix::inverse(transform.transform);
             data.projection = helix::perspective(camera.fov, aspect, camera.near_plane, camera.far_plane);
