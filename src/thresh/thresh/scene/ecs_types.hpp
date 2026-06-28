@@ -49,6 +49,8 @@ struct Light {
 struct Mesh {
     std::uint32_t handle;
     std::uint32_t material_handle;
+    std::uint32_t index_offset = 0;
+    std::uint32_t index_count = 0; // 0 = Whole buffer;
 };
 
 struct MeshSource {

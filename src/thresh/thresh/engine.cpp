@@ -163,6 +163,13 @@ namespace thresh {
         return *m_asset_manager;
     }
 
+    auto Engine::models() -> ModelLoader& {
+        if (!m_model_loader) {
+            m_model_loader = std::make_unique<ModelLoader>(m_renderer->resources());
+        }
+        return *m_model_loader;
+    }
+
     auto Engine::active_scene() -> Scene* {
         return m_active_scene.get();
     }

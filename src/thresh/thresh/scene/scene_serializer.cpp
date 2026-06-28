@@ -24,9 +24,10 @@ namespace thresh {
         register_math_components(world);
 
         world.component<Transform>()
-             .member<helix::float3>("position")
-             .member<helix::quat>("rotation")
-             .member<helix::float3>("scale");
+            .member<helix::float3>("position")
+            .member<helix::quat>("rotation")
+            .member<helix::float3>("scale")
+            .add(flecs::OnInstantiate, flecs::Override);
 
         world.component<Camera>()
              .member<float>("fov")
@@ -56,7 +57,8 @@ namespace thresh {
 
         // Mesh is runtime-derived. Registered so flecs to_json/from_json handles
         // it cleanly values are overwritten on load by the resolution pass.
-        world.component<Mesh>();
+        world.component<Mesh>()
+        .add(flecs::OnInstantiate, flecs::Inherit);
 
         // ActiveCamera is a pure tag - registering the component is enough.
         world.component<ActiveCamera>();

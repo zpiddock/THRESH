@@ -38,6 +38,8 @@ namespace demo {
                 .set<MeshSource>({.path = "primitive://box"})
                 .set<MaterialSource>({.path = "material/default.mat"})
                 .set<Mesh>({box_mesh, default_material});
+
+            thresh::Engine::get_instance().models().spawn(scene->get_world(), "models/ArmoredGirl.tasset", scene->root());
         }
 
         // auto scene = std::make_unique<thresh::Scene>();

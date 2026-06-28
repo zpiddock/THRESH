@@ -5,6 +5,8 @@ add_library(ferret STATIC
         ferret/hash.hpp
         ferret/assimp_import.cpp
         ferret/assimp_import.hpp
+        ferret/mesh_build.cpp
+        ferret/mesh_build.hpp
 )
 target_link_libraries(ferret
         PUBLIC

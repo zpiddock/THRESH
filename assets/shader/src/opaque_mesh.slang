@@ -5,6 +5,7 @@ struct VertexInput
 {
     float3 in_position;
     float3 in_normal;
+    float4 in_tangent;
     float2 in_texcoord;
 };
 

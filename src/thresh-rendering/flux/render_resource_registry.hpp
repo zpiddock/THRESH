@@ -20,10 +20,15 @@ namespace flux {
             RenderResourceRegistry(ThreshVkDevice& device, DescriptorHeap& resource_heap, std::uint32_t material_capacity);
 
             auto register_mesh(const MeshData& data) -> std::uint32_t;
+            auto register_mesh_data(std::span<const std::byte> vertices,
+                std::span<const std::byte> indices,
+                std::uint32_t index_count,
+                const helix::AABB& local_aabb) -> std::uint32_t;
 
             auto register_texture(const std::string& path) -> std::uint32_t;
 
             auto register_material(std::uint32_t texture_handle, helix::Colour base_colour = helix::Colour(1.f) , const std::string& material_type = "opaque") -> std::uint32_t;
+            auto register_material(const gpu::MaterialData& data, const std::string& material_type = "opaque") -> std::uint32_t;
 
             [[nodiscard]] auto get_mesh_resource(std::uint32_t mesh_id) const -> const MeshResource*;
             [[nodiscard]] auto get_texture_resource(std::uint32_t texture_id) const -> const TextureResource*;
