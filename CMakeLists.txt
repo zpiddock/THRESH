@@ -18,7 +18,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Thresh Build Options
 option(THRESH_BUILD_EXAMPLES "Builds the engine examples and samples, currently only the Demo FPS" ON)
-option(THRESH_BUILD_TOOLS    "Builds the tooling executables (Ferret Asset CLI)"                   OFF)
+option(THRESH_BUILD_TOOLS    "Builds the tooling executables (Ferret Asset CLI)"                   ON)
 
 # Uniform descriptor stride, shared by the shader cook step and the runtime.
 # Slang's default (-spirv-*-heap-stride 0) uses per-TYPE descriptor sizes, which makes the
@@ -29,16 +29,26 @@ option(THRESH_BUILD_TOOLS    "Builds the tooling executables (Ferret Asset CLI)"
 set(THRESH_RESOURCE_HEAP_STRIDE 64 CACHE STRING "byte stride of one resource-heap slot")
 set(THRESH_SAMPLER_HEAP_STRIDE  64 CACHE STRING "byte stride of one sampler-heap slot")
 
-# Include CMP for Dependency management
+message("Thresh Examples: ${THRESH_BUILD_EXAMPLES}")
+message("Thresh Tools: ${THRESH_BUILD_TOOLS}")
+
+# Include CPM for Dependency management
 include(cmake-scripts/get_cpm.cmake)
 # Find Vulkan (Khronos Official Vulkan cmake script)
 include(cmake-scripts/FindVulkan.cmake)
 # Include dependencies
 include(cmake-scripts/dependencies.cmake)
+# Tool-only dependencies (Assimp, zlib, etc.). Pulled in here, before the warning
+# flags below, so third-party code never inherits our -Werror. Anything added after
+# add_compile_options() picks up the strict flags; dependencies must stay above it.
+if(THRESH_BUILD_TOOLS)
+    include(cmake-scripts/tool_dependencies.cmake)
+endif()
 # Set up custom commands
 include(cmake-scripts/add_slang_shader.cmake)
 
-# Treat warnings as errors
+# Treat warnings as errors. Applies only to targets created below (src/, tools/,
+# examples/) -- all dependency add_subdirectory() calls happen above this point.
 if(MSVC)
     add_compile_options(/W4 /WX)
 else()
@@ -59,7 +69,7 @@ endif()
 add_subdirectory(src)
 
 if(THRESH_BUILD_TOOLS)
-    add_subdirectory(tools/ferret)
+    add_subdirectory(tools)
 endif ()
 
 if(THRESH_BUILD_EXAMPLES)

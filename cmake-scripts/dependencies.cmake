@@ -72,8 +72,27 @@ CPMAddPackage(
             "KTX_FEATURE_LOADTEST_APPS OFF"
 )
 
+# KTX bundles ARM's astc-encoder, which builds with its own -Werror and applies both
+# -ffp-model=precise and -ffp-contract=off. Recent clang flags that combo as
+# -Woverriding-option, turning the dependency's own -Werror into a hard build failure.
+# Demote that one warning back to non-fatal on the astcenc target (clang only).
+# KTX selects exactly one ISA variant at configure time (see KTX CMakeLists ~L1015).
+foreach(astcenc_target
+        astcenc-avx2-static astcenc-sse4.1-static astcenc-sse2-static
+        astcenc-neon-static astcenc-none-static astcenc-static)
+    if(TARGET ${astcenc_target})
+        target_compile_options(${astcenc_target}
+                PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-error=overriding-option>)
+    endif()
+endforeach()
+
 CPMAddPackage("gh:ocornut/imgui@1.92.8#docking")
 CPMAddPackage("gh:cedricguillemet/imguizmo#1.10")
+
+# ZSTD for compression
+CPMAddPackage(NAME zstd GIT_REPOSITORY https://github.com/facebook/zstd.git GIT_TAG v1.5.7
+        GIT_SHALLOW TRUE SOURCE_SUBDIR build/cmake
+        OPTIONS "ZSTD_BUILD_SHARED OFF" "ZSTD_BUILD_PROGRAMS OFF" "ZSTD_BUILD_TESTS OFF")
 
 if(imgui_ADDED)
     add_library(imgui SHARED
