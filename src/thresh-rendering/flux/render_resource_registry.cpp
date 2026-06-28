@@ -46,8 +46,18 @@ namespace flux {
         return handle;
     }
 
+    auto RenderResourceRegistry::register_texture_mips(std::span<const std::byte> all_levels,
+        std::span<const MipRegion> regions, vk::Extent2D base_extent, vk::Format format,
+        std::uint32_t mip_levels) -> std::uint32_t {
+
+        auto image = m_device.upload_image_mips(all_levels, regions, base_extent, format, mip_levels, "Model Texture");
+        const auto handle = store_texture(TextureResource{ .image = std::move(image) });
+        SUB_TRACE("Registered texture handle {} ({} mips)", handle, mip_levels);
+        return handle;
+    }
+
     auto RenderResourceRegistry::register_material(std::uint32_t texture_handle, helix::Colour base_colour,
-        const std::string& material_type) -> std::uint32_t {
+                                                   const std::string& material_type) -> std::uint32_t {
         const auto* albedo = get_texture_resource(texture_handle);
         const std::uint32_t albedo_slot = albedo ? albedo->image.heap_index() : m_dummy_texture_heap_index;
 

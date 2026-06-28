@@ -9,6 +9,7 @@
 #include "assimp_import.hpp"
 #include "hash.hpp"
 #include "mesh_build.hpp"
+#include "texture_bake.hpp"
 #include "zstd.h"
 #include "assimp/Importer.hpp"
 #include "thresh/asset/model_asset.hpp"
@@ -74,8 +75,15 @@ namespace ferret {
             }
         };
         walk(scene->mRootNode, -1);
+
+        if (!options.texture_out_dir.empty()) {
+            std::filesystem::create_directories(options.texture_out_dir);
+        }
         for (unsigned i = 0; i < scene->mNumMaterials; ++i) {
-            asset.materials.push_back(build_material(scene->mMaterials[i]));
+            auto entry = build_material(scene->mMaterials[i]);
+            cook_material_textures(scene, model_path.parent_path(), scene->mMaterials[i],
+                                   options.codec, options.texture_out_dir, entry);
+            asset.materials.push_back(std::move(entry));
         }
         if (auto w = write_thresh_model(out_model, asset, options.should_compress); !w) {
             return std::unexpected(w.error());

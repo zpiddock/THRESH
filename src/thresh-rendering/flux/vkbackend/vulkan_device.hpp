@@ -16,7 +16,14 @@ namespace flux {
         YES,
     };
 
+    struct MipRegion {
+        vk::DeviceSize buffer_offset{};
+        vk::Extent2D extent;
+        std::uint32_t mip_level{};
+    };
+
     class ThreshVkDevice {
+
 
         public:
             ThreshVkDevice(const vk::raii::Instance& instance, const vk::SurfaceKHR& surface);
@@ -27,6 +34,10 @@ namespace flux {
 
             auto upload_image(std::span<const std::byte> pixels, vk::Extent2D extent, vk::Format format,
                               const char*                name) -> Image;
+
+            auto upload_image_mips(std::span<const std::byte> all_levels, std::span<const MipRegion> regions,
+                       vk::Extent2D base_extent, vk::Format format, std::uint32_t mip_levels,
+                       const char* name) -> Image;
 
             auto begin_single_time_commands() -> flux::CommandBuffer;
 

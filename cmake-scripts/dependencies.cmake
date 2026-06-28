@@ -60,7 +60,7 @@ endif()
 CPMAddPackage(
         NAME ktx
         GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
-        GIT_TAG v4.3.2
+        GIT_TAG v4.4.2
         GIT_SHALLOW TRUE
         OPTIONS
             "KTX_FEATURE_STATIC_LIBRARY ON"

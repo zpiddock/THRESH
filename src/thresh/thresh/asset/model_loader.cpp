@@ -4,6 +4,10 @@
 
 #include "model_loader.hpp"
 
+#include <algorithm>
+#include <format>
+#include <ktx.h>
+
 #include "substratum/filesystem/vfs.hpp"
 #include "thresh/asset/model_io.hpp"
 #include "thresh/scene/ecs_types.hpp"
@@ -98,9 +102,54 @@ namespace thresh {
         return m_registry.register_material(md);
     }
 
-    auto ModelLoader::resolve_texture(const asset::TextureRef& asset) -> std::uint32_t {
+    auto ModelLoader::resolve_texture(const asset::TextureRef& ref) -> std::uint32_t {
 
-        return m_registry.dummy_texture_handle();
+        if (ref.hash == 0) return m_registry.dummy_texture_handle();        // slot has no texture
+
+        if (auto it = m_texture_by_hash.find(ref.hash); it != m_texture_by_hash.end())
+            return it->second;                                             // one heap slot per unique texture
+
+        const auto bytes = substratum::VFS::read_file(std::format("textures/{:016x}.ktx2", ref.hash));
+        if (bytes.empty()) {
+            std::println("resolve_texture: missing sidecar textures/{:016x}.ktx2 (using dummy)", ref.hash);
+            return m_registry.dummy_texture_handle();
+        }
+
+        ktxTexture2* tex = nullptr;
+        if (ktxTexture2_CreateFromMemory(bytes.data(), bytes.size(),
+                KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &tex) != KTX_SUCCESS) {
+            std::println("resolve_texture: KTX2 parse failed for {:016x}", ref.hash);
+            return m_registry.dummy_texture_handle();
+        }
+
+        if (ktxTexture2_NeedsTranscoding(tex)) {                           // UASTC/ETC1S → BC7
+            if (ktxTexture2_TranscodeBasis(tex, KTX_TTF_BC7_RGBA, 0) != KTX_SUCCESS) {
+                ktxTexture_Destroy(ktxTexture(tex));
+                return m_registry.dummy_texture_handle();
+            }
+        }
+
+        const auto* data  = ktxTexture_GetData(ktxTexture(tex));
+        const auto  total = ktxTexture_GetDataSize(ktxTexture(tex));
+        std::vector<flux::MipRegion> regions(tex->numLevels);
+        for (std::uint32_t l = 0; l < tex->numLevels; ++l) {
+            ktx_size_t offset = 0;
+            ktxTexture_GetImageOffset(ktxTexture(tex), l, 0, 0, &offset);
+            regions[l] = {
+                .buffer_offset = offset,
+                .extent        = { std::max(1u, tex->baseWidth >> l), std::max(1u, tex->baseHeight >> l) },
+                .mip_level     = l,
+            };
+        }
+
+        const std::uint32_t handle = m_registry.register_texture_mips(
+            { reinterpret_cast<const std::byte*>(data), total }, regions,
+            { tex->baseWidth, tex->baseHeight }, static_cast<vk::Format>(tex->vkFormat), tex->numLevels);
+        ktxTexture_Destroy(ktxTexture(tex));
+
+        const std::uint32_t slot = m_registry.get_texture_resource(handle)->image.heap_index();
+        m_texture_by_hash.emplace(ref.hash, slot);
+        return slot;
     }
 
     auto ModelLoader::default_material() -> std::uint32_t {

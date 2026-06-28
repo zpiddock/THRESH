@@ -24,6 +24,7 @@ target_link_libraries(Thresh PUBLIC
         stb
         glaze::glaze
         zstd
+        ktx
 )
 
 target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)

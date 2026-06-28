@@ -7,15 +7,17 @@ add_library(ferret STATIC
         ferret/assimp_import.hpp
         ferret/mesh_build.cpp
         ferret/mesh_build.hpp
+        ferret/texture_bake.cpp
+        ferret/texture_bake.hpp
 )
 target_link_libraries(ferret
         PUBLIC
         Asset_Schema
         assimp
+        ktx
         PRIVATE
         xxhash
         stb
-        ktx
         libzstd_static
         glaze::glaze
 )
@@ -31,5 +33,15 @@ target_link_libraries(ferret-cli
         ferret
         Substratum
 )
+
+# Copy runtime DLLs (assimp, etc.) next to the CLI so it can launch standalone.
+if (WIN32)
+    add_custom_command(TARGET ferret-cli POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:ferret-cli>
+            $<TARGET_FILE_DIR:ferret-cli>
+            COMMAND_EXPAND_LISTS
+            COMMENT "Copying runtime DLLs next to ferret-cli")
+endif ()
 
 add_subdirectory(tests)

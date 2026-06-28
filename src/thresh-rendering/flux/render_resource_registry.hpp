@@ -26,6 +26,8 @@ namespace flux {
                 const helix::AABB& local_aabb) -> std::uint32_t;
 
             auto register_texture(const std::string& path) -> std::uint32_t;
+            auto register_texture_mips(std::span<const std::byte> all_levels, std::span<const MipRegion> regions,
+                           vk::Extent2D base_extent, vk::Format format, std::uint32_t mip_levels) -> std::uint32_t;
 
             auto register_material(std::uint32_t texture_handle, helix::Colour base_colour = helix::Colour(1.f) , const std::string& material_type = "opaque") -> std::uint32_t;
             auto register_material(const gpu::MaterialData& data, const std::string& material_type = "opaque") -> std::uint32_t;

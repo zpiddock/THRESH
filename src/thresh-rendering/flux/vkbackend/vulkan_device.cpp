@@ -86,7 +86,51 @@ namespace flux {
                                 .access = vk::AccessFlagBits2::eShaderRead });
         end_single_time_commands(cmd);
         return image;
-}
+    }
+
+    auto ThreshVkDevice::upload_image_mips(std::span<const std::byte> all_levels, std::span<const MipRegion> regions,
+        vk::Extent2D base_extent, vk::Format format, std::uint32_t mip_levels, const char* name) -> Image {
+
+        Buffer staging(*this, {
+            .size = all_levels.size(),
+            .usage = vk::BufferUsageFlagBits::eTransferSrc,
+            .memory = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+            .persistent_map = true,
+            .debug_name = "Mip Staging"
+        });
+        std::memcpy(staging.mapped().data(), all_levels.data(), all_levels.size());
+
+        Image image(*this, {
+            .extent = base_extent,
+            .format = format,
+            .usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+            .aspect = vk::ImageAspectFlagBits::eColor,
+            .mip_levels = mip_levels,
+            .debug_name = name
+        });
+
+        std::vector<vk::BufferImageCopy> copies;
+        copies.reserve(regions.size());
+        for (const auto& region : regions) {
+            copies.push_back({
+                .bufferOffset     = region.buffer_offset,
+                .imageSubresource = { .aspectMask = vk::ImageAspectFlagBits::eColor,
+                                      .mipLevel = region.mip_level, .baseArrayLayer = 0, .layerCount = 1 },
+                .imageExtent      = { region.extent.width, region.extent.height, 1 },
+            });
+        }
+        auto cmd = begin_single_time_commands();
+        cmd.transition(image, { .layout = vk::ImageLayout::eTransferDstOptimal,    // covers all mip levels
+                                .stage  = vk::PipelineStageFlagBits2::eCopy,
+                                .access = vk::AccessFlagBits2::eTransferWrite });
+        cmd.raw().copyBufferToImage(staging.handle(), image.handle(),
+                                    vk::ImageLayout::eTransferDstOptimal, copies);
+        cmd.transition(image, { .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                                .stage  = vk::PipelineStageFlagBits2::eFragmentShader,
+                                .access = vk::AccessFlagBits2::eShaderRead });
+        end_single_time_commands(cmd);
+        return image;   // caller (store_texture) allocates the HeapSlot + writes the descriptor
+    }
 
     auto ThreshVkDevice::begin_single_time_commands() -> flux::CommandBuffer {
 
