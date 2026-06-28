@@ -1,6 +1,8 @@
 add_library(ferret STATIC
         ferret/cook.cpp
         ferret/cook.hpp
+        ferret/hash.cpp
+        ferret/hash.hpp
 )
 target_link_libraries(ferret
         PUBLIC

@@ -26,11 +26,11 @@ auto main(int argc, char** argv) -> int {
         }
     }
 
-    const auto result = false; // TODO: Do cooking....
-    if (!result) {
-        std::println(stderr, "Failed to cook model!");
+    const auto result = ferret::cook_model(src, out, options);
+    if (!result.has_value()) {
+        std::println(stderr, "Failed to cook model!, error: {}", result.error());
         return 2;
     }
-    std::println(stdout, "Cooked model!");
+    std::println(stdout, "Cooked model to {}!", result->output_path.string());
     return 0;
 }
