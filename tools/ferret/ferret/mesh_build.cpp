@@ -4,6 +4,9 @@
 
 #include "mesh_build.hpp"
 
+#include "assimp/GltfMaterial.h"
+#include "thresh/asset/material_flags.hpp"
+
 namespace ferret {
 
     auto build_mesh_entry(const aiScene* scene, const aiNode* node) -> thresh::asset::MeshEntry {
@@ -48,6 +51,50 @@ namespace ferret {
         out.indices.resize(idx.size() * sizeof(std::uint32_t));
         std::memcpy(out.indices.data(), idx.data(), out.indices.size());
         return out;
+    }
+
+    auto build_material(const aiMaterial* mat) -> thresh::asset::MaterialEntry {
+        thresh::asset::MaterialEntry e;
+
+        aiColor4D base{1, 1, 1, 1};
+        if (mat->Get(AI_MATKEY_BASE_COLOR, base) != AI_SUCCESS)
+            mat->Get(AI_MATKEY_COLOR_DIFFUSE, base);                  // FBX / legacy Phong fallback
+        e.base_colour_factor = { base.r, base.g, base.b, base.a };
+
+        float metallic = 1.f, roughness = 1.f;
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, metallic);               // absent on legacy → stays default
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness);
+        e.metallic_factor = metallic;
+        e.roughness_factor = roughness;
+
+        aiColor3D emissive{0, 0, 0};
+        mat->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
+        e.emissive_factor = { emissive.r, emissive.g, emissive.b };
+
+        float cutoff = 0.5f;
+        mat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, cutoff);
+        e.alpha_cutoff = cutoff;
+
+        int twosided = 0;
+        mat->Get(AI_MATKEY_TWOSIDED, twosided);
+        aiString alpha_mode;
+        const bool mask = mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alpha_mode) == AI_SUCCESS
+                       && std::string_view{alpha_mode.C_Str()} == "MASK";
+        const bool has_normal   = mat->GetTextureCount(aiTextureType_NORMALS) > 0;
+        const bool has_emissive = mat->GetTextureCount(aiTextureType_EMISSIVE) > 0
+                               || (emissive.r + emissive.g + emissive.b) > 0.f;
+        if (mask)         e.flags |= thresh::asset::MATERIAL_FLAG_ALPHA_MASK;
+        if (twosided)     e.flags |= thresh::asset::MATERIAL_FLAG_DOUBLE_SIDED;
+        if (has_normal)   e.flags |= thresh::asset::MATERIAL_FLAG_HAS_NORMAL;
+        if (has_emissive) e.flags |= thresh::asset::MATERIAL_FLAG_HAS_EMISSIVE;
+
+        // Per-slot usage + colour space (the bake pass in Step 16 fills content_hash):
+        e.base_colour_texture.usage        = thresh::asset::TextureUsage::BaseColour; e.base_colour_texture.colour_space               = thresh::asset::ColourSpace::sRGB;
+        e.normal_texture.usage             = thresh::asset::TextureUsage::Normal; e.normal_texture.colour_space                        = thresh::asset::ColourSpace::Linear;
+        e.metallic_roughness_texture.usage = thresh::asset::TextureUsage::MetallicRoughness; e.metallic_roughness_texture.colour_space = thresh::asset::ColourSpace::Linear;
+        e.occlusion_texture.usage          = thresh::asset::TextureUsage::Occlusion; e.occlusion_texture.colour_space                  = thresh::asset::ColourSpace::Linear;
+        e.emissive_texture.usage           = thresh::asset::TextureUsage::Emissive; e.emissive_texture.colour_space                    = thresh::asset::ColourSpace::sRGB;
+        return e;
     }
 
     auto component_min(std::array<float, 3> a, std::array<float, 3> b) -> std::array<float, 3> {

@@ -23,7 +23,7 @@ namespace thresh {
         private:
             auto build_prefab(flecs::world& world, const asset::ModelAsset& asset) -> flecs::entity;
             auto upload_mesh(const asset::MeshEntry& asset) -> std::uint32_t;           // registry mesh handle
-            auto register_material(const asset::MaterialEntry& asset) -> std::uint32_t; // registry material handle
+            auto register_material(const asset::MaterialEntry& entry) -> std::uint32_t; // registry material handle
             auto resolve_texture(const asset::TextureRef& asset) -> std::uint32_t;      // hash -> HeapSlot, cached
             auto default_material() -> std::uint32_t;
 

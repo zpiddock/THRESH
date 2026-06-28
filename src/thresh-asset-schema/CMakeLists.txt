@@ -1,5 +1,6 @@
 add_library(Asset_Schema INTERFACE
         thresh/asset/material_asset.h
+        thresh/asset/material_flags.hpp
         thresh/asset/model_io.hpp
         thresh/asset/model_asset.hpp
 )

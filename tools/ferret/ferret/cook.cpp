@@ -74,7 +74,9 @@ namespace ferret {
             }
         };
         walk(scene->mRootNode, -1);
-
+        for (unsigned i = 0; i < scene->mNumMaterials; ++i) {
+            asset.materials.push_back(build_material(scene->mMaterials[i]));
+        }
         if (auto w = write_thresh_model(out_model, asset, options.should_compress); !w) {
             return std::unexpected(w.error());
         }
