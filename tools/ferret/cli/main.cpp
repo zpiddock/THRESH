@@ -66,9 +66,33 @@ auto main(int argc, char** argv) -> int {
         std::println("source_uri: {}", model->src_uri);
         std::println("nodes: {}  meshes: {}  materials: {}",
                      model->nodes.size(), model->meshes.size(), model->materials.size());
-        for (const auto& n : model->nodes)                                      // grows as later steps fill the model
+        for (const auto& n : model->nodes) {
+            // grows as later steps fill the model
             std::println("  node '{}' parent={} mesh={}  T=({:.2f},{:.2f},{:.2f})",
                          n.name, n.parent_index, n.mesh, n.translation[0], n.translation[1], n.translation[2]);
+        }
+        std::println("meshes:");
+
+        for (std::size_t i = 0; i < model->meshes.size(); ++i) {
+            const auto& mesh = model->meshes[i];
+            std::println("  mesh[{}] layout={} index_type={} vertices={} indices={} submeshes={}",
+                         i,
+                         static_cast<int>(mesh.layout),
+                         static_cast<int>(mesh.index_type),
+                         mesh.vertex_count,
+                         mesh.index_count,
+                         mesh.submeshes.size());
+
+            std::println("    aabb min=({:.2f},{:.2f},{:.2f}) max=({:.2f},{:.2f},{:.2f})",
+                         mesh.aabb_min[0], mesh.aabb_min[1], mesh.aabb_min[2],
+                         mesh.aabb_max[0], mesh.aabb_max[1], mesh.aabb_max[2]);
+
+            for (std::size_t s = 0; s < mesh.submeshes.size(); ++s) {
+                const auto& sub = mesh.submeshes[s];
+                std::println("    submesh[{}] index_offset={} index_count={} material={}",
+                             s, sub.index_offset, sub.index_count, sub.material_index);
+            }
+        }
         return 0;
     }
 

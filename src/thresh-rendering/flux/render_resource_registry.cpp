@@ -28,6 +28,18 @@ namespace flux {
         return handle;
     }
 
+    auto RenderResourceRegistry::register_mesh_data(const std::span<const std::byte> vertices,
+        const std::span<const std::byte> indices, const std::uint32_t index_count, const helix::AABB& local_aabb) -> std::uint32_t {
+
+        MeshResource mr;
+        mr.vertex      = m_device.upload_device_local(vertices, vk::BufferUsageFlagBits::eVertexBuffer, "Model VBO");
+        mr.index       = m_device.upload_device_local(indices,  vk::BufferUsageFlagBits::eIndexBuffer,  "Model IBO");
+        mr.index_count = index_count;
+        mr.local_aabb  = local_aabb; // precomputed at cook time - no per-vertex expand
+        m_mesh_resources.emplace_back(std::move(mr));
+        return static_cast<std::uint32_t>(m_mesh_resources.size()); // 1-based, matches register_mesh
+    }
+
     auto RenderResourceRegistry::register_texture(const std::string& path) -> std::uint32_t {
         const auto handle = store_texture(create_texture_resource(path));
         SUB_TRACE("Registered texture handle {} from '{}'", handle, path);
@@ -53,12 +65,18 @@ namespace flux {
             .metallic_roughness_texture_handle = m_dummy_texture_heap_index,
             .occlusion_texture_handle          = m_dummy_texture_heap_index,
             .flags = 0,
-            };
-        const std::uint32_t gpu_index = m_material_buffer.register_material(data);
+        };
+        const auto handle = register_material(data, material_type);
+        return handle;
+    }
 
+    auto RenderResourceRegistry::register_material(const gpu::MaterialData& data,
+        const std::string& material_type) -> std::uint32_t {
+
+        const std::uint32_t gpu_index = m_material_buffer.register_material(data);
         m_material_resources.emplace_back(MaterialResource{ .material_type = material_type, .gpu_index = gpu_index });
-        const auto handle = static_cast<std::uint32_t>(m_material_resources.size());
-        SUB_TRACE("Registered material handle {} -> gpu index {} (type='{}', albedo_slot={})", handle, gpu_index, material_type, albedo_slot);
+        auto handle =  static_cast<std::uint32_t>(m_material_resources.size()); // the handle Mesh.material_handle stores
+        SUB_TRACE("Registered material handle {} -> gpu index {} (type='{}')", handle, gpu_index, material_type);
         return handle;
     }
 

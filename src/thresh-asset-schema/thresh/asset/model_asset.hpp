@@ -49,8 +49,12 @@ namespace thresh::asset {
         std::vector<std::uint8_t> vertices; // vertex_count * sizeof(MeshEntry)
         std::vector<std::uint8_t> indices; // index_count * stride(index_type)
         std::vector<Submesh> submeshes;
-        std::array<float, 3> bb_min{};
-        std::array<float, 3> bb_max{}; // precomputed for WorldAABB/picking
+        std::array<float, 3> aabb_min{  std::numeric_limits<float>::max(),
+                                        std::numeric_limits<float>::max(),
+                                        std::numeric_limits<float>::max() };
+        std::array<float, 3> aabb_max{  -std::numeric_limits<float>::max(),
+                                        -std::numeric_limits<float>::max(),
+                                        -std::numeric_limits<float>::max() }; // precomputed for WorldAABB/picking
     };
 
     enum class ColourSpace : std::uint8_t {

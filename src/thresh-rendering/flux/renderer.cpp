@@ -279,7 +279,7 @@ namespace flux {
             });
             cmd_buffer.raw().bindVertexBuffers(0, {mesh->vertex.handle()}, {0});
             cmd_buffer.raw().bindIndexBuffer(mesh->index.handle(), 0, vk::IndexType::eUint32);
-            cmd_buffer.raw().drawIndexed(mesh->index_count, 1, 0, 0, 0);
+            cmd_buffer.raw().drawIndexed(cmd.index_count ? cmd.index_count : mesh->index_count, 1, cmd.index_offset, 0, 0);
         }
         cmd_buffer.raw().endRendering();
     }

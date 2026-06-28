@@ -13,6 +13,7 @@
 
 #include "application.hpp"
 #include "asset/assets_loader.hpp"
+#include "asset/model_loader.hpp"
 #include "flux/renderer.hpp"
 #include "horizon/input_manager.hpp"
 #include "horizon/window.hpp"
@@ -57,6 +58,8 @@ class Engine {
 
         auto assets() -> AssetsLoader&;
 
+        auto models() -> ModelLoader&;
+
         auto active_scene() -> Scene*;
 
         auto load_scene(const std::string& path) -> std::unique_ptr<Scene>;
@@ -74,6 +77,7 @@ class Engine {
         std::unique_ptr<flux::Renderer>        m_renderer;
         std::unique_ptr<horizon::InputManager> m_input_manager;
         std::unique_ptr<AssetsLoader>          m_asset_manager;
+        std::unique_ptr<ModelLoader>           m_model_loader;
 
         std::unique_ptr<Scene> m_active_scene;
 };

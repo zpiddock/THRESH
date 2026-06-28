@@ -20,6 +20,7 @@ namespace flux {
 
         helix::float3 position;
         helix::float3 normal;
+        helix::float4 tangent;
         helix::float2 tex_coord;
 
         static auto get_binding_description() -> vk::VertexInputBindingDescription {
@@ -27,7 +28,7 @@ namespace flux {
             return {.binding = 0, .stride = sizeof(Vertex), .inputRate = vk::VertexInputRate::eVertex};
         }
 
-        static auto get_attribute_descriptions() -> std::array<vk::VertexInputAttributeDescription, 3> {
+        static auto get_attribute_descriptions() -> std::array<vk::VertexInputAttributeDescription, 4> {
 
             return {
                     {
@@ -45,6 +46,12 @@ namespace flux {
                         },
                         {
                             .location = 2,
+                            .binding = 0,
+                            .format = vk::Format::eR32G32B32A32Sfloat, // slang float4, glsl vec4
+                            .offset = offsetof(Vertex, tangent)
+                        },
+                        {
+                            .location = 3,
                             .binding = 0,
                             .format = vk::Format::eR32G32Sfloat, // slang float2, glsl vec3
                             .offset = offsetof(Vertex, tex_coord)

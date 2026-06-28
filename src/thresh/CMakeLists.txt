@@ -14,6 +14,8 @@ add_library(Thresh STATIC
         thresh/scene/scene_serializer.hpp
         thresh/debug_utils/debug_ui.cpp
         thresh/debug_utils/debug_ui.hpp
+        thresh/asset/model_loader.cpp
+        thresh/asset/model_loader.hpp
 )
 
 target_link_libraries(Thresh PUBLIC
@@ -21,6 +23,7 @@ target_link_libraries(Thresh PUBLIC
         flecs::flecs
         stb
         glaze::glaze
+        zstd
 )
 
 target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)

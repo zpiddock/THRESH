@@ -33,5 +33,7 @@ namespace flux {
         helix::float4 base_colour;
         std::uint32_t mesh_handle;
         std::uint32_t material_handle;
+        std::uint32_t index_offset = 0;
+        std::uint32_t index_count = 0;
     };
 } // flux

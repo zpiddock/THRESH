@@ -101,6 +101,8 @@ namespace thresh {
                     .base_colour     = helix::float4(1.f),
                     .mesh_handle     = mesh.handle,
                     .material_handle = mesh.material_handle,
+                    .index_offset    = mesh.index_offset,
+                    .index_count     = mesh.index_count,
                 });
             }
         );

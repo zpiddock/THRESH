@@ -1,6 +1,7 @@
 add_library(Asset_Schema INTERFACE
         thresh/asset/material_asset.h
         thresh/asset/model_io.hpp
+        thresh/asset/model_asset.hpp
 )
 
 target_link_libraries(Asset_Schema INTERFACE glaze::glaze)

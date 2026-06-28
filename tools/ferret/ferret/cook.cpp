@@ -8,13 +8,13 @@
 
 #include "assimp_import.hpp"
 #include "hash.hpp"
+#include "mesh_build.hpp"
 #include "zstd.h"
 #include "assimp/Importer.hpp"
 #include "thresh/asset/model_asset.hpp"
 
 namespace ferret {
 
-    // Encodes, but no IO, thats handled by the application
     auto encode_thresh_model(const thresh::asset::ModelAsset& asset, bool should_compress) -> std::expected<std::vector<std::uint8_t>, std::string> {
 
         std::string beve;
@@ -61,8 +61,14 @@ namespace ferret {
             return std::unexpected(importer.GetErrorString());
         }
         auto walk = [&](this auto& self, const aiNode* node, std::int32_t parent) -> void {
+            auto thresh_node = make_node(node, parent);
+            if (node->mNumMeshes > 0) {
+                thresh_node.mesh = static_cast<std::int32_t>(asset.meshes.size());
+                asset.meshes.push_back(build_mesh_entry(scene, node));
+            }
+
             const auto self_idx = static_cast<std::int32_t>(asset.nodes.size());
-            asset.nodes.push_back(make_node(node, parent));
+            asset.nodes.push_back(std::move(thresh_node));
             for (unsigned i = 0; i < node->mNumChildren; ++i) {
                 self(node->mChildren[i], self_idx);
             }
