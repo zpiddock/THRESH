@@ -135,13 +135,23 @@ namespace flux {
         record_command_buffers(cmd, image_index, m_draw_commands);
 
         auto render_semaphore = *m_render_complete_semaphores[image_index];
-        vk::PipelineStageFlags wait_stage(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-        const vk::SubmitInfo submit_info{
-            .waitSemaphoreCount = 1, .pWaitSemaphores = &present_semaphore, .pWaitDstStageMask = &wait_stage,
-            .commandBufferCount = 1, .pCommandBuffers = &*cmd.raw(),
-            .signalSemaphoreCount = 1, .pSignalSemaphores = &render_semaphore,
+
+        const vk::SemaphoreSubmitInfo wait_info{
+            .semaphore = present_semaphore,
+            .stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
         };
-        m_vk_device.graphics_queue().submit(submit_info, fence);
+        const vk::CommandBufferSubmitInfo cmd_info{
+            .commandBuffer = *cmd.raw(),
+        };
+        const vk::SemaphoreSubmitInfo signal_info{
+            .semaphore = render_semaphore,
+            .stageMask = vk::PipelineStageFlagBits2::eBottomOfPipe,
+        };
+        m_vk_device.graphics_queue().submit2(vk::SubmitInfo2{
+            .waitSemaphoreInfoCount   = 1, .pWaitSemaphoreInfos   = &wait_info,
+            .commandBufferInfoCount   = 1, .pCommandBufferInfos   = &cmd_info,
+            .signalSemaphoreInfoCount = 1, .pSignalSemaphoreInfos = &signal_info,
+        }, fence);
 
         const vk::PresentInfoKHR present_info{
             .waitSemaphoreCount = 1, .pWaitSemaphores = &render_semaphore,

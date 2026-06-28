@@ -94,7 +94,7 @@ namespace flux {
         const vk::SurfaceCapabilitiesKHR& surface_capabilities) -> uint32_t {
 
         auto min_image_count = std::max(3u, surface_capabilities.minImageCount);
-        if ((0 > surface_capabilities.maxImageCount) && (min_image_count > surface_capabilities.maxImageCount)) {
+        if ((surface_capabilities.maxImageCount > 0) && (min_image_count > surface_capabilities.maxImageCount)) {
             min_image_count = surface_capabilities.maxImageCount;
         }
         return min_image_count;
