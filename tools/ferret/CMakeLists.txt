@@ -15,6 +15,7 @@ target_link_libraries(ferret
         Asset_Schema
         assimp
         ktx
+        CLI11::CLI11
         PRIVATE
         xxhash
         stb

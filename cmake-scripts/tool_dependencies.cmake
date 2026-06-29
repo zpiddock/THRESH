@@ -28,6 +28,9 @@ CPMAddPackage(
 # DocTest
 CPMAddPackage("gh:doctest/doctest#v2.5.2")
 
+# CLI11
+CPMAddPackage("gh:cliutils/cli11#v2.6.2")
+
 if(xxhash_ADDED AND NOT TARGET xxhash)
     add_library(xxhash INTERFACE)
     target_include_directories(xxhash INTERFACE ${xxhash_SOURCE_DIR})
