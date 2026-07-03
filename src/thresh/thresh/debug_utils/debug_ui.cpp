@@ -28,9 +28,10 @@ namespace {
         helix::float4 perspective;
         helix::quat rotation;
 
-        helix::decompose(local, scale, rotation, translation, skew, perspective);
+        if (helix::decompose(local, scale, rotation, translation, skew, perspective)) {
 
-        entity.set<Transform>({.position = translation, .rotation = rotation, .scale = scale});
+            entity.set<Transform>({.position = translation, .rotation = rotation, .scale = scale});
+        }
     }
 
     auto draw_transforms(flecs::entity entity) -> void {
@@ -213,14 +214,15 @@ namespace thresh {
 
         helix::float4x4 world = m_selected_entity.get<WorldTransform>().transform;
 
-        ImGuizmo::Manipulate(
+        if (ImGuizmo::Manipulate(
             helix::value_ptr(cam->view),
             helix::value_ptr(cam->projection),
             m_gizmo_operation,
             m_gizmo_mode,
-            helix::value_ptr(world));
+            helix::value_ptr(world))) {
 
-        write_to_local(m_selected_entity, world);
+            write_to_local(m_selected_entity, world);
+        }
     }
 
     auto DebugUI::submit_aabbs(Scene& scene) -> void {
