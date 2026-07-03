@@ -57,8 +57,9 @@ namespace thresh {
 
         // Mesh is runtime-derived. Registered so flecs to_json/from_json handles
         // it cleanly values are overwritten on load by the resolution pass.
-        world.component<Mesh>()
-        .add(flecs::OnInstantiate, flecs::Inherit);
+        world.component<Mesh>();          // Inherit trait dropped — nothing instantiates prefabs anymore
+
+        world.component<MeshRenderer>();  // runtime-derived, no member reflection
 
         // ActiveCamera is a pure tag - registering the component is enough.
         world.component<ActiveCamera>();

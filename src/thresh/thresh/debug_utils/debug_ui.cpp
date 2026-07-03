@@ -4,6 +4,8 @@
 
 #include "debug_ui.hpp"
 
+#include <cstdio>
+
 #include "imgui.h"
 #include "ImGuizmo.h"
 #include "thresh/engine.hpp"
@@ -96,6 +98,27 @@ namespace {
         ImGui::Text("handle %u, material %u", mesh.handle, mesh.material_handle);
     }
 
+    auto draw_mesh_renderer(flecs::entity entity, std::int32_t& selected_submesh) -> void {
+        if (!entity.has<MeshRenderer>()) {
+            return;
+        }
+        if (!ImGui::CollapsingHeader("MeshRenderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            return;
+        }
+        const auto& renderer = entity.get<MeshRenderer>();
+        ImGui::Text("mesh %u (%zu submeshes)", renderer.mesh_handle, renderer.submeshes.size());
+        for (std::size_t i = 0; i < renderer.submeshes.size(); ++i) {
+            const auto& sm = renderer.submeshes[i];
+            char label[96];
+            std::snprintf(label, sizeof label, "[%zu] mat=%u indices=[%u, +%u)", i, sm.material_handle,
+                          sm.index_offset, sm.index_count);
+            const bool selected = selected_submesh == static_cast<std::int32_t>(i);
+            if (ImGui::Selectable(label, selected)) {
+                selected_submesh = selected ? -1 : static_cast<std::int32_t>(i); // click again to deselect
+            }
+        }
+    }
+
     auto draw_sources(flecs::entity e) -> void {
         if (e.has<MeshSource>())     ImGui::Text("MeshSource: %s",     e.get<MeshSource>().path.c_str());
         if (e.has<MaterialSource>()) ImGui::Text("MaterialSource: %s", e.get<MaterialSource>().path.c_str());
@@ -159,6 +182,7 @@ namespace thresh {
             draw_camera(m_selected_entity);
             draw_light(m_selected_entity);
             draw_mesh(m_selected_entity);
+            draw_mesh_renderer(m_selected_entity, m_selected_submesh);
             draw_sources(m_selected_entity);
             draw_world(m_selected_entity);
         } else {
@@ -203,12 +227,27 @@ namespace thresh {
 
         auto* lines = Engine::get_instance().graphics()->debug_line_renderer();
         if (!lines) return;
-        scene.get_world().query_builder<const WorldAABB>().with<Mesh>().build()
+        scene.get_world().query_builder<const WorldAABB>().with<Mesh>().or_().with<MeshRenderer>().build()
             .each([&](flecs::entity e, const WorldAABB& w) {
                 const auto colour = (e == m_selected_entity) ? helix::float3{1, 1, 0}
                                                  : helix::float3{0.5f, 0.5f, 0.5f};
                 lines->submit_aabb(w.aabb, colour);
             });
+
+        // Per-submesh boxes for the selected model — the picked/inspector-selected one pops orange.
+        if (m_selected_entity.is_alive() && m_selected_entity.has<MeshRenderer>()
+            && m_selected_entity.has<WorldTransform>()) {
+            const auto& renderer = m_selected_entity.get<MeshRenderer>();
+            const auto& world    = m_selected_entity.get<WorldTransform>().transform;
+            for (std::size_t i = 0; i < renderer.submeshes.size(); ++i) {
+                const auto& sm  = renderer.submeshes[i];
+                const auto  box = helix::transform_aabb(sm.local_aabb, world * sm.local);
+                const auto colour = (static_cast<std::int32_t>(i) == m_selected_submesh)
+                                  ? helix::float3{1.f, 0.5f, 0.f}
+                                  : helix::float3{0.3f, 0.6f, 1.f};
+                lines->submit_aabb(box, colour);
+            }
+        }
     }
 
     auto DebugUI::walk_children(flecs::entity parent) -> void {
@@ -224,7 +263,8 @@ namespace thresh {
 
             const bool opened = ImGui::TreeNodeEx(reinterpret_cast<void*>(child.id()), flags, "%s", name);
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-                m_selected_entity = child;
+                m_selected_entity  = child;
+                m_selected_submesh = -1; // tree click selects the whole entity
             }
             if (opened) {
                 walk_children(child);

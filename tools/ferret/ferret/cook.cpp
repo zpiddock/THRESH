@@ -4,6 +4,8 @@
 
 #include "cook.hpp"
 
+#include <unordered_map>
+
 #include <glaze/glaze.hpp>
 
 #include "assimp_import.hpp"
@@ -54,35 +56,53 @@ namespace ferret {
             return std::unexpected("Model file does not exist!");
         }
         thresh::asset::ModelAsset asset{};
-        asset.src_uri = model_path.filename().string();
+        asset.name = out_model.stem().string();
 
         Assimp::Importer importer;
         const aiScene* scene = import_scene(importer, model_path);
         if (!scene) {
             return std::unexpected(importer.GetErrorString());
         }
-        auto walk = [&](this auto& self, const aiNode* node, std::int32_t parent) -> void {
-            auto thresh_node = make_node(node, parent);
-            if (node->mNumMeshes > 0) {
-                thresh_node.mesh = static_cast<std::int32_t>(asset.meshes.size());
-                asset.meshes.push_back(build_mesh_entry(scene, node));
-            }
 
-            const auto self_idx = static_cast<std::int32_t>(asset.nodes.size());
-            asset.nodes.push_back(std::move(thresh_node));
+        // The hierarchy is consumed here: transforms accumulate into Submesh.local, geometry is
+        // cooked once per aiMesh (instanced nodes share the range), and nothing node-shaped survives.
+        std::unordered_map<unsigned, MeshRange> cooked; // aiScene mesh index -> merged-buffer range
+        auto walk = [&](this auto& self, const aiNode* node, const helix::float4x4& parent_global) -> void {
+            const helix::float4x4 global = parent_global * to_helix(node->mTransformation);
+
+            for (unsigned k = 0; k < node->mNumMeshes; ++k) {
+                const unsigned mesh_idx = node->mMeshes[k];
+                auto it = cooked.find(mesh_idx);
+                if (it == cooked.end()) {
+                    it = cooked.emplace(mesh_idx, append_mesh(scene->mMeshes[mesh_idx], asset)).first;
+                }
+                const MeshRange& range = it->second;
+                asset.submeshes.push_back({
+                    .local          = global,
+                    .aabb           = range.local_aabb,
+                    .index_offset   = range.index_offset,
+                    .index_count    = range.index_count,
+                    .material_index = scene->mMeshes[mesh_idx]->mMaterialIndex,
+                });
+                asset.aabb.expand(helix::transform_aabb(range.local_aabb, global));
+            }
             for (unsigned i = 0; i < node->mNumChildren; ++i) {
-                self(node->mChildren[i], self_idx);
-            }
+                self(node->mChildren[i], global); // root's own transform participates — exporters
+            }                                     // park unit/axis fixes there; don't identity it away
         };
-        walk(scene->mRootNode, -1);
+        walk(scene->mRootNode, helix::float4x4{1.f});
 
+        // Textures: per-asset subdir keyed by the cooked name. texture_bake already content-hashes,
+        // dedups, and skips existing files within whatever dir it's handed.
+        std::filesystem::path tex_dir;
         if (!options.texture_out_dir.empty()) {
-            std::filesystem::create_directories(options.texture_out_dir);
+            tex_dir = std::filesystem::path{options.texture_out_dir} / asset.name;
+            std::filesystem::create_directories(tex_dir);
         }
         for (unsigned i = 0; i < scene->mNumMaterials; ++i) {
             auto entry = build_material(scene->mMaterials[i]);
             cook_material_textures(scene, model_path.parent_path(), scene->mMaterials[i],
-                                   options.codec, options.texture_out_dir, entry);
+                                   options.codec, tex_dir, entry);
             asset.materials.push_back(std::move(entry));
         }
         if (auto w = write_thresh_model(out_model, asset, options.should_compress); !w) {

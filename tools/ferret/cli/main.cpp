@@ -46,6 +46,7 @@ auto register_cook_app(CLI::App& base_app) -> void {
         const auto result = ferret::cook_model(args->input, args->output, options);
         if (!result.has_value()) {
             std::println(stderr, "Failed to cook model!, error: {}", result.error());
+            return;
         }
         std::println(stdout, "Cooked model to {}!", result->output_path.string());
     });
@@ -92,27 +93,30 @@ auto register_dump_command(CLI::App& base_app) -> void {
             return;                                          // callback returns void; no exit codes here
         }
 
-        std::println("source_uri: {}", model->src_uri);
-        std::println("nodes: {}  meshes: {}  materials: {}",
-                     model->nodes.size(), model->meshes.size(), model->materials.size());
-        for (const auto& n : model->nodes) {
-            std::println("  node '{}' parent={} mesh={}  T=({:.2f},{:.2f},{:.2f})",
-                         n.name, n.parent_index, n.mesh, n.translation[0], n.translation[1], n.translation[2]);
+        const auto& m = *model;
+        std::println("name: {}", m.name);
+        std::println("vertices: {}   indices: {}   submeshes: {}   materials: {}",
+                     m.vertex_count, m.index_count, m.submeshes.size(), m.materials.size());
+        std::println("aabb min=({:.2f},{:.2f},{:.2f}) max=({:.2f},{:.2f},{:.2f})",
+                     m.aabb.min.x, m.aabb.min.y, m.aabb.min.z,
+                     m.aabb.max.x, m.aabb.max.y, m.aabb.max.z);
+        for (std::size_t s = 0; s < m.submeshes.size(); ++s) {
+            const auto& sub = m.submeshes[s];
+            const auto& t = sub.local[3];   // translation column — quick placement sanity check
+            std::println("  submesh[{}] indices=[{}, +{})  material={}  T=({:.2f},{:.2f},{:.2f})",
+                         s, sub.index_offset, sub.index_count, sub.material_index, t.x, t.y, t.z);
         }
-        std::println("meshes:");
-        for (std::size_t i = 0; i < model->meshes.size(); ++i) {
-            const auto& mesh = model->meshes[i];
-            std::println("  mesh[{}] layout={} index_type={} vertices={} indices={} submeshes={}",
-                         i, static_cast<int>(mesh.layout), static_cast<int>(mesh.index_type),
-                         mesh.vertex_count, mesh.index_count, mesh.submeshes.size());
-            std::println("    aabb min=({:.2f},{:.2f},{:.2f}) max=({:.2f},{:.2f},{:.2f})",
-                         mesh.aabb_min[0], mesh.aabb_min[1], mesh.aabb_min[2],
-                         mesh.aabb_max[0], mesh.aabb_max[1], mesh.aabb_max[2]);
-            for (std::size_t s = 0; s < mesh.submeshes.size(); ++s) {
-                const auto& sub = mesh.submeshes[s];
-                std::println("    submesh[{}] index_offset={} index_count={} material={}",
-                             s, sub.index_offset, sub.index_count, sub.material_index);
-            }
+        for (std::size_t i = 0; i < m.materials.size(); ++i) {
+            const auto& mat = m.materials[i];
+            std::println("  material[{}] shader='{}' base=({:.2f},{:.2f},{:.2f},{:.2f}) metal={:.2f} rough={:.2f} "
+                         "tex[base={} norm={} mr={} occ={} emis={}]",
+                         i, mat.shader_type,
+                         mat.base_colour_factor.x, mat.base_colour_factor.y,
+                         mat.base_colour_factor.z, mat.base_colour_factor.w,
+                         mat.metallic_factor, mat.roughness_factor,
+                         mat.base_colour_texture.hash != 0, mat.normal_texture.hash != 0,
+                         mat.metallic_roughness_texture.hash != 0, mat.occlusion_texture.hash != 0,
+                         mat.emissive_texture.hash != 0);
         }
     });
 }

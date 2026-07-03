@@ -18,6 +18,8 @@ namespace ferret {
             aiProcess_GlobalScale |
             aiProcess_FlipUVs; //glTF / FBX UV origin -> out convention, verify per format
 
+        importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+
         const aiScene* scene = importer.ReadFile(src.string(), flags);
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             return nullptr;
@@ -25,18 +27,12 @@ namespace ferret {
         return scene; // freed when importer goes out of scope
     }
 
-    auto make_node(const aiNode* n, std::int32_t parent) -> thresh::asset::Node {
-
-        aiVector3D translation, scale;
-        aiQuaternion roration;
-        n->mTransformation.Decompose(scale, roration, translation);
-
+    auto to_helix(aiMatrix4x4 m) -> helix::float4x4 {
         return {
-            .name = n->mName.C_Str(),
-            .parent_index = parent,
-            .translation = {translation.x, translation.y, translation.z},
-            .rotation = {roration.x, roration.y, roration.z, roration.w},
-            .scale = {scale.x, scale.y, scale.z}
+            m.a1, m.b1, m.c1, m.d1,
+            m.a2, m.b2, m.c2, m.d2,
+            m.a3, m.b3, m.c3, m.d3,
+            m.a4, m.b4, m.c4, m.d4
         };
     }
 } // ferret

@@ -11,6 +11,7 @@ namespace thresh {
     struct PickHit {
         flecs::entity entity;
         float flags{};
+        std::int32_t submesh = -1; // index into MeshRenderer::submeshes; -1 = whole entity (Mesh path)
     };
 
     class Scene {

@@ -107,6 +107,27 @@ namespace thresh {
             }
         );
 
+        m_world.system<const WorldTransform, const MeshRenderer>("ModelRender").kind(flecs::OnStore).each(
+            [](flecs::iter&, size_t, const WorldTransform& transform, const MeshRenderer& renderer) {
+
+                auto* graphics = Engine::get_instance().graphics();
+
+                for (const auto& sm : renderer.submeshes) {
+                    if (!graphics->resources().get_material_resource(sm.material_handle)) {
+                        continue; // same unresolved-material guard as MeshRender
+                    }
+                    graphics->submit_draw_command({
+                        .model           = transform.transform * sm.local, // CPU compose — flux untouched
+                        .base_colour     = helix::float4(1.f),
+                        .mesh_handle     = renderer.mesh_handle,
+                        .material_handle = sm.material_handle,
+                        .index_offset    = sm.index_offset,
+                        .index_count     = sm.index_count,
+                    });
+                }
+            }
+        );
+
         m_world.system("PropogateWorldTransform").kind(flecs::PostUpdate)
         .run([this](flecs::iter& it) {
             auto walk  = [] (this auto& self, flecs::entity e, const helix::float4x4& parent_world) -> void {
@@ -132,6 +153,15 @@ namespace thresh {
                 helix::AABB aabb{};
                 if (const auto* mesh = e.try_get<Mesh>()) {
                     if (const auto* mesh_handle = gfx->resources().get_mesh_resource(mesh->handle)) {
+                        if (const auto* world_transform = e.try_get<WorldTransform>()) {
+                            aabb.expand(helix::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
+                        }
+                    }
+                }
+                if (const auto* renderer = e.try_get<MeshRenderer>()) {
+                    // The cook stored the whole-model AABB on the merged mesh, so one lookup covers
+                    // every submesh.
+                    if (const auto* mesh_handle = gfx->resources().get_mesh_resource(renderer->mesh_handle)) {
                         if (const auto* world_transform = e.try_get<WorldTransform>()) {
                             aabb.expand(helix::transform_aabb(mesh_handle->local_aabb, world_transform->transform));
                         }
@@ -278,13 +308,32 @@ namespace thresh {
         // Test against every entity with a WorldAABB. For each, also need the entity itself.
         std::optional<PickHit> best;
         m_world.query_builder<const WorldAABB>()
-        .with<Mesh>()
+        .with<Mesh>().or_()
+        .with<MeshRenderer>()
         .build().each(
             [&](flecs::entity e, const WorldAABB& wa) {
-                const auto hit = helix::ray_aabb_intersect(ray_origin, ray_dir, wa.aabb);
-                if (!hit) return;
-                if (!best || *hit < best->flags) {
-                    best = PickHit{e, *hit};
+                const auto broad = helix::ray_aabb_intersect(ray_origin, ray_dir, wa.aabb);
+                if (!broad) return;
+
+                // MeshRenderer entities refine to the closest submesh box; the hit carries its index.
+                if (const auto* renderer = e.try_get<MeshRenderer>()) {
+                    const auto* world_transform = e.try_get<WorldTransform>();
+                    if (!world_transform) return;
+                    for (std::size_t i = 0; i < renderer->submeshes.size(); ++i) {
+                        const auto& sm = renderer->submeshes[i];
+                        const auto box = helix::transform_aabb(sm.local_aabb,
+                                                               world_transform->transform * sm.local);
+                        const auto hit = helix::ray_aabb_intersect(ray_origin, ray_dir, box);
+                        if (!hit) continue;
+                        if (!best || *hit < best->flags) {
+                            best = PickHit{e, *hit, static_cast<std::int32_t>(i)};
+                        }
+                    }
+                    return;
+                }
+
+                if (!best || *broad < best->flags) {
+                    best = PickHit{e, *broad};
                 }
             });
         return best;

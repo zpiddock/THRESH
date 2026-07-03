@@ -9,48 +9,44 @@
 
 namespace ferret {
 
-    auto build_mesh_entry(const aiScene* scene, const aiNode* node) -> thresh::asset::MeshEntry {
-        thresh::asset::MeshEntry           out;
-        std::vector<thresh::asset::MeshVertex> verts;                 // staged, then byte-copied into out.vertices
-        std::vector<std::uint32_t>             idx;
+    auto append_mesh(const aiMesh* mesh, thresh::asset::ModelAsset& out) -> MeshRange {
+        using thresh::asset::MeshVertex;
 
-        for (unsigned k = 0; k < node->mNumMeshes; ++k) {
-            const aiMesh* m = scene->mMeshes[node->mMeshes[k]];
-            const auto base_vtx = static_cast<std::uint32_t>(verts.size());
-            const auto base_idx = static_cast<std::uint32_t>(idx.size());
+        const auto base_vertex = out.vertex_count; // where this mesh starts in the merged VBO
+        const auto base_index  = out.index_count;  // ... and the merged IBO
 
-            for (unsigned i = 0; i < m->mNumVertices; ++i) {
-                thresh::asset::MeshVertex v{};
-                v.position = { m->mVertices[i].x, m->mVertices[i].y, m->mVertices[i].z };
-                if (m->mNormals)            v.normal = { m->mNormals[i].x, m->mNormals[i].y, m->mNormals[i].z };
-                if (m->mTextureCoords[0])   v.uv     = { m->mTextureCoords[0][i].x, m->mTextureCoords[0][i].y };
-                if (m->mTangents) {
-                    const aiVector3D& t = m->mTangents[i]; const aiVector3D& b = m->mBitangents[i];
-                    const aiVector3D& n = m->mNormals[i];
-                    const float handed = (n ^ t) * b < 0.f ? -1.f : 1.f;            // aiVector3D::operator^ = cross
-                    v.tangent = { t.x, t.y, t.z, handed };
-                }
-                verts.push_back(v);
-                out.aabb_min = component_min(out.aabb_min, v.position);
-                out.aabb_max = component_max(out.aabb_max, v.position);
+        out.vertices.reserve(out.vertices.size() + mesh->mNumVertices);
+        for (unsigned i = 0; i < mesh->mNumVertices; ++i) {
+            MeshVertex v{};
+            // Mesh-local, UNTRANSFORMED — placement lives in Submesh.local now.
+            v.position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
+            if (mesh->mNormals)          v.normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+            if (mesh->mTextureCoords[0]) v.uv     = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
+            if (mesh->mTangents && mesh->mBitangents && mesh->mNormals) {
+                const aiVector3D& t = mesh->mTangents[i];
+                const aiVector3D& b = mesh->mBitangents[i];
+                const aiVector3D& n = mesh->mNormals[i];
+                const float handed = (n ^ t) * b < 0.f ? -1.f : 1.f; // aiVector3D::operator^ = cross
+                v.tangent = { t.x, t.y, t.z, handed };
             }
-            for (unsigned f = 0; f < m->mNumFaces; ++f) {                          // triangulated → 3 idx/face
-                const aiFace& face = m->mFaces[f];
-                for (unsigned e = 0; e < 3; ++e) idx.push_back(base_vtx + face.mIndices[e]);
-            }
-            out.submeshes.push_back({ .index_offset   = base_idx,
-                                      .index_count    = static_cast<std::uint32_t>(idx.size()) - base_idx,
-                                      .material_index = m->mMaterialIndex });
+            out.vertices.push_back(v);
         }
 
-        out.vertex_count = static_cast<std::uint32_t>(verts.size());
-        out.index_count  = static_cast<std::uint32_t>(idx.size());
-        out.vertices.resize(verts.size() * sizeof(thresh::asset::MeshVertex));
-        std::memcpy(out.vertices.data(), verts.data(), out.vertices.size());
-        // index_type: keep U32 here; (yours) optionally re-narrow to U16 when vertex_count <= 0xFFFF
-        out.indices.resize(idx.size() * sizeof(std::uint32_t));
-        std::memcpy(out.indices.data(), idx.data(), out.indices.size());
-        return out;
+        out.indices.reserve(out.indices.size() + static_cast<std::size_t>(mesh->mNumFaces) * 3);
+        for (unsigned f = 0; f < mesh->mNumFaces; ++f) { // triangulated → exactly 3 per face
+            const aiFace& face = mesh->mFaces[f];
+            for (unsigned e = 0; e < 3; ++e) out.indices.push_back(base_vertex + face.mIndices[e]); // rebase
+        }
+
+        out.vertex_count = static_cast<std::uint32_t>(out.vertices.size());
+        out.index_count  = static_cast<std::uint32_t>(out.indices.size());
+
+        return {
+            .index_offset = base_index,
+            .index_count  = out.index_count - base_index,
+            .local_aabb   = { { mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z },  // GenBoundingBoxes
+                              { mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z } },
+        };
     }
 
     auto build_material(const aiMaterial* mat) -> thresh::asset::MaterialEntry {
@@ -88,20 +84,12 @@ namespace ferret {
         if (has_normal)   e.flags |= thresh::asset::MATERIAL_FLAG_HAS_NORMAL;
         if (has_emissive) e.flags |= thresh::asset::MATERIAL_FLAG_HAS_EMISSIVE;
 
-        // Per-slot usage + colour space (the bake pass in Step 16 fills content_hash):
+        // Per-slot usage + colour space (the bake pass fills content hash):
         e.base_colour_texture.usage        = thresh::asset::TextureUsage::BaseColour; e.base_colour_texture.colour_space               = thresh::asset::ColourSpace::sRGB;
         e.normal_texture.usage             = thresh::asset::TextureUsage::Normal; e.normal_texture.colour_space                        = thresh::asset::ColourSpace::Linear;
         e.metallic_roughness_texture.usage = thresh::asset::TextureUsage::MetallicRoughness; e.metallic_roughness_texture.colour_space = thresh::asset::ColourSpace::Linear;
         e.occlusion_texture.usage          = thresh::asset::TextureUsage::Occlusion; e.occlusion_texture.colour_space                  = thresh::asset::ColourSpace::Linear;
         e.emissive_texture.usage           = thresh::asset::TextureUsage::Emissive; e.emissive_texture.colour_space                    = thresh::asset::ColourSpace::sRGB;
         return e;
-    }
-
-    auto component_min(std::array<float, 3> a, std::array<float, 3> b) -> std::array<float, 3> {
-        return { std::min(a[0], b[0]), std::min(a[1], b[1]), std::min(a[2], b[2]) };
-    }
-
-    auto component_max(std::array<float, 3> a, std::array<float, 3> b) -> std::array<float, 3> {
-        return { std::max(a[0], b[0]), std::max(a[1], b[1]), std::max(a[2], b[2]) };
     }
 } // ferret

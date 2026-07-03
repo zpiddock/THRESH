@@ -15,12 +15,17 @@ namespace thresh {
 
             auto draw(Scene& scene) -> void;
 
-            auto set_selected_entity(flecs::entity entity) -> void {
+            auto set_selected_entity(flecs::entity entity, std::int32_t submesh = -1) -> void {
                 m_selected_entity = entity;
+                m_selected_submesh = submesh;
             }
 
             auto selected_entity() const -> flecs::entity {
                 return m_selected_entity;
+            }
+
+            auto selected_submesh() const -> std::int32_t {
+                return m_selected_submesh;
             }
 
             bool show_aabbs{true};
@@ -34,6 +39,7 @@ namespace thresh {
             auto walk_children(flecs::entity parent) -> void;
 
             flecs::entity m_selected_entity{};
+            std::int32_t m_selected_submesh{-1}; // index into MeshRenderer::submeshes; -1 = whole entity
 
             ImGuizmo::OPERATION m_gizmo_operation{ImGuizmo::TRANSLATE};
             ImGuizmo::MODE m_gizmo_mode{ImGuizmo::WORLD};

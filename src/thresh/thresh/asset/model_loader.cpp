@@ -29,93 +29,96 @@ namespace thresh {
         return asset::decode_thresh_model(bytes);
     }
 
-    auto ModelLoader::prefab_for(flecs::world& world, const std::string& vfs_path) -> flecs::entity {
+    auto ModelLoader::get_or_load(const std::string& vfs_path) -> const LoadedModel* {
 
-        if (auto it = m_prefab_by_path.find(vfs_path); it != m_prefab_by_path.end()) return it->second;
-        auto model = load_model_asset(vfs_path);                          // propagate error in real code
-        auto root  = build_prefab(world, *model);
-        m_prefab_by_path.emplace(vfs_path, root);
-        return root;
-    }
-    auto ModelLoader::spawn(flecs::world& world, const std::string& path, flecs::entity parent) -> flecs::entity {
-        auto inst = world.entity().is_a(prefab_for(world, path));     // deep-copies the prefab child hierarchy
-        inst.child_of(parent);
-        return inst;
-    }
+        if (auto it = m_models.find(vfs_path); it != m_models.end()) return &it->second;
 
-    auto ModelLoader::build_prefab(flecs::world& world, const asset::ModelAsset& asset) -> flecs::entity {
-        std::vector<std::uint32_t> mesh_handles;
-        mesh_handles.reserve(asset.meshes.size());
-        for (const auto& m : asset.meshes) mesh_handles.push_back(upload_mesh(m));
+        auto decoded = load_model_asset(vfs_path);
+        if (!decoded) {
+            std::println("ModelLoader: failed to decode '{}'", vfs_path);
+            return nullptr;
+        }
+        const auto& asset = *decoded;
+
+        LoadedModel model;
+        model.name = asset.name.empty() ? "model" : asset.name;
+        model.mesh_handle = m_registry.register_mesh_data(
+            std::as_bytes(std::span{asset.vertices}),
+            std::as_bytes(std::span{asset.indices}),
+            asset.index_count, asset.aabb);
 
         std::vector<std::uint32_t> mat_handles;
         mat_handles.reserve(asset.materials.size());
-        for (const auto& mat : asset.materials) {
-            mat_handles.push_back(register_material(mat));
+        for (const auto& entry : asset.materials) {
+            mat_handles.push_back(register_material(entry, model.name));
         }
 
-        auto root = world.prefab();                                   // Prefab-tagged, unscoped (not under SceneRoot)
-        std::vector<flecs::entity> ents(asset.nodes.size());
-        for (std::size_t i = 0; i < asset.nodes.size(); ++i) {
-            const auto& n = asset.nodes[i];
-            auto p = world.prefab();                                  // unnamed → no sibling name collisions
-            p.set<Transform>({ {n.translation[0], n.translation[1], n.translation[2]},
-                               {n.rotation[3], n.rotation[0], n.rotation[1], n.rotation[2]},  // glm::quat(w,x,y,z) ← xyzw
-                               {n.scale[0], n.scale[1], n.scale[2]} });
-            p.child_of(n.parent_index < 0 ? root : ents[n.parent_index]);         // ChildOf among prefab entities
-            if (n.mesh >= 0)
-                for (const auto& sm : asset.meshes[n.mesh].submeshes) {
-                    const std::uint32_t mat_handle = sm.material_index < mat_handles.size() ? mat_handles[sm.material_index] : default_material();
-                    world.prefab().child_of(p)                        // one prefab child per submesh
-                         .set<Transform>({})                          // identity; node carries the transform
-                         .set<Mesh>({ mesh_handles[n.mesh], mat_handle, sm.index_offset, sm.index_count });
-                }
-            ents[i] = p;
+        model.submeshes.reserve(asset.submeshes.size());
+        for (const auto& sm : asset.submeshes) {
+            const std::uint32_t mat_handle = sm.material_index < mat_handles.size()
+                                           ? mat_handles[sm.material_index] : default_material();
+            model.submeshes.push_back({ mat_handle, sm.index_offset, sm.index_count, sm.local, sm.aabb });
         }
-        return root;
+
+        auto [it, inserted] = m_models.emplace(vfs_path, std::move(model));
+        return &it->second;
     }
 
-    auto ModelLoader::upload_mesh(const asset::MeshEntry& asset) -> std::uint32_t {
-        const helix::AABB aabb {
-            {asset.aabb_min[0], asset.aabb_min[1], asset.aabb_min[2]},
-            {asset.aabb_max[0], asset.aabb_max[1], asset.aabb_max[2]}
-        };
-        return m_registry.register_mesh_data(std::as_bytes(std::span{asset.vertices}),
-                                         std::as_bytes(std::span{asset.indices}), asset.index_count, aabb);
+    auto ModelLoader::spawn(flecs::world& world, const std::string& vfs_path, flecs::entity parent) -> flecs::entity {
+
+        const auto* model = get_or_load(vfs_path);
+        if (!model) return flecs::entity{};
+
+        // flecs sibling names must be unique — suffix repeat spawns under the same parent.
+        std::string name = model->name;
+        for (int n = 1; parent.lookup(name.c_str()); ++n) {
+            name = std::format("{}_{}", model->name, n);
+        }
+
+        auto entity = world.entity().child_of(parent);
+        entity.set_name(name.c_str());
+        entity.set<Transform>({});
+        entity.set<MeshRenderer>({ model->mesh_handle, model->submeshes }); // small vector copy per instance
+        return entity;
     }
 
-    auto ModelLoader::register_material(const asset::MaterialEntry& entry) -> std::uint32_t {
+    auto ModelLoader::register_material(const asset::MaterialEntry& entry, const std::string& model_name) -> std::uint32_t {
 
         const flux::gpu::MaterialData md{
-            .base_colour_factor = { entry.base_colour_factor[0], entry.base_colour_factor[1],
-                                    entry.base_colour_factor[2], entry.base_colour_factor[3] },
-            .emissive_factor    = { entry.emissive_factor[0], entry.emissive_factor[1], entry.emissive_factor[2] },
+            .base_colour_factor = entry.base_colour_factor,   // helix on both sides — no unpacking
+            .emissive_factor    = entry.emissive_factor,
             .metallic_factor = entry.metallic_factor, .roughness_factor = entry.roughness_factor,
             .normal_scale = entry.normal_scale, .occlusion_strength = entry.occlusion_strength,
             .alpha_cutoff = entry.alpha_cutoff,
-            .base_colour_texture_handle        = resolve_texture(entry.base_colour_texture),
-            .normal_texture_handle             = resolve_texture(entry.normal_texture),
-            .emissive_texture_handle           = resolve_texture(entry.emissive_texture),
-            .metallic_roughness_texture_handle = resolve_texture(entry.metallic_roughness_texture),
-            .occlusion_texture_handle          = resolve_texture(entry.occlusion_texture),
+            .base_colour_texture_handle        = resolve_texture(entry.base_colour_texture, model_name),
+            .normal_texture_handle             = resolve_texture(entry.normal_texture, model_name),
+            .emissive_texture_handle           = resolve_texture(entry.emissive_texture, model_name),
+            .metallic_roughness_texture_handle = resolve_texture(entry.metallic_roughness_texture, model_name),
+            .occlusion_texture_handle          = resolve_texture(entry.occlusion_texture, model_name),
             .flags = entry.flags,
         };
-        return m_registry.register_material(md);
+        return m_registry.register_material(md, entry.shader_type); // shader string -> material_type
     }
 
-    auto ModelLoader::resolve_texture(const asset::TextureRef& ref) -> std::uint32_t {
+    auto ModelLoader::resolve_texture(const asset::TextureRef& ref, const std::string& model_name) -> std::uint32_t {
 
         // Empty slot → the engine default for that usage (flat-normal for normals, white otherwise).
-        const std::uint64_t hash = ref.hash ? ref.hash
-            : (ref.usage == asset::TextureUsage::Normal ? asset::FLAT_NORMAL_HASH : asset::WHITE_HASH);
+        const bool is_default = ref.hash == 0;
+        const std::uint64_t hash = is_default
+            ? (ref.usage == asset::TextureUsage::Normal ? asset::FLAT_NORMAL_HASH : asset::WHITE_HASH)
+            : ref.hash;
         if (hash == 0) return m_registry.dummy_texture_handle();            // defaults not cooked/pinned
 
         if (auto it = m_texture_by_hash.find(hash); it != m_texture_by_hash.end())
             return it->second;                                             // one heap slot per unique texture/default
 
-        const auto bytes = substratum::VFS::read_file(std::format("textures/{:016x}.ktx2", hash));
+        // Defaults live in the flat root; asset textures in the per-asset subdir.
+        const auto vfs_path = is_default
+            ? std::format("textures/{:016x}.ktx2", hash)
+            : std::format("textures/{}/{:016x}.ktx2", model_name, hash);
+        const auto bytes = substratum::VFS::read_file(vfs_path);
         if (bytes.empty()) {
-            std::println("resolve_texture: missing sidecar textures/{:016x}.ktx2 (using dummy)", hash);
+            std::println("resolve_texture: missing sidecar {} (using dummy)", vfs_path);
             return m_registry.dummy_texture_handle();
         }
 

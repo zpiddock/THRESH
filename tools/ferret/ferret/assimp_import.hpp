@@ -13,5 +13,5 @@ namespace ferret {
 
     auto import_scene(Assimp::Importer& importer, const std::filesystem::path& src) -> const aiScene*;
 
-    auto make_node(const aiNode* n, std::int32_t parent) -> thresh::asset::Node;
+    auto to_helix(aiMatrix4x4 m) -> helix::float4x4;
 } // ferret

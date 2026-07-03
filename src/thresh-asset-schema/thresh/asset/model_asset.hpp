@@ -1,10 +1,16 @@
 #pragma once
 #include <array>
+#include <cstdint>
+#include <string>
 #include <vector>
+
+#include "helix/math.hpp"
+#include "helix_glaze.hpp"
 
 namespace thresh::asset {
     inline constexpr std::array<char, 4> TMODEL_MAGIC = {'T', 'M', 'D', 'L'};
-    inline constexpr std::uint32_t TMODEL_VERSION = 1;
+    inline constexpr std::uint32_t TMODEL_VERSION = 3; // v2: merged buffers + per-submesh transform
+                                                       // v3: per-submesh mesh-local AABB (picking)
 
     struct alignas(8) ModelFileHeader {
         std::array<char, 4> magic              = TMODEL_MAGIC;
@@ -19,42 +25,22 @@ namespace thresh::asset {
 
     struct MeshVertex {
 
-        std::array<float, 3> position;
-        std::array<float, 3> normal;
-        std::array<float, 4> tangent;
-        std::array<float, 2> uv;
+        helix::float3 position;
+        helix::float3 normal;
+        helix::float4 tangent; // xyz + handedness in w
+        helix::float2 uv;
     };
     static_assert(sizeof(MeshVertex) == 48);
+    static_assert(std::is_trivially_copyable_v<MeshVertex>);
 
-    enum class VertexLayout : std::uint8_t {
-        PositionNormalUV        = 0,
-        PositionNormalTangentUV = 1,
-    };
-    enum class IndexType : std::uint8_t {
-        Uint16 = 0,
-        Uint32 = 1,
-    };
-
+    // One draw: an index range into the merged buffers, placed by the source node's world transform.
+    // Two source nodes referencing the same mesh emit two Submeshes sharing one range.
     struct Submesh {
-        std::uint32_t index_offset;
-        std::uint32_t index_count;
-        std::uint32_t material_index;
-    };
-
-    struct MeshEntry {
-        VertexLayout layout = VertexLayout::PositionNormalTangentUV;
-        IndexType    index_type = IndexType::Uint32;
-        std::uint32_t vertex_count;
-        std::uint32_t index_count;
-        std::vector<std::uint8_t> vertices; // vertex_count * sizeof(MeshEntry)
-        std::vector<std::uint8_t> indices; // index_count * stride(index_type)
-        std::vector<Submesh> submeshes;
-        std::array<float, 3> aabb_min{  std::numeric_limits<float>::max(),
-                                        std::numeric_limits<float>::max(),
-                                        std::numeric_limits<float>::max() };
-        std::array<float, 3> aabb_max{  -std::numeric_limits<float>::max(),
-                                        -std::numeric_limits<float>::max(),
-                                        -std::numeric_limits<float>::max() }; // precomputed for WorldAABB/picking
+        helix::float4x4 local{1.f}; // node-accumulated, model-space
+        helix::AABB aabb;           // mesh-local (pre-`local`) bounds — per-submesh picking/highlight
+        std::uint32_t index_offset{0};
+        std::uint32_t index_count{0};
+        std::uint32_t material_index{0}; // into materials[]; out-of-range = engine default
     };
 
     enum class ColourSpace : std::uint8_t {
@@ -69,14 +55,15 @@ namespace thresh::asset {
         Occlusion,
     };
     struct TextureRef {
-        std::uint64_t hash = 0;
+        std::uint64_t hash = 0; // 0 = engine default for the slot
         ColourSpace   colour_space = ColourSpace::sRGB;
         TextureUsage  usage = TextureUsage::BaseColour;
     };
 
     struct MaterialEntry {
-        std::array<float, 4> base_colour_factor{1, 1, 1, 1};
-        std::array<float, 3> emissive_factor{0, 0, 0};
+        std::string shader_type = "opaque"; // registry material_type / pipeline name
+        helix::float4 base_colour_factor{1.f, 1.f, 1.f, 1.f};
+        helix::float3 emissive_factor{0.f, 0.f, 0.f};
         float metallic_factor = 1.f;
         float roughness_factor = 1.f;
         float normal_scale = 1.f;
@@ -90,19 +77,20 @@ namespace thresh::asset {
         TextureRef occlusion_texture;
     };
 
-    struct Node {
-        std::string name;
-        std::int32_t parent_index = -1; // index in to nodes, -1 = root node
-        std::array<float, 3> translation{0, 0, 0};
-        std::array<float, 4> rotation{0, 0, 0, 1}; // quaternion xyzw
-        std::array<float, 3> scale{1, 1, 1};
-        std::int32_t mesh = -1; // Index in to meshes, -1 transform only
-    };
-
-    struct ModelAsset { // BEVE Root, nodes topologically orderer
-        std::string src_uri;
-        std::vector<MeshEntry> meshes;
+    struct ModelAsset { // BEVE Root
+        std::string name;                    // asset stem; also the texture subdir name
+        std::uint32_t vertex_count = 0;
+        std::uint32_t index_count = 0;
+        std::vector<MeshVertex> vertices;    // one merged VBO
+        std::vector<std::uint32_t> indices;  // one merged IBO
+        std::vector<Submesh> submeshes;
         std::vector<MaterialEntry> materials;
-        std::vector<Node> nodes;
+        helix::AABB aabb;                    // whole model; starts sentinel-invalid, expand()-only
     };
 }
+
+// Serialize MeshVertex as 12 packed floats — without this, BEVE writes each vertex as an object
+// with repeated field keys, bloating the payload by an order of magnitude on real meshes.
+template<> struct glz::meta<thresh::asset::MeshVertex> {
+    static constexpr auto value = thresh::asset::detail::float_span<12>;
+};

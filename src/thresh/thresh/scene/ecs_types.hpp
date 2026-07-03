@@ -53,6 +53,20 @@ struct Mesh {
     std::uint32_t index_count = 0; // 0 = Whole buffer;
 };
 
+struct SubmeshDraw {
+    std::uint32_t material_handle = 0;
+    std::uint32_t index_offset = 0;
+    std::uint32_t index_count = 0;  // 0 = Whole buffer
+    helix::float4x4 local{1.f};     // cook-time node placement, composed with the entity transform
+    helix::AABB local_aabb;         // mesh-local (pre-`local`) bounds — submesh picking/highlight
+};
+
+// One cooked model on one entity: a single merged mesh + a draw per submesh.
+struct MeshRenderer {
+    std::uint32_t mesh_handle = 0;
+    std::vector<SubmeshDraw> submeshes;
+};
+
 struct MeshSource {
     // Relative VFS path, or primitive uri ( "primitive://box" )
     std::string path;
