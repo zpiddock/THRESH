@@ -37,6 +37,8 @@ namespace thresh {
                 return *m_temp_allocator;
             }
 
+            auto make_shape(flecs::entity entity) -> JPH::ShapeRefC;
+
         private:
 
             std::unique_ptr<JPH::TempAllocatorImpl>    m_temp_allocator;

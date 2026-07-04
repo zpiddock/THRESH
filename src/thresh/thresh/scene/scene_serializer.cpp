@@ -69,6 +69,34 @@ namespace thresh {
         world.component<WorldTransform>();
 
         world.component<WorldAABB>();
+
+        world.component<MotionType>();
+
+        world.component<RigidBody>()
+            .member<MotionType>("motion")
+            .member<float>("mass")
+            .member<float>("friction")
+            .member<float>("restitution");
+
+        world.component<BoxCollider>()
+            .member<helix::float3>("half_extents");
+
+        world.component<SphereCollider>()
+            .member<float>("radius");
+
+        world.component<CapsuleCollider>()
+            .member<float>("radius")
+            .member<float>("half_height");
+
+        world.component<CharacterController>()
+            .member<float>("height")
+            .member<float>("radius")
+            .member<float>("eye_height")
+            .member<float>("move_speed")
+            .member<float>("jump_speed")
+            .member<bool>("freecam");
+
+        world.component<PhysicsBody>();
     }
 
     auto SceneSerializer::save_scene(Scene& scene, const std::string& vfs_path)
@@ -139,6 +167,7 @@ namespace thresh {
             return nullptr;
         }
 
+        // Mesh is default constructed and would produce garbage data (UB) if not handled here
         world.each([&](flecs::entity e, const MeshSource& mesh, const MaterialSource& material) {
             const auto mesh_handle     = loader.resolve_mesh(mesh.path);
             const auto material_handle = loader.load_material(material.path);
@@ -146,6 +175,9 @@ namespace thresh {
             SUB_TRACE("Resolved mesh for '{}': mesh='{}'({}), mat='{}'({})",
                       e.name().c_str(), mesh.path, mesh_handle, material_handle, material.path);
         });
+
+        // PhysicsBody is default constructed and would produce garbage data (UB) is not handled here
+        world.remove_all<PhysicsBody>();
 
         SUB_INFO("Loaded scene from '{}'", vfs_path);
         return scene;

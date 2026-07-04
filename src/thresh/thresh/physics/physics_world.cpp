@@ -4,8 +4,13 @@
 
 #include "physics_world.hpp"
 
+#include "jolt_math.hpp"
 #include "Jolt/RegisterTypes.h"
+#include "Jolt/Physics/Collision/Shape/BoxShape.h"
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
+#include "Jolt/Physics/Collision/Shape/SphereShape.h"
 #include "substratum/log.hpp"
+#include "thresh/scene/ecs_types.hpp"
 
 namespace thresh {
 
@@ -68,5 +73,19 @@ namespace thresh {
     auto PhysicsWorld::step(const float timestep) -> void {
 
         m_physics->Update(timestep, 1, m_temp_allocator.get(), m_job_system.get());
+    }
+
+    auto PhysicsWorld::make_shape(flecs::entity entity) -> JPH::ShapeRefC {
+
+        if (const auto* box = entity.try_get<BoxCollider>()) {
+            return new JPH::BoxShape(phys::to_jph(box->half_extents));
+        }
+        if (const auto* sphere = entity.try_get<SphereCollider>()) {
+            return new JPH::SphereShape(sphere->radius);
+        }
+        if (const auto* capsule = entity.try_get<CapsuleCollider>()) {
+            return new JPH::CapsuleShape(capsule->half_height, capsule->radius);
+        }
+        return nullptr;
     }
 } // thresh

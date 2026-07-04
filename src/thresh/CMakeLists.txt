@@ -19,6 +19,9 @@ add_library(Thresh STATIC
         thresh/physics/physics_layers.hpp
         thresh/physics/physics_world.cpp
         thresh/physics/physics_world.hpp
+        thresh/physics/jolt_math.hpp
+        thresh/physics/jolt_debug_draw.cpp
+        thresh/physics/jolt_debug_draw.hpp
 )
 
 target_link_libraries(Thresh PUBLIC

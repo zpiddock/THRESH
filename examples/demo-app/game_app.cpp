@@ -45,24 +45,30 @@ namespace demo {
                 .set<MaterialSource>({.path = "material/default.mat"})
                 .set<Mesh>({box_mesh, default_material});
 
+
+            auto ground = scene->get_or_create_entity("ground");
+            ground.set<Transform>({ .position = {0.f, -2.f, 0.f}, .scale = {10.f, 0.5f, 10.f} })
+                .set<MeshSource>({ "primitive://box" })
+                .set<MaterialSource>({ "material/default.mat" })
+                .set<Mesh>({ box_mesh, default_material })
+                .set<RigidBody>({ .motion_type = MotionType::Static })
+                .set<BoxCollider>({ .half_extents = {5.f, 0.25f, 5.f} });
+
+            auto crate = scene->get_or_create_entity("crate");
+            crate.set<Transform>({ .position = {0.f, 5.f, 0.f},
+                                   .rotation = helix::angleAxis(helix::radians(30.f),
+                                                                helix::normalize(helix::float3{1.f, 0.f, 1.f})) })
+                .set<MeshSource>({ "primitive://box" })
+                .set<MaterialSource>({ "material/default.mat" })
+                .set<Mesh>({ box_mesh, default_material })
+                .set<RigidBody>({ .motion_type = MotionType::Dynamic, .mass = 10.f })
+                .set<BoxCollider>({});
+
            // thresh::Engine::get_instance().models().spawn(scene->world(), "models/ArmoredGirl.tasset", scene->root());
 
         }
 
         thresh::Engine::get_instance().transition_scene(std::move(scene));
-
-        auto& physics = thresh::Engine::get_instance().active_scene()->physics();
-            auto& bodies  = physics.bodies();
-
-            const JPH::BodyCreationSettings sphere(
-                new JPH::SphereShape(0.5f), JPH::RVec3(0, 10, 0), JPH::Quat::sIdentity(),
-                JPH::EMotionType::Dynamic, thresh::phys::layers::MOVING);
-            const JPH::BodyID id = bodies.CreateAndAddBody(sphere, JPH::EActivation::Activate);
-
-            for (int i = 0; i < 60; ++i) physics.step(1.f / 60.f);
-            SUB_INFO("smoke: sphere y after 1s = {}", bodies.GetPosition(id).GetY()); // expect ~5.1 (10 - g/2)
-            bodies.RemoveBody(id);
-            bodies.DestroyBody(id);
     }
 
     auto GameApp::update(float /*delta_time*/) -> void {

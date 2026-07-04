@@ -33,15 +33,15 @@
          "components": {
             "Transform": {
                "position": {
-                  "x": 2.6428847313,
+                  "x": 3.0104269981,
                   "y": 1.7550063133,
-                  "z": 3.4374694824
+                  "z": 4.0766592026
                },
                "rotation": {
-                  "x": -0.1042583659,
-                  "y": 0.2472419739,
-                  "z": 0.0267686527,
-                  "w": 0.9629563689
+                  "x": -0.0905752108,
+                  "y": 0.2568369508,
+                  "z": 0.0241845604,
+                  "w": 0.9618971348
                },
                "scale": {
                   "x": 0.999999702,
@@ -55,8 +55,8 @@
                "far_plane": 100
             },
             "CameraController": {
-               "yaw": 0.502648592,
-               "pitch": -0.2156978846,
+               "yaw": 0.5218473673,
+               "pitch": -0.1877725124,
                "movement_speed": 5,
                "mouse_sensitivity": 0.1000000015,
                "movement_allowed": true
@@ -194,6 +194,100 @@
             "Mesh": null,
             "WorldTransform": null,
             "WorldAABB": null
+         }
+      },
+      {
+         "parent": "SceneRoot",
+         "name": "ground",
+         "components": {
+            "Transform": {
+               "position": {
+                  "x": 0,
+                  "y": -2,
+                  "z": 0
+               },
+               "rotation": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0,
+                  "w": 1
+               },
+               "scale": {
+                  "x": 10,
+                  "y": 0.5,
+                  "z": 10
+               }
+            },
+            "MeshSource": {
+               "path": "primitive://box"
+            },
+            "MaterialSource": {
+               "path": "material/default.mat"
+            },
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null,
+            "RigidBody": {
+               "motion": "Static",
+               "mass": 1,
+               "friction": 0.5,
+               "restitution": 0
+            },
+            "BoxCollider": {
+               "half_extents": {
+                  "x": 5,
+                  "y": 0.25,
+                  "z": 5
+               }
+            },
+            "PhysicsBody": null
+         }
+      },
+      {
+         "parent": "SceneRoot",
+         "name": "crate",
+         "components": {
+            "Transform": {
+               "position": {
+                  "x": 0.0,
+                  "y": 5.0,
+                  "z": 0.0
+               },
+               "rotation": {
+                  "x": 0,
+                  "y": 0.0,
+                  "z": 0,
+                  "w": 1
+               },
+               "scale": {
+                  "x": 1,
+                  "y": 1,
+                  "z": 1
+               }
+            },
+            "MeshSource": {
+               "path": "primitive://box"
+            },
+            "MaterialSource": {
+               "path": "material/default.mat"
+            },
+            "Mesh": null,
+            "WorldTransform": null,
+            "WorldAABB": null,
+            "RigidBody": {
+               "motion": "Dynamic",
+               "mass": 10,
+               "friction": 0.5,
+               "restitution": 0
+            },
+            "BoxCollider": {
+               "half_extents": {
+                  "x": 0.5,
+                  "y": 0.5,
+                  "z": 0.5
+               }
+            },
+            "PhysicsBody": null
          }
       }
    ]
