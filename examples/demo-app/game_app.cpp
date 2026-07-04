@@ -4,12 +4,18 @@
 
 #include "game_app.hpp"
 
+#include "thresh/thresh.hpp"
+
 #include "imgui.h"
 #include "substratum/filesystem/vfs.hpp"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
 #include "thresh/scene/ecs_types.hpp"
 #include "thresh/scene/scene_serializer.hpp"
+
+
+#include "Jolt/Physics/Body/BodyCreationSettings.h"
+#include "Jolt/Physics/Collision/Shape/SphereShape.h"
 
 namespace demo {
 
@@ -39,10 +45,24 @@ namespace demo {
                 .set<MaterialSource>({.path = "material/default.mat"})
                 .set<Mesh>({box_mesh, default_material});
 
-            thresh::Engine::get_instance().models().spawn(scene->get_world(), "models/ArmoredGirl.tasset", scene->root());
+           // thresh::Engine::get_instance().models().spawn(scene->world(), "models/ArmoredGirl.tasset", scene->root());
+
         }
 
         thresh::Engine::get_instance().transition_scene(std::move(scene));
+
+        auto& physics = thresh::Engine::get_instance().active_scene()->physics();
+            auto& bodies  = physics.bodies();
+
+            const JPH::BodyCreationSettings sphere(
+                new JPH::SphereShape(0.5f), JPH::RVec3(0, 10, 0), JPH::Quat::sIdentity(),
+                JPH::EMotionType::Dynamic, thresh::phys::layers::MOVING);
+            const JPH::BodyID id = bodies.CreateAndAddBody(sphere, JPH::EActivation::Activate);
+
+            for (int i = 0; i < 60; ++i) physics.step(1.f / 60.f);
+            SUB_INFO("smoke: sphere y after 1s = {}", bodies.GetPosition(id).GetY()); // expect ~5.1 (10 - g/2)
+            bodies.RemoveBody(id);
+            bodies.DestroyBody(id);
     }
 
     auto GameApp::update(float /*delta_time*/) -> void {
