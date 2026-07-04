@@ -51,7 +51,7 @@ namespace thresh::phys {
 
                     case static_cast<JPH::BroadPhaseLayer::Type>(broadphase::NON_MOVING): return "STATIC";
                     case static_cast<JPH::BroadPhaseLayer::Type>(broadphase::MOVING): return "DYNAMIC";
-                    default: return std::format("Invalid BroadPhase Layer {}", static_cast<JPH::BroadPhaseLayer::Type>(inLayer)).c_str();
+                    default: JPH_ASSERT(false); return "INVALID";
                 }
             }
 #endif

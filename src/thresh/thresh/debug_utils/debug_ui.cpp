@@ -229,7 +229,7 @@ namespace thresh {
 
         auto* lines = Engine::get_instance().graphics()->debug_line_renderer();
         if (!lines) return;
-        scene.get_world().query_builder<const WorldAABB>().with<Mesh>().or_().with<MeshRenderer>().build()
+        scene.world().query_builder<const WorldAABB>().with<Mesh>().or_().with<MeshRenderer>().build()
             .each([&](flecs::entity e, const WorldAABB& w) {
                 const auto colour = (e == m_selected_entity) ? helix::float3{1, 1, 0}
                                                  : helix::float3{0.5f, 0.5f, 0.5f};

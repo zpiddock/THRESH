@@ -17,6 +17,8 @@ add_library(Thresh STATIC
         thresh/asset/model_loader.cpp
         thresh/asset/model_loader.hpp
         thresh/physics/physics_layers.hpp
+        thresh/physics/physics_world.cpp
+        thresh/physics/physics_world.hpp
 )
 
 target_link_libraries(Thresh PUBLIC

@@ -4,10 +4,13 @@
 
 #include "scene.hpp"
 
+#include "thresh/thresh.hpp"
 #include "ecs_types.hpp"
 #include "scene_serializer.hpp"
 #include "substratum/log.hpp"
 #include "thresh/engine.hpp"
+
+#include "Jolt/RegisterTypes.h"
 
 namespace thresh {
     Scene::Scene() {
@@ -16,6 +19,11 @@ namespace thresh {
         m_world.import<flecs::stats>();
         m_world.set<flecs::Rest>({});
 
+        // Physics World
+        m_physics_world = std::make_unique<PhysicsWorld>();
+        JPH::VerifyJoltVersionID();
+
+        // Flecs Systems
         init();
     }
 
@@ -240,8 +248,12 @@ namespace thresh {
         return result;
     }
 
-    auto Scene::get_world() -> flecs::world& {
+    auto Scene::world() -> flecs::world& {
         return m_world;
+    }
+
+    auto Scene::physics() -> PhysicsWorld& {
+        return *m_physics_world;
     }
 
     auto Scene::get_or_create_entity(const std::string& name) -> flecs::entity {

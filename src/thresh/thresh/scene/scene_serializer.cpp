@@ -83,8 +83,8 @@ namespace thresh {
         desc.serialize_inherited  = false;
         desc.serialize_full_paths = true;
 
-        auto root_query  = scene.get_world().query_builder().with<SceneRoot>().build();
-        auto children_query = scene.get_world().query_builder()
+        auto root_query  = scene.world().query_builder().with<SceneRoot>().build();
+        auto children_query = scene.world().query_builder()
                             .with(flecs::ChildOf, scene.root())
                             .cached()
                             .build();
@@ -125,7 +125,7 @@ namespace thresh {
         -> std::unique_ptr<Scene> {
         auto scene = std::make_unique<Scene>();
 
-        auto& world = scene->get_world();
+        auto& world = scene->world();
 
         const auto scene_json = substratum::VFS::read_file_string(vfs_path);
         if (scene_json.empty()) {

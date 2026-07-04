@@ -16,7 +16,7 @@ CPMAddPackage(
         GIT_TAG release-3.4.12
         GIT_SHALLOW TRUE
         OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF" "SDL_WERROR OFF"
-        SYSTEM
+        SYSTEM YES
 )
 
 # GLM - Mathematics library
@@ -123,6 +123,7 @@ CPMAddPackage(
         GIT_TAG v5.5.0
         GIT_SHALLOW TRUE
         SOURCE_SUBDIR Build # Jolt's CMake lives in /Build
+        SYSTEM YES
         OPTIONS
         "USE_STATIC_MSVC_RUNTIME_LIBRARY OFF"
         "OVERRIDE_CXX_FLAGS OFF"

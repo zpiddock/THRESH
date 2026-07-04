@@ -5,6 +5,7 @@
 #pragma once
 #include "flux/graphics_types.hpp"
 #include "thresh/thresh.hpp"
+#include "thresh/physics/physics_world.hpp"
 
 namespace thresh {
 
@@ -23,7 +24,9 @@ namespace thresh {
             auto init() -> void;
             auto update(float delta_time) -> void;
 
-            auto get_world() -> flecs::world&;
+            auto world() -> flecs::world&;
+
+            auto physics() -> PhysicsWorld&;
 
             auto get_or_create_entity(const std::string& name) -> flecs::entity;
 
@@ -40,6 +43,9 @@ namespace thresh {
             flecs::entity m_scene_root;
 
         private:
+
+            std::unique_ptr<PhysicsWorld> m_physics_world;
+
             flecs::world m_world;
     };
 } // thresh
