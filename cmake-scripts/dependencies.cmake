@@ -13,7 +13,7 @@ endif()
 CPMAddPackage(
         NAME sdl
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.4.8
+        GIT_TAG release-3.4.12
         GIT_SHALLOW TRUE
         OPTIONS "SDL_SHARED ON" "SDL_STATIC OFF" "SDL_WERROR OFF"
         SYSTEM
@@ -32,7 +32,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)
 CPMAddPackage(
         NAME physfs
         GIT_REPOSITORY https://github.com/icculus/physfs.git
-        GIT_TAG release-3.2.0
+        GIT_TAG main
         GIT_SHALLOW TRUE
         OPTIONS
             "PHYSFS_BUILD_SHARED OFF"
@@ -115,3 +115,21 @@ endif ()
 
 # Glaze
 CPMAddPackage("gh:stephenberry/glaze@7.6.0")
+
+# Jolt Physics
+CPMAddPackage(
+        NAME JoltPhysics
+        GIT_REPOSITORY https://github.com/jrouwe/JoltPhysics.git
+        GIT_TAG v5.5.0
+        GIT_SHALLOW TRUE
+        SOURCE_SUBDIR Build # Jolt's CMake lives in /Build
+        OPTIONS
+        "USE_STATIC_MSVC_RUNTIME_LIBRARY OFF"
+        "OVERRIDE_CXX_FLAGS OFF"
+        "DEBUG_RENDERER_IN_DEBUG_AND_RELEASE ON"
+        "TARGET_UNIT_TESTS OFF"
+        "TARGET_HELLO_WORLD OFF"
+        "TARGET_PERFORMANCE_TEST OFF"
+        "TARGET_SAMPLES OFF"
+        "TARGET_VIEWER OFF"
+)

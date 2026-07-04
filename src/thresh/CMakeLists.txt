@@ -16,6 +16,7 @@ add_library(Thresh STATIC
         thresh/debug_utils/debug_ui.hpp
         thresh/asset/model_loader.cpp
         thresh/asset/model_loader.hpp
+        thresh/physics/physics_layers.hpp
 )
 
 target_link_libraries(Thresh PUBLIC
@@ -25,6 +26,7 @@ target_link_libraries(Thresh PUBLIC
         glaze::glaze
         zstd
         ktx
+        Jolt
 )
 
 target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)
