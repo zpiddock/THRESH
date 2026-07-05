@@ -97,4 +97,27 @@ namespace flux::math {
             * helix::mat4_cast(transform.rotation)
             * helix::scale(IDENTITY, transform.scale);
     }
+
+    // World-space matrix -> Transform relative to the entity's parent (uses the
+    // parent's WorldTransform from the last propagation). nullopt if the matrix
+    // can't be decomposed.
+    inline auto world_to_local(flecs::entity entity, const helix::float4x4& world)
+        -> std::optional<Transform> {
+
+        helix::float4x4 parent_world{1.f};
+        if (auto parent = entity.parent(); parent.is_valid()) {
+            if (const auto* t = parent.try_get<WorldTransform>()) {
+                parent_world = t->transform;
+            }
+        }
+        const helix::float4x4 local = helix::inverse(parent_world) * world;
+
+        helix::float3 scale, skew, translation;
+        helix::float4 perspective;
+        helix::quat rotation;
+        if (!helix::decompose(local, scale, rotation, translation, skew, perspective)) {
+            return std::nullopt;
+        }
+        return Transform{.position = translation, .rotation = rotation, .scale = scale};
+    }
 }

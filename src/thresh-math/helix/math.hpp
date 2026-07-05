@@ -39,6 +39,11 @@ namespace helix {
     using glm::abs;
     using glm::value_ptr;
     using glm::decompose;
+    using glm::lerp;
+    using glm::smoothstep;
+    using glm::mix;
+    using glm::frustum;
+    using glm::eulerAngles;
 
     // Constants
     using glm::pi;

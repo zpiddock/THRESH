@@ -11,6 +11,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "physics_layers.hpp"
+#include "helix/math.hpp"
 
 namespace thresh {
     class PhysicsWorld {
@@ -37,7 +38,11 @@ namespace thresh {
                 return *m_temp_allocator;
             }
 
-            auto make_shape(flecs::entity entity) -> JPH::ShapeRefC;
+            // `world_scale` is the entity's decomposed world scale — collider
+            // dimensions are authored in local units and scaled here, since
+            // Jolt shapes know nothing about the transform hierarchy.
+            auto make_shape(flecs::entity entity,
+                            const helix::float3& world_scale = helix::float3{1.f}) -> JPH::ShapeRefC;
 
         private:
 

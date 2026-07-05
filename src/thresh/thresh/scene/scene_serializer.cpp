@@ -183,6 +183,11 @@ namespace thresh {
         world.remove_all<PhysicsBody>();
         world.remove_all<CharacterBody>();
 
+        // The file stores WorldTransform as null -> identity. PhysicsBodyCreate
+        // reads it, so bodies would spawn at the origin on frame 1; removing it
+        // makes them wait for the first PropagateWorldTransform pass.
+        world.remove_all<WorldTransform>();
+
         SUB_INFO("Loaded scene from '{}'", vfs_path);
         return scene;
     }

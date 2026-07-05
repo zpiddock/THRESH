@@ -6,6 +6,7 @@
 
 #include "thresh/application.hpp"
 #include "thresh/debug_utils/debug_ui.hpp"
+#include "thresh/editor/editor_ui.hpp"
 
 namespace demo {
 
@@ -23,7 +24,7 @@ class GameApp : public thresh::Application {
 
     private:
 
-        std::unique_ptr<thresh::DebugUI> m_debug_ui;
+        std::unique_ptr<thresh::edit::EditorUI> m_debug_ui;
 };
 
 } // demo

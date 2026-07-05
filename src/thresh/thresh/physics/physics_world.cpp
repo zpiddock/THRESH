@@ -4,6 +4,8 @@
 
 #include "physics_world.hpp"
 
+#include <algorithm>
+
 #include "jolt_math.hpp"
 #include "physics_components.hpp"
 #include "Jolt/RegisterTypes.h"
@@ -76,16 +78,20 @@ namespace thresh {
         m_physics->Update(timestep, 1, m_temp_allocator.get(), m_job_system.get());
     }
 
-    auto PhysicsWorld::make_shape(flecs::entity entity) -> JPH::ShapeRefC {
+    auto PhysicsWorld::make_shape(flecs::entity entity,
+                                  const helix::float3& world_scale) -> JPH::ShapeRefC {
 
         if (const auto* box = entity.try_get<BoxCollider>()) {
-            return new JPH::BoxShape(phys::to_jph(box->half_extents));
+            return new JPH::BoxShape(phys::to_jph(box->half_extents * world_scale));
         }
         if (const auto* sphere = entity.try_get<SphereCollider>()) {
-            return new JPH::SphereShape(sphere->radius);
+            // Jolt spheres are uniform — take the largest axis of the scale.
+            const float uniform = std::max({world_scale.x, world_scale.y, world_scale.z});
+            return new JPH::SphereShape(sphere->radius * uniform);
         }
         if (const auto* capsule = entity.try_get<CapsuleCollider>()) {
-            return new JPH::CapsuleShape(capsule->half_height, capsule->radius);
+            return new JPH::CapsuleShape(capsule->half_height * world_scale.y,
+                                         capsule->radius * std::max(world_scale.x, world_scale.z));
         }
         return nullptr;
     }

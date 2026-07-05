@@ -18,11 +18,22 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
         world.set<PhysicsClock>({});
         world.set<PhysicsDebugDraw>({});
 
-        world.system<const Transform, const RigidBody>("PhysicsBodyCreate")
+        // Bodies live in world space — a nested entity's local Transform is not
+        // where it renders. WorldTransform is propagated at PostUpdate, so a
+        // freshly spawned entity gets its body one frame later, from the same
+        // matrix the renderer uses.
+        world.system<const WorldTransform, const RigidBody>("PhysicsBodyCreate")
         .without<PhysicsBody>()
         .kind(flecs::PreUpdate)
-        .each([phys = &physics_world] (flecs::entity entity, const Transform& transform, const RigidBody& body) {
-            const auto shape = phys->make_shape(entity);
+        .each([phys = &physics_world] (flecs::entity entity, const WorldTransform& world_transform, const RigidBody& body) {
+            helix::float3 scale, skew, translation;
+            helix::float4 perspective;
+            helix::quat rotation;
+            if (!helix::decompose(world_transform.transform, scale, rotation, translation, skew, perspective)) {
+                return;
+            }
+
+            const auto shape = phys->make_shape(entity, scale);
 
             if (!shape) {
                 return;
@@ -31,8 +42,8 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
             const bool dynamic = body.motion_type == MotionType::Dynamic;
             JPH::BodyCreationSettings settings(
                 shape,
-                phys::to_jph(transform.position),
-                phys::to_jph(transform.rotation),
+                phys::to_jph(translation),
+                phys::to_jph(rotation),
                 body.motion_type == MotionType::Static    ? JPH::EMotionType::Static
                 : body.motion_type == MotionType::Kinematic ? JPH::EMotionType::Kinematic
                 : JPH::EMotionType::Dynamic,
@@ -70,16 +81,23 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
             // A hitch or pause must not trigger a catch up death spiral
             clock.accumulator = std::min(clock.accumulator + it.world().delta_time(), 0.25f);
 
-            auto kinematics = it.world().query<const Transform, const RigidBody, const PhysicsBody>();
+            auto kinematics = it.world().query<const WorldTransform, const RigidBody, const PhysicsBody>();
             while (clock.accumulator >= STEP) {
-                kinematics.each([&](flecs::entity e, const Transform& transform, const RigidBody& body, const PhysicsBody& physics_body) {
+                kinematics.each([&](flecs::entity e, const WorldTransform& world_transform, const RigidBody& body, const PhysicsBody& physics_body) {
                     if (body.motion_type != MotionType::Kinematic) {
+                        return;
+                    }
+                    // Same world-space rule as body creation.
+                    helix::float3 scale, skew, translation;
+                    helix::float4 perspective;
+                    helix::quat rotation;
+                    if (!helix::decompose(world_transform.transform, scale, rotation, translation, skew, perspective)) {
                         return;
                     }
                     phys->bodies().MoveKinematic(
                         JPH::BodyID(physics_body.body_handle),
-                        phys::to_jph(transform.position),
-                        phys::to_jph(transform.rotation),
+                        phys::to_jph(translation),
+                        phys::to_jph(rotation),
                         STEP
                     );
                 });
@@ -98,8 +116,17 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
             JPH::RVec3 pos;
             JPH::Quat rot{};
             phys->bodies().GetPositionAndRotation(JPH::BodyID(physics_body.body_handle), pos, rot);
-            transform.position = phys::to_helix(pos);
-            transform.rotation = phys::to_helix(rot);
+
+            // Jolt hands back a world pose; Transform is parent-relative.
+            constexpr auto IDENTITY = helix::float4x4{1.f};
+            const auto world_pose = helix::translate(IDENTITY, phys::to_helix(pos))
+                                  * helix::mat4_cast(phys::to_helix(rot));
+            if (const auto local = flux::math::world_to_local(entity, world_pose)) {
+                transform.position = local->position;
+                transform.rotation = local->rotation;
+                // scale untouched: physics never changes it, and world_pose
+                // deliberately carries none.
+            }
         });
 
     world.system<const Transform, const CharacterController>("CharacterCreate")
@@ -155,19 +182,25 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
         const auto forward = helix::float3{-helix::sin(controller.yaw), 0.f, -helix::cos(controller.yaw)};
         const auto right   = helix::float3{ helix::cos(controller.yaw), 0.f, -helix::sin(controller.yaw)};
 
+        // UI open = no steering, but gravity keeps simulating so the character
+        // doesn't freeze mid-air. (The fly-cam system gates on the same flag.)
+        const bool input_allowed = controller.movement_allowed;
+
         helix::float3 wish{0.f};
-        if (input->is_key_held(SDL_SCANCODE_W)) wish += forward;
-        if (input->is_key_held(SDL_SCANCODE_S)) wish -= forward;
-        if (input->is_key_held(SDL_SCANCODE_A)) wish -= right;
-        if (input->is_key_held(SDL_SCANCODE_D)) wish += right;
-        if (helix::length(wish) > 0.0001f) wish = helix::normalize(wish) * controller.movement_speed;
+        if (input_allowed) {
+            if (input->is_key_held(SDL_SCANCODE_W)) wish += forward;
+            if (input->is_key_held(SDL_SCANCODE_S)) wish -= forward;
+            if (input->is_key_held(SDL_SCANCODE_A)) wish -= right;
+            if (input->is_key_held(SDL_SCANCODE_D)) wish += right;
+            if (helix::length(wish) > 0.0001f) wish = helix::normalize(wish) * controller.movement_speed;
+        }
 
         // Vertical: keep falling speed unless grounded; jump replaces it.
         const auto gravity = phys->system().GetGravity();
         float vertical = character_ptr->GetLinearVelocity().GetY();
         if (character_ptr->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround) {
             vertical = 0.f;
-            if (input->key_just_pressed(SDL_SCANCODE_SPACE)) vertical = character.jump_speed;
+            if (input_allowed && input->key_just_pressed(SDL_SCANCODE_SPACE)) vertical = character.jump_speed;
         } else {
             vertical += gravity.GetY() * delta_time;
         }

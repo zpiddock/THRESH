@@ -24,6 +24,10 @@ add_library(Thresh STATIC
         thresh/physics/jolt_debug_draw.hpp
         thresh/physics/physics_components.hpp
         thresh/physics/physics_components.cpp
+        thresh/editor/editor_ui.cpp
+        thresh/editor/editor_ui.hpp
+        thresh/editor/scene_commands.cpp
+        thresh/editor/scene_commands.hpp
 )
 
 target_link_libraries(Thresh PUBLIC

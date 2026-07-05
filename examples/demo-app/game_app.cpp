@@ -29,7 +29,7 @@ namespace demo {
         substratum::VFS::set_write_dir(assets_path);
 
         thresh::Engine::get_instance().graphics()->enable_debug_line_renderer();
-        m_debug_ui = std::make_unique<thresh::DebugUI>();
+        m_debug_ui = std::make_unique<thresh::edit::EditorUI>();
 
         auto scene = thresh::Engine::get_instance().load_scene("/test/scenes/scene.thresh");
 
@@ -38,22 +38,15 @@ namespace demo {
             auto box_mesh = thresh::Engine::get_instance().graphics()->resources().register_mesh(flux::primitives::box());
             auto default_material = thresh::Engine::get_instance().assets().load_material("material/default.mat");
 
-            // Manually creates a child of "Test Cube" with propagated world transform, 2 units above world transform of parent
-            [[maybe_unused]] auto child = scene->get_or_create_entity("ChildBox")
-                .child_of(scene->get_or_create_entity("Test Cube"))
-                .set<Transform>({.position = {0,2,0}, .scale = helix::float3{0.5f}})
-                .set<MeshSource>({.path = "primitive://box"})
-                .set<MaterialSource>({.path = "material/default.mat"})
-                .set<Mesh>({box_mesh, default_material});
-
-
             auto ground = scene->get_or_create_entity("ground");
             ground.set<Transform>({ .position = {0.f, -2.f, 0.f}, .scale = {10.f, 0.5f, 10.f} })
                 .set<MeshSource>({ "primitive://box" })
                 .set<MaterialSource>({ "material/default.mat" })
                 .set<Mesh>({ box_mesh, default_material })
                 .set<RigidBody>({ .motion_type = MotionType::Static })
-                .set<BoxCollider>({ .half_extents = {5.f, 0.25f, 5.f} });
+                // Colliders are in local units now that make_shape applies world
+                // scale: 0.5 half extents x scale {10, 0.5, 10} = {5, 0.25, 5}.
+                .set<BoxCollider>({});
 
             auto crate = scene->get_or_create_entity("crate");
             crate.set<Transform>({ .position = {0.f, 5.f, 0.f},
