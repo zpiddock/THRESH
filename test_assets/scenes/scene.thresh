@@ -26,46 +26,6 @@
       },
       {
          "parent": "SceneRoot",
-         "name": "Player",
-         "tags": [
-            "ActiveCamera"
-         ],
-         "components": {
-            "Transform": {
-               "position": {
-                  "x": 3.0104269981,
-                  "y": 1.7550063133,
-                  "z": 4.0766592026
-               },
-               "rotation": {
-                  "x": -0.0905752108,
-                  "y": 0.2568369508,
-                  "z": 0.0241845604,
-                  "w": 0.9618971348
-               },
-               "scale": {
-                  "x": 0.999999702,
-                  "y": 1,
-                  "z": 1
-               }
-            },
-            "Camera": {
-               "fov": 1.5707963705,
-               "near_plane": 0.1000000015,
-               "far_plane": 100
-            },
-            "CameraController": {
-               "yaw": 0.5218473673,
-               "pitch": -0.1877725124,
-               "movement_speed": 5,
-               "mouse_sensitivity": 0.1000000015,
-               "movement_allowed": true
-            },
-            "WorldTransform": null
-         }
-      },
-      {
-         "parent": "SceneRoot",
          "name": "Test Cube",
          "components": {
             "Transform": {
@@ -288,6 +248,55 @@
                }
             },
             "PhysicsBody": null
+         }
+      },
+      {
+         "parent": "SceneRoot",
+         "name": "Player",
+         "tags": [
+            "ActiveCamera"
+         ],
+         "components": {
+            "Transform": {
+               "position": {
+                  "x": 2.3812861443,
+                  "y": 1.1296410561,
+                  "z": 3.0853874683
+               },
+               "rotation": {
+                  "x": -0.1929039061,
+                  "y": 0.3203245401,
+                  "z": 0.0667983666,
+                  "w": 0.9250504375
+               },
+               "scale": {
+                  "x": 0.999999702,
+                  "y": 1,
+                  "z": 1
+               }
+            },
+            "Camera": {
+               "fov": 1.5707963705,
+               "near_plane": 0.1000000015,
+               "far_plane": 100
+            },
+            "CameraController": {
+               "yaw": 0.6667101979,
+               "pitch": -0.4111742675,
+               "movement_speed": 5,
+               "mouse_sensitivity": 0.1000000015,
+               "movement_allowed": true
+            },
+            "WorldTransform": null,
+            "CharacterController": {
+               "height": 0.3000000119,
+               "radius": 1.3500000238,
+               "eye_height": 1.6000000238,
+               "move_speed": 5,
+               "jump_speed": 6,
+               "freecam": true
+            },
+            "CharacterBody": null
          }
       }
    ]

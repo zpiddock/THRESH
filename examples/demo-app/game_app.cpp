@@ -16,6 +16,7 @@
 
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/SphereShape.h"
+#include "thresh/physics/physics_components.hpp"
 
 namespace demo {
 

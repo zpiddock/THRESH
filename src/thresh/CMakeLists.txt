@@ -22,6 +22,8 @@ add_library(Thresh STATIC
         thresh/physics/jolt_math.hpp
         thresh/physics/jolt_debug_draw.cpp
         thresh/physics/jolt_debug_draw.hpp
+        thresh/physics/physics_components.hpp
+        thresh/physics/physics_components.cpp
 )
 
 target_link_libraries(Thresh PUBLIC

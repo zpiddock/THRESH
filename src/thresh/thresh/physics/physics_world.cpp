@@ -5,6 +5,7 @@
 #include "physics_world.hpp"
 
 #include "jolt_math.hpp"
+#include "physics_components.hpp"
 #include "Jolt/RegisterTypes.h"
 #include "Jolt/Physics/Collision/Shape/BoxShape.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"

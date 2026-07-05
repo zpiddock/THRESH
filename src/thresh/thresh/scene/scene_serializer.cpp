@@ -9,6 +9,7 @@
 #include "ecs_types.hpp"
 #include "substratum/filesystem/vfs.hpp"
 #include "substratum/log.hpp"
+#include "thresh/physics/physics_components.hpp"
 
 namespace thresh {
     auto SceneSerializer::register_components(flecs::world& world) -> void {
