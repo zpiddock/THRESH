@@ -142,6 +142,14 @@ namespace thresh {
 
     auto DebugUI::draw(Scene& scene) -> void {
 
+        // A selection carried across a scene transition points into the previous,
+        // destroyed world, drop it before anything dereferences the entity.
+        if (auto* world = scene.world().c_ptr(); world != m_last_world) {
+            m_selected_entity  = {};
+            m_selected_submesh = -1;
+            m_last_world       = world;
+        }
+
         ImGuizmo::BeginFrame();
 
         if (!ImGui::GetIO().WantTextInput) {

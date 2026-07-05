@@ -41,3 +41,8 @@ target_precompile_headers(Thresh PUBLIC thresh/thresh.hpp)
 target_include_directories(Thresh PUBLIC
         ${CMAKE_SOURCE_DIR}/src/thresh
 )
+
+# doctest ships with the tool dependencies; no tools, no test runner.
+if(TARGET doctest::doctest)
+    add_subdirectory(tests)
+endif()

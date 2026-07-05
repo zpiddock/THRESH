@@ -103,40 +103,39 @@ namespace thresh {
     auto SceneSerializer::save_scene(Scene& scene, const std::string& vfs_path)
         -> bool {
 
-        ecs_iter_to_json_desc_t desc{};
-        desc.serialize_table      = true;
-        desc.serialize_values     = true;
-        desc.serialize_fields     = true;
-        desc.serialize_builtin    = false;
-        desc.serialize_entity_ids = false;
-        desc.serialize_inherited  = false;
-        desc.serialize_full_paths = true;
+        const flecs::entity_to_json_desc_t desc = ECS_ENTITY_TO_JSON_INIT;
 
-        auto root_query  = scene.world().query_builder().with<SceneRoot>().build();
-        auto children_query = scene.world().query_builder()
-                            .with(flecs::ChildOf, scene.root())
-                            .cached()
-                            .build();
-
-        auto root_raw = root_query.to_json(&desc);
-        auto child_raw = children_query.to_json(&desc);
-        if (!child_raw || !root_raw) {
-            SUB_ERROR("ecs_iter_to_json returned null");
+        glz::generic doc{};
+        if (glz::read_json(doc, std::string{R"({"results":[]})"})) {
+            SUB_ERROR("save_scene: failed to seed results document");
             return false;
         }
+        auto& results = doc["results"].get_array();
 
-        // Merge the two {"results":[...]} docs into one results array.
-        glz::generic doc{}, children{};
-        if (glz::read_json(doc, std::string{root_raw}) || glz::read_json(children, std::string{child_raw})) {
-            SUB_ERROR("save_scene: failed to parse serialized scene json");
+        // Depth first from the root so entities at any depth are captured and
+        // parents always precede their children in the file.
+        bool ok = true;
+        auto append = [&](this auto& self, flecs::entity e) -> void {
+            const auto raw = e.to_json(&desc);
+            if (!raw.c_str()) {
+                SUB_ERROR("save_scene: entity_to_json failed for '{}'", e.path().c_str());
+                ok = false;
+                return;
+            }
+            glz::generic entry{};
+            if (glz::read_json(entry, std::string{raw.c_str()})) {
+                SUB_ERROR("save_scene: failed to parse json for '{}'", e.path().c_str());
+                ok = false;
+                return;
+            }
+            results.emplace_back(std::move(entry));
+            e.children([&](flecs::entity child) { self(child); });
+        };
+        append(scene.root());
+
+        if (!ok) {
             return false;
         }
-
-        auto& results       = doc["results"].get_array();
-        auto& child_results = children["results"].get_array();
-        results.insert(results.end(),
-                       std::make_move_iterator(child_results.begin()),
-                       std::make_move_iterator(child_results.end()));
 
         std::string merged;
         if (glz::write_json(doc, merged)) {
@@ -144,8 +143,11 @@ namespace thresh {
             return false;
         }
 
-        auto pretty_json = glz::prettify_json(merged);
-        substratum::VFS::write_file_string(vfs_path, pretty_json);
+        const auto pretty_json = glz::prettify_json(merged);
+        if (!substratum::VFS::write_file_string(vfs_path, pretty_json)) {
+            SUB_ERROR("save_scene: failed to write '{}'", vfs_path);
+            return false;
+        }
         return true;
     }
 

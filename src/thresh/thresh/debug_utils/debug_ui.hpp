@@ -41,6 +41,8 @@ namespace thresh {
             flecs::entity m_selected_entity{};
             std::int32_t m_selected_submesh{-1}; // index into MeshRenderer::submeshes; -1 = whole entity
 
+            flecs::world_t* m_last_world{nullptr};
+
             ImGuizmo::OPERATION m_gizmo_operation{ImGuizmo::TRANSLATE};
             ImGuizmo::MODE m_gizmo_mode{ImGuizmo::WORLD};
     };
