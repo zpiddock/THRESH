@@ -115,7 +115,7 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
         .Create().Get();
         settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -controller.radius);
 
-        const auto feet = transform.position + helix::float3{0.f, controller.eye_height, 0.f};
+        const auto feet = transform.position - helix::float3{0.f, controller.eye_height, 0.f};
         entity.set<CharacterBody>({
             new JPH::CharacterVirtual(
                 &settings,
@@ -123,6 +123,64 @@ auto thresh::phys::register_systems(flecs::world& world, PhysicsWorld& physics_w
                 JPH::Quat::sIdentity(),
                 &phys->system())
         });
+    });
+
+    world.system<const Transform, const CameraController, CharacterController, CharacterBody>("CharacterControllerToggle")
+    .kind(flecs::OnUpdate)
+    .each([] (flecs::entity entity, const Transform& transform, const CameraController& controller, CharacterController& character, CharacterBody& character_body) {
+        if (!controller.movement_allowed) return;
+        if (!Engine::get_instance().input()->key_just_pressed(SDL_SCANCODE_F)) {
+            return;
+        }
+
+        character.freecam = !character.freecam;
+
+        if (auto* cc = character_body.character.GetPtr()) {
+            cc->SetPosition(to_jph(transform.position - helix::float3(0.f, character.eye_height, 0.f)));
+            cc->SetLinearVelocity(JPH::Vec3::sZero());
+        }
+    });
+
+    world.system<Transform, const CameraController, const CharacterController, CharacterBody>("CharacterMove")
+    .kind(flecs::OnUpdate)
+    .each([phys = &physics_world] (flecs::entity entity, Transform& transform, const CameraController& controller, const CharacterController& character, CharacterBody& character_body) {
+        if (character.freecam) {
+            return;
+        }
+        auto* input = Engine::get_instance().input();
+        auto* character_ptr = character_body.character.GetPtr();
+        const float delta_time = entity.world().delta_time();
+
+        // Same yaw-plane basis the fly-cam uses, walking follows the camera heading.
+        const auto forward = helix::float3{-helix::sin(controller.yaw), 0.f, -helix::cos(controller.yaw)};
+        const auto right   = helix::float3{ helix::cos(controller.yaw), 0.f, -helix::sin(controller.yaw)};
+
+        helix::float3 wish{0.f};
+        if (input->is_key_held(SDL_SCANCODE_W)) wish += forward;
+        if (input->is_key_held(SDL_SCANCODE_S)) wish -= forward;
+        if (input->is_key_held(SDL_SCANCODE_A)) wish -= right;
+        if (input->is_key_held(SDL_SCANCODE_D)) wish += right;
+        if (helix::length(wish) > 0.0001f) wish = helix::normalize(wish) * controller.movement_speed;
+
+        // Vertical: keep falling speed unless grounded; jump replaces it.
+        const auto gravity = phys->system().GetGravity();
+        float vertical = character_ptr->GetLinearVelocity().GetY();
+        if (character_ptr->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround) {
+            vertical = 0.f;
+            if (input->key_just_pressed(SDL_SCANCODE_SPACE)) vertical = character.jump_speed;
+        } else {
+            vertical += gravity.GetY() * delta_time;
+        }
+        character_ptr->SetLinearVelocity(JPH::Vec3(wish.x, vertical, wish.z));
+
+        const JPH::CharacterVirtual::ExtendedUpdateSettings update_settings{}; // defaults: stick-to-floor + stair walk
+        character_ptr->ExtendedUpdate(delta_time, gravity, update_settings,
+                           phys->system().GetDefaultBroadPhaseLayerFilter(layers::MOVING),
+                           phys->system().GetDefaultLayerFilter(layers::MOVING),
+                           {}, {}, phys->temp_allocator());
+
+        // Camera rides the character: lens at feet + eye height. Rotation stays mouse-look's.
+        transform.position = to_helix(character_ptr->GetPosition()) + helix::float3(0.f, character.eye_height, 0.f);
     });
 
         world.system("PhysicsDebugDraw")

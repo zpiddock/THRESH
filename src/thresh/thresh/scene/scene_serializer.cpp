@@ -177,8 +177,9 @@ namespace thresh {
                       e.name().c_str(), mesh.path, mesh_handle, material_handle, material.path);
         });
 
-        // PhysicsBody is default constructed and would produce garbage data (UB) is not handled here
+        // PhysicsBody & CharacterBody are default constructed and would produce garbage data (UB) is not handled here
         world.remove_all<PhysicsBody>();
+        world.remove_all<CharacterBody>();
 
         SUB_INFO("Loaded scene from '{}'", vfs_path);
         return scene;

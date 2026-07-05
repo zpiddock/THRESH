@@ -43,8 +43,8 @@ namespace thresh {
         m_scene_root = m_world.entity("SceneRoot").add<SceneRoot>();
         m_scene_root.set<AmbientLight>({});
 
-        m_world.system<Transform, CameraController, ActiveCamera>().kind(flecs::OnUpdate).each(
-                [](flecs::iter& it, size_t, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {
+        m_world.system<Transform, CameraController, ActiveCamera>("CameraSystem").kind(flecs::OnUpdate).each(
+                [](flecs::iter& it, size_t row, Transform& transform, CameraController& camera_controller, const ActiveCamera& active_camera) {
 
                     if (!camera_controller.movement_allowed) { return; }
 
@@ -62,6 +62,10 @@ namespace thresh {
                     const auto q_pitch = helix::angleAxis(camera_controller.pitch, helix::float3(1.f, 0.f, 0.f));
 
                     transform.rotation = q_yaw * q_pitch;
+
+                    if (const auto* cc = it.entity(row).try_get<CharacterController>(); cc && !cc->freecam) {
+                        return;
+                    }
 
                     // movement vectors
                     const auto forward = helix::float3{-helix::sin(camera_controller.yaw), 0.f, -helix::cos(camera_controller.yaw)};
